@@ -1,0 +1,28 @@
+# Secrets
+config/.env
+APIS NEWSLETER/
+*.pem
+*.key
+
+# Sortides i dades (generades / snapshots)
+output/
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.idea/
+.vscode/
+*.swp

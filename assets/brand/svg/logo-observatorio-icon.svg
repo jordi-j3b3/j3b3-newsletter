@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" role="img" aria-label="Observatorio del Comercio Minorista">
+  <title>Observatorio del Comercio Minorista</title>
+  <rect x="1.25" y="1.25" width="69.5" height="69.5" rx="4" fill="none" stroke="#1B2A4A" stroke-width="2.5"/>
+  <line x1="20" y1="56" x2="20" y2="42" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"/>
+  <line x1="36" y1="56" x2="36" y2="30" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"/>
+  <line x1="52" y1="56" x2="52" y2="18" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"/>
+</svg>

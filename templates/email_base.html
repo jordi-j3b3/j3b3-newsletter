@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{subject}}</title>
+<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+<style type="text/css">
+  body, table, td, p, a, h1, h2, h3 { -webkit-font-smoothing: antialiased; }
+  body { margin: 0; padding: 0; background: #f4f4f2; }
+  table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { border: 0; line-height: 100%; outline: none; }
+  a { color: #0055a4; text-decoration: none; }
+  p { margin: 0 0 14px; }
+
+  .container { width: 100%; max-width: 600px; }
+  .wrapper { background: #ffffff; }
+  .body-pad { padding: 36px 36px 28px; }
+
+  /* === Cabecera === */
+  .eyebrow {
+    color: #5a9fd4;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0;
+  }
+  .edition-title {
+    font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+    font-size: 30px;
+    line-height: 1.15;
+    color: #0055a4;
+    font-weight: 400;
+    margin: 12px 0 8px;
+    letter-spacing: -0.005em;
+  }
+  .subhead {
+    color: #7f8c8d;
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-size: 13px;
+    font-style: italic;
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+  hr.rule { border: 0; border-top: 1px solid #e8f0fe; margin: 24px 0; }
+
+  /* === Bloques === */
+  h2 {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: #0055a4;
+    font-weight: 600;
+    margin: 32px 0 14px;
+    padding-left: 12px;
+    border-left: 4px solid #0055a4;
+  }
+  h2.data-title {
+    text-transform: none;
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: #1a1a1a;
+    border-left-color: #0055a4;
+    margin: 32px 0 8px;
+  }
+
+  /* === Bloque 1: caja-exhibit === */
+  .exhibit-table { margin: 20px 0 12px; }
+  .exhibit-box {
+    border: 1px solid #e8f0fe;
+    border-left: 4px solid #0055a4;
+    background: #fafbfd;
+    padding: 22px 26px;
+  }
+  .exhibit-cifra {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 56px;
+    line-height: 1;
+    color: #0055a4;
+    font-weight: 400;
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+  }
+  .exhibit-unit { font-size: 36px; }
+  .exhibit-context {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #1a1a1a;
+    font-weight: 500;
+    line-height: 1.4;
+    margin: 0 0 6px;
+  }
+  .exhibit-source {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: #7f8c8d;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* === Bloque 3: barras horizontales === */
+  .bars-table { margin: 14px 0 4px; }
+  .bar-label {
+    width: 120px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: #1a1a1a;
+    padding: 6px 12px 6px 0;
+    vertical-align: middle;
+  }
+  .bar-cell { padding: 0; }
+  .bar-track { width: 280px; border-collapse: collapse; }
+  .bar-side { padding: 0; width: 140px; vertical-align: middle; height: 22px; }
+  .bar-side-right { border-left: 1px solid #d0d4d9; }
+  .bar { display: inline-block; height: 14px; vertical-align: middle; }
+  .bar-neg { background: #c0392b; }
+  .bar-pos-strong { background: #0055a4; }
+  .bar-pos-light { background: #5a9fd4; }
+  .bar-value {
+    width: 64px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 0 6px 12px;
+    vertical-align: middle;
+  }
+  .bar-value-neg { color: #c0392b; }
+  .bar-value-pos-strong { color: #0055a4; }
+  .bar-value-pos { color: #1a1a1a; }
+  .bars-legend {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    margin: 4px 0 18px;
+  }
+
+  /* === Cuerpo === */
+  p, .body-text {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #1a1a1a;
+  }
+  em { color: #7f8c8d; }
+  strong { color: #1a1a1a; }
+  blockquote {
+    margin: 16px 0;
+    padding: 4px 0 4px 16px;
+    border-left: 4px solid #c0392b;
+    color: #1a1a1a;
+    font-style: italic;
+  }
+
+  /* === Pie de fuentes técnicas === */
+  .sources {
+    background: #ffffff;
+    padding: 0 36px 26px;
+  }
+  .sources p {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: #aaa;
+    font-style: italic;
+    line-height: 1.55;
+    margin: 0;
+    padding-top: 18px;
+    border-top: 1px dashed #e8f0fe;
+  }
+
+  /* === Footer de marca === */
+  .footer {
+    background: #f4f4f2;
+    color: #7f8c8d;
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-size: 12px;
+    text-align: center;
+    padding: 24px 32px;
+    line-height: 1.5;
+  }
+  .footer a { color: #0055a4; }
+
+  @media only screen and (max-width: 620px) {
+    .body-pad { padding: 26px 20px 18px !important; }
+    .sources { padding: 0 20px 22px !important; }
+    .edition-title { font-size: 26px !important; }
+    .exhibit-cifra { font-size: 44px !important; }
+    .exhibit-unit { font-size: 28px !important; }
+    .bar-label { width: 90px !important; font-size: 12px !important; padding-right: 8px !important; }
+    .bar-track { width: 200px !important; }
+    .bar-side { width: 100px !important; }
+    .bar-value { width: 54px !important; font-size: 12px !important; padding-left: 8px !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background:#f4f4f2;">
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#f4f4f2;">{{preheader}}</div>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f4f2;">
+  <tr>
+    <td align="center" style="padding: 24px 12px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="container" width="600" style="max-width:600px; width:100%;">
+        <tr>
+          <td class="wrapper" style="background:#ffffff;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="background:#ffffff; padding:16px 24px 0; text-align:center;">
+                  <p style="font-family:'DM Sans',-apple-system,sans-serif; font-size:11px; font-weight:400; color:#888888; letter-spacing:0.08em; text-transform:uppercase; margin:0;">
+                    OBSERVATORIO DEL COMERCIO MINORISTA // J3B3 ECONOMICS, SL
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td class="body-pad">
+                  <p class="eyebrow">El Pulso de la semana · Núm. {{numero}} · {{semana_str}}</p>
+                  <h1 class="edition-title">{{titular}}</h1>
+                  <p class="subhead">{{preheader}}</p>
+                  <hr class="rule" />
+
+                  {{body_html}}
+
+                </td>
+              </tr>
+              <tr>
+                <td class="sources">
+                  <p>Fuentes: Eurostat (sts_trtu_m, base 2021=100) · INE (CDMGE, tabla 37808) · Recopilación propia de 12 medios sectoriales.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background:#ffffff; padding:8px 24px 28px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="background:#f5f8fc; border-left:3px solid #0055a4; padding:20px;">
+                        <p style="font-family:'DM Sans',-apple-system,sans-serif; font-size:14px; font-weight:700; color:#0055a4; margin:0 0 8px; line-height:1.3;">¿Qué es esto?</p>
+                        <p style="font-family:'DM Sans',-apple-system,sans-serif; font-size:13px; color:#1a1a1a; font-style:italic; line-height:1.6; margin:0 0 10px;">El Pulso de la semana es la publicación semanal del Observatorio del Comercio (J3B3). Cada lunes ofrece una lectura experta del sector retail español: una cifra protagonista, tres noticias con ángulo, un mapa europeo de ventas minoristas y una predicción concreta sobre el futuro próximo del sector.</p>
+                        <p style="font-family:'DM Sans',-apple-system,sans-serif; font-size:13px; color:#1a1a1a; line-height:1.6; margin:0;">Si quieres saber más, visita <a href="{{url_publica}}" style="color:#0055a4; text-decoration:underline;">observatorio-comercio.j3b3.com</a>.</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="footer">
+            <p style="margin:0 0 6px;"><strong>Observatorio del Comercio</strong> · <a href="{{url_publica}}">observatorio-comercio.j3b3.com</a></p>
+            <p style="margin:0 0 6px;">Análisis sectorial sobre el comercio minorista en España y Europa.</p>
+            <p style="margin:6px 0 0;"><a href="{{url_publica}}">Web</a> · <a href="{$unsubscribe}">Darse de baja</a></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 84" role="img" aria-label="Observatorio del Comercio Minorista">
+  <title>Observatorio del Comercio Minorista</title>
+  <defs>
+    <style>
+      .logo-text { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Símbol: marc amb tres barres ascendents -->
+  <g>
+    <rect x="0" y="0" width="72" height="72" rx="4" fill="none" stroke="#FFFFFF" stroke-width="2.5"/>
+    <line x1="20" y1="56" x2="20" y2="42" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <line x1="36" y1="56" x2="36" y2="30" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <line x1="52" y1="56" x2="52" y2="18" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Separador vertical -->
+  <line x1="94" y1="10" x2="94" y2="62" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+
+  <!-- Wordmark -->
+  <text x="108" y="32" class="logo-text" font-size="28" font-weight="600" fill="#FFFFFF" letter-spacing="-0.5">Observatorio</text>
+  <text x="108" y="56" class="logo-text" font-size="20" font-weight="300" fill="rgba(255,255,255,0.85)" letter-spacing="0.5">del Comercio Minorista</text>
+  <text x="108" y="74" class="logo-text" font-size="9.5" font-weight="400" fill="rgba(255,255,255,0.6)" letter-spacing="2.5">J3B3 CONSULTING</text>
+</svg>

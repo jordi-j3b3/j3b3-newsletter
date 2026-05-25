@@ -1,0 +1,46 @@
+# Configuración no sensible del pipeline newsletter.
+# Las credenciales y rutas locales van en config/.env (no aquí).
+
+newsletter:
+  nombre: "El Pulso de la semana"
+  marca: "Observatorio del Comercio"
+  url_publica: "https://observatorio-comercio.j3b3.com"
+  idioma: "es"
+  ancho_email_px: 600
+
+modelo:
+  proveedor: "anthropic"
+  modelo: "claude-sonnet-4-6"
+  max_tokens: 4000
+  temperatura: 0.6
+
+# Palabras objetivo por bloque (referencia editorial, no límite estricto).
+bloques:
+  cifra_semana: 150
+  tres_noticias: 200
+  grafico: 120
+  prediccion: 80
+
+# Captura de prensa: ventana temporal hacia atrás desde la fecha de snapshot.
+prensa:
+  dias_ventana: 7
+
+# Rutas relativas al OBSERVATORI_PATH definido en .env.
+snapshot:
+  cdmge_origen: "data/cache/cdmge.csv"
+  europa_origen: "data/cache/europa_retail_mensual.csv"
+
+# Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
+# Se usa en email_base.html y en cualquier visualización.
+paleta:
+  azul_marca: "#0055a4"
+  azul_claro: "#5a9fd4"
+  azul_fondo: "#e8f0fe"
+  rojo_destacado: "#c0392b"
+  texto: "#1a1a1a"
+  gris: "#bdc3c7"
+  gris_oscuro: "#7f8c8d"
+
+tipografia:
+  titulares: "DM Serif Display, Georgia, serif"
+  cuerpo: "DM Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
