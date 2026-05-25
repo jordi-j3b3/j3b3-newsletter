@@ -61,42 +61,6 @@ def ejecutar(*cmd: str) -> None:
         raise SystemExit(f"Paso fallido: {' '.join(cmd)}")
 
 
-def mirror_to_dashboard(semana: str, numero: int) -> None:
-    """Copia el .md al repo observatori-comerc i fa git commit + push.
-
-    Salta sense abortar si el repo destí no existeix o git falla:
-    l'envío ya está hecho y el espejado puede arreglarse a mano.
-    """
-    obs_root = Path(os.environ.get("OBSERVATORI_REPO_PATH")
-                    or (ROOT.parent / "observatori-comerc")).expanduser().resolve()
-    src = ROOT / "output" / f"semana-{semana}" / "newsletter.md"
-
-    if not obs_root.is_dir():
-        print(f"\n[mirror] Repo destí no trobat a {obs_root}. Salto espejado.")
-        return
-    if not src.is_file():
-        print(f"\n[mirror] Origen no trobat: {src}. Salto espejado.")
-        return
-
-    target_dir = obs_root / "data" / "newsletter"
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target = target_dir / f"semana-{semana}.md"
-    shutil.copy2(src, target)
-    rel_target = target.relative_to(obs_root)
-    print(f"\n[mirror] Copiat a {obs_root.name}/{rel_target}")
-
-    msg = f"feat: mirall Pulso núm. {numero} (setmana {semana})"
-    try:
-        subprocess.run(["git", "add", str(rel_target)], cwd=obs_root, check=True)
-        subprocess.run(["git", "commit", "-m", msg], cwd=obs_root, check=True)
-        subprocess.run(["git", "push"], cwd=obs_root, check=True)
-        print(f"[mirror] Publicat al dashboard: commit + push OK.")
-    except subprocess.CalledProcessError as e:
-        print(f"[mirror] Git ha fallat ({e}). Resol manualment:")
-        print(f"   cd {obs_root}")
-        print(f"   git add {rel_target} && git commit -m '{msg}' && git push")
-
-
 def abrir_editor(path: Path) -> None:
     editor = os.environ.get("EDITOR")
     if editor:
@@ -183,10 +147,11 @@ def main() -> int:
                 "n",
             ).lower()
             if opcion == "s":
-                ejecutar(sys.executable, "scripts/send.py", "--semana", semana,
-                         "--numero", str(numero))
-                if not args.skip_mirror:
-                    mirror_to_dashboard(semana, numero)
+                cmd = [sys.executable, "scripts/send.py", "--semana", semana,
+                       "--numero", str(numero)]
+                if args.skip_mirror:
+                    cmd.append("--skip-mirror")  # send.py és l'únic punt de mirall
+                ejecutar(*cmd)
                 break
             if opcion == "p":
                 ejecutar(sys.executable, "scripts/preview.py", "--semana", semana,

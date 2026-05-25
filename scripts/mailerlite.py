@@ -1,3 +1,5 @@
+# DEPRECATED: migrat a brevo.py el 2026-05-25
+# Mantingut com a backup per si cal rollback
 """
 Cliente mínimo para la API de MailerLite (Connect / v2 actual).
 

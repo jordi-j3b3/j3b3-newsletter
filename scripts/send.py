@@ -13,7 +13,7 @@ Escribe:
 
 Uso:
     python scripts/send.py --semana 2026-05-19 --numero 1
-    python scripts/send.py --semana 2026-05-19 --numero 1 --grupo MAILERLITE_GROUP_GRATUITA_ID
+    python scripts/send.py --semana 2026-05-19 --numero 1 --grupo BREVO_LIST_PILOT_ID
 """
 from __future__ import annotations
 
@@ -28,8 +28,9 @@ import yaml
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from mailerlite import create_campaign, schedule_campaign_now  # noqa: E402
+from brevo import create_campaign, send_campaign  # noqa: E402
 from compose import extraer_meta, strip_trazabilidad  # noqa: E402
+from mirror import mirror_to_dashboard  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -54,10 +55,12 @@ def main() -> int:
     p.add_argument("--numero", type=int, required=True)
     p.add_argument(
         "--grupo",
-        default="MAILERLITE_GROUP_PILOT_ID",
-        help="Nombre de la variable de entorno con el ID del grupo destino "
-             "(default: MAILERLITE_GROUP_PILOT_ID)",
+        default="BREVO_LIST_PILOT_ID",
+        help="Nombre de la variable de entorno con el ID de la lista destino "
+             "(default: BREVO_LIST_PILOT_ID)",
     )
+    p.add_argument("--skip-mirror", action="store_true",
+                   help="No publicar la edición en el dashboard (observatori-comerc) tras el envío.")
     args = p.parse_args()
 
     week_dir = ROOT / "output" / f"semana-{args.semana}"
@@ -78,11 +81,11 @@ def main() -> int:
     if not group_id:
         print(f"Error: {args.grupo} no está definido en config/.env", file=sys.stderr)
         return 2
-    from_email = os.environ.get("MAILERLITE_FROM_EMAIL")
+    from_email = os.environ.get("BREVO_FROM_EMAIL")
     if not from_email:
-        print("Error: MAILERLITE_FROM_EMAIL no está definido en config/.env", file=sys.stderr)
+        print("Error: BREVO_FROM_EMAIL no está definido en config/.env", file=sys.stderr)
         return 2
-    from_name = os.environ.get("MAILERLITE_FROM_NAME", "Observatorio del Comercio")
+    from_name = os.environ.get("BREVO_FROM_NAME", "Observatorio del Comercio")
     modo = os.environ.get("MODO_EJECUCION", "prueba")
 
     print()
@@ -111,13 +114,13 @@ def main() -> int:
         preheader=preheader,
         from_email=from_email,
         from_name=from_name,
-        group_ids=[group_id],
-        html=html,
+        list_ids=[group_id],
+        html_content=html,
     )
     print(f"  Campaign ID: {campaign_id}")
-    print("Encolando envío inmediato...")
-    schedule_campaign_now(campaign_id)
-    print("Envío encolado.")
+    print("Enviando inmediatamente...")
+    send_campaign(campaign_id)
+    print("Envío realizado.")
 
     log = {
         "envio_utc": datetime.now(timezone.utc).isoformat(),
@@ -134,6 +137,10 @@ def main() -> int:
     log_path = week_dir / "send_log.json"
     log_path.write_text(json.dumps(log, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Envío registrado en {log_path}")
+
+    # Publicació automàtica al dashboard: cada enviament queda visible a la web.
+    if not args.skip_mirror:
+        mirror_to_dashboard(args.semana, args.numero)
     return 0
 
 

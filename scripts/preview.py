@@ -1,9 +1,9 @@
 """
-Envía la newsletter actual al grupo MAILERLITE_GROUP_PREVIEW_ID.
+Envía la newsletter actual a la lista BREVO_LIST_PREVIEW_ID (Brevo).
 
-El grupo preview contiene una sola dirección (EMAIL_PREVIEW). El envío es
-silencioso: no requiere confirmación, ya que el objetivo es precisamente
-comprobar el renderizado real vía la misma API que el envío de producción.
+La lista preview contiene una sola dirección. El envío es silencioso: no
+requiere confirmación, ya que el objetivo es precisamente comprobar el
+renderizado real vía la misma API que el envío de producción.
 
 Lee:
 - output/semana-YYYY-MM-DD/newsletter.html
@@ -23,7 +23,7 @@ import yaml
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from mailerlite import create_campaign, schedule_campaign_now  # noqa: E402
+from brevo import create_campaign, send_campaign  # noqa: E402
 from compose import extraer_meta, strip_trazabilidad  # noqa: E402
 
 
@@ -53,16 +53,16 @@ def main() -> int:
     preheader = meta["preheader"]
     html = html_path.read_text(encoding="utf-8")
 
-    group_id = os.environ.get("MAILERLITE_GROUP_PREVIEW_ID")
-    if not group_id:
-        print("Error: MAILERLITE_GROUP_PREVIEW_ID no está definido en config/.env", file=sys.stderr)
+    list_id = os.environ.get("BREVO_LIST_PREVIEW_ID")
+    if not list_id:
+        print("Error: BREVO_LIST_PREVIEW_ID no está definido en config/.env", file=sys.stderr)
         return 2
-    from_email = os.environ.get("MAILERLITE_FROM_EMAIL")
+    from_email = os.environ.get("BREVO_FROM_EMAIL")
     if not from_email:
-        print("Error: MAILERLITE_FROM_EMAIL no está definido en config/.env", file=sys.stderr)
+        print("Error: BREVO_FROM_EMAIL no está definido en config/.env", file=sys.stderr)
         return 2
-    from_name = os.environ.get("MAILERLITE_FROM_NAME", "Observatorio del Comercio")
-    destino = os.environ.get("EMAIL_PREVIEW", "(EMAIL_PREVIEW no definido)")
+    from_name = os.environ.get("BREVO_FROM_NAME", "Observatorio del Comercio")
+    destino = os.environ.get("EMAIL_PREVIEW", "jordi@j3b3.com")
 
     name = f"[PREVIEW] Núm. {args.numero} · semana {args.semana}"
     print(f"Creando campaña preview: {name}")
@@ -72,12 +72,12 @@ def main() -> int:
         preheader=preheader,
         from_email=from_email,
         from_name=from_name,
-        group_ids=[group_id],
-        html=html,
+        list_ids=[list_id],
+        html_content=html,
     )
     print(f"  Campaign ID: {campaign_id}")
-    print("Encolando envío inmediato...")
-    schedule_campaign_now(campaign_id)
+    print("Enviando inmediatamente...")
+    send_campaign(campaign_id)
     print(f"Preview enviada. Revisa la bandeja de {destino}.")
     return 0
 
