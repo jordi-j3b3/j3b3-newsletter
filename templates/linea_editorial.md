@@ -161,7 +161,7 @@ tarde"* → "debo revisar si tengo escala suficiente").
 ### Bloque 2 — Tres noticias con ángulo (~200 palabras)
 
 Tres noticias seleccionadas de la Recopilación de prensa. Para cada una:
-- Titular + medio + fecha
+- Titular **parafraseado con palabras propias** + medio + fecha + enlace a la fuente (uso de prensa de terceros: ver §12)
 - **2-3 frases con NUESTRO ángulo** (no resumen de la noticia)
 
 La regla: el lector ya sabe qué pasó. Viene a saber qué significa.
@@ -522,6 +522,37 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
 7. ¿El tic "No X: sí Y" aparece menos de 3 veces?
 8. ¿El bloque 3 muestra datos nuevos (no repetidos de la semana anterior)?
 9. ¿Un periodista podría citar la frase tesis en un artículo?
+10. ¿El Bloque 2 parafrasea (no copia) los titulares, atribuye y enlaza, y no
+    vuelca texto ajeno a ningún modelo? (§12)
+
+---
+
+## 12. Fuentes y propiedad intelectual (prensa de terceros)
+
+El Bloque 2 se nutre de noticias de terceros, pero el valor —y la cobertura
+legal— está en la **lectura propia**, no en reproducir su contenido. Reglas que
+no se negocian:
+
+- **Parafrasear, no copiar.** El titular ajeno se reescribe con palabras propias;
+  no se reproduce literal. Las **cifras y los hechos son libres** (no tienen
+  derechos de autor): se pueden citar siempre.
+- **Atribuir y enlazar siempre.** Cada noticia cita medio y fecha y enlaza al
+  original. El enlace y el extracto muy breve están amparados por el derecho del
+  editor de prensa; reproducir párrafos, no.
+- **El ángulo manda.** Nuestro comentario es la parte sustancial y transformadora
+  (derecho de cita, art. 32 LPI). Si una noticia solo admite resumen y no lectura
+  propia, no entra (ya lo dice §6.3).
+- **Nunca minería ni IA sobre su texto.** No se vuelca el cuerpo de un artículo
+  de terceros a un modelo para resumirlo o reescribirlo. El modelo trabaja sobre
+  datos públicos propios y sobre nuestra interpretación, no sobre la prosa ajena.
+- **Medios con reserva de minería de datos** (Expansión, La Vanguardia, Cinco
+  Días, Alimarket): retirados de la recopilación y excluidos también del feed de
+  Google News. No se citan salvo paráfrasis breve de un hecho público con enlace.
+  Preferir las fuentes que sí cubrimos (DA, Diffusion Sport, El Economista vía
+  Google News, fuentes públicas).
+
+En una frase: **hechos + enlace + paráfrasis + nuestro ángulo; nunca su texto en
+un modelo.**
 
 ---
 
