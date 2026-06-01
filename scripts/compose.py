@@ -111,8 +111,12 @@ def extraer_meta(text: str) -> dict:
         )
     body_start = max(m.end() for m in [subject_m, preheader_m, titular_m] if m)
     after = text[body_start:]
-    sep = after.find("---")
-    body = after[sep + 3:] if sep >= 0 else after
+    # Consumir solo un separador '---' que esté al inicio del cuerpo (entre la
+    # cabecera y el primer bloque). Buscar con find("---") era frágil: si el
+    # borrador no trae ese separador post-cabecera, saltaba hasta el '---' del
+    # footer y descartaba todo el cuerpo editorial.
+    lead_sep = re.match(r"\s*\n?-{3,}[ \t]*\n", after)
+    body = after[lead_sep.end():] if lead_sep else after
     return {
         "subject": subject_m.group(1).strip(),
         "preheader": preheader_m.group(1).strip(),
@@ -178,9 +182,12 @@ def render_exhibit(data: dict) -> str:
 
 # --- Bloque 3: barras horizontales --------------------------------------------
 
+# Subtítulo aceptado en dos formatos: '**Datos:** <texto>' (ediciones antiguas)
+# o '**<texto>**' (subtítulo en negrita sin prefijo). Sin esta tolerancia, un
+# borrador que omita 'Datos:' caía a lista plana en vez de barras divergentes.
 DATOS_PATTERN = re.compile(
     r"\*\*◆\s*DATOS DE LA SEMANA\s*\*\*\s*\n+"
-    r"\*\*Datos:\*\*\s*(.+?)\s*\n\n"
+    r"\*\*(?:Datos:\*\*\s*)?(.+?)(?:\*\*)?\s*\n\n"
     r"((?:-\s+[^\n]+\n?)+)",
     re.IGNORECASE,
 )

@@ -36,7 +36,7 @@ with open(ROOT / "config" / "settings.yaml", encoding="utf-8") as f:
     SETTINGS = yaml.safe_load(f)
 
 
-HISTORIAL_PATH = ROOT / "output" / "historial_editorial.json"
+HISTORIAL_PATH = ROOT / "config" / "historial_editorial.json"
 HISTORIAL_VENTANA = 6  # ediciones recientes a inyectar en el prompt
 
 # Triggers de revisión del sistema anti-repetición (acordados 2026-05-15):

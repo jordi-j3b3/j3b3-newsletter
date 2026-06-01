@@ -1,0 +1,55 @@
+name: Newsletter automatitzada
+
+on:
+  schedule:
+    - cron: '0 20 * * 0'   # Cada diumenge 22:00 CEST (20:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  schedule-newsletter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout j3b3-newsletter
+        uses: actions/checkout@v4
+
+      - name: Clone observatori-comerc (públic, només lectura)
+        run: git clone --depth=1 https://github.com/jordi-j3b3/observatori-comerc.git /tmp/observatori-comerc
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run schedule.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_LIST_PREVIEW_ID: ${{ secrets.BREVO_LIST_PREVIEW_ID }}
+          BREVO_LIST_PILOT_ID: ${{ secrets.BREVO_LIST_PILOT_ID }}
+          BREVO_FROM_EMAIL: ${{ secrets.BREVO_FROM_EMAIL }}
+          BREVO_FROM_NAME: ${{ secrets.BREVO_FROM_NAME }}
+          OBSERVATORI_PATH: /tmp/observatori-comerc
+        run: python scripts/schedule.py
+
+      - name: Commit historial actualitzat
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add config/historial_editorial.json
+          if git diff --staged --quiet; then
+            echo "Sense canvis al historial."
+          else
+            git commit -m "auto: programada nova edició setmanal"
+            git pull --rebase
+            git push
+          fi

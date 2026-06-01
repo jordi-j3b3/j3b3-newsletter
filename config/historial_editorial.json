@@ -1,0 +1,58 @@
+[
+  {
+    "numero": 1,
+    "semana": "2026-05-19",
+    "cifra": "+4,1%",
+    "angulo_bloc1": "España crece por encima de la media europea en un entorno continental excepcionalmente débil",
+    "tema_prediccion": "Los puntos de venta independientes en alimentación caerán por debajo de 35.000 antes de 2027",
+    "noticias": [
+      "Mercadona, Lidl y Dia disparan un 45% la venta por tienda en cinco años",
+      "Glovo pacta con los sindicatos un ERE para 436 repartidores",
+      "Zara supera a Nike como la marca de moda más valiosa del mundo con 44.000 millones de dólares"
+    ],
+    "periodo_eurostat": "2026-03",
+    "indicador_bloc3": "europeu"
+  },
+  {
+    "numero": 1,
+    "semana": "2026-05-18",
+    "cifra": "+4,1%",
+    "angulo_bloc1": "España acelera mientras Europa frena, pero el crecimiento se redistribuye hacia canales nuevos",
+    "tema_prediccion": "TikTok Shop alcanzará el 4% de cuota y 400 millones de euros en España antes de fin de 2026",
+    "noticias": [
+      "La revolución de TikTok Shop en España: ventas de 200 millones y un 2% cuota en solo un año",
+      "La hostelería y las cadenas de supermercados centran su competencia en la mitad de la población que come fuera de casa al menos una vez a la semana",
+      "Los supermercados soportan el impacto de los costes de combustible"
+    ],
+    "periodo_eurostat": "2026-03",
+    "indicador_bloc3": "europeu"
+  },
+  {
+    "numero": 2,
+    "semana": "2026-05-25",
+    "cifra": "+8,3%",
+    "angulo_bloc1": "El crecimiento del oligopolio retail captura cuota del pequeño comercio que no puede competir en escala.",
+    "tema_prediccion": "La IA acelerará la concentración retail y los establecimientos independientes caerán un 4% antes de que cierre 2026.",
+    "noticias": [
+      "La IA impulsa al retail en 2026: el 89% de las empresas aumenta sus ingresos y el 95% reduce sus costes",
+      "El Corte Inglés baja el precio de 1.300 productos de consumo habitual",
+      "Logifruit firma su venta a Mercadona tras crecer un 7,7%"
+    ],
+    "periodo_eurostat": "2026-03",
+    "indicador_bloc3": "cdmge_tasa_anual"
+  },
+  {
+    "numero": 3,
+    "semana": "2026-06-01",
+    "cifra": "+0,3%",
+    "angulo_bloc1": "El freno del comercio minorista no es uniforme: la geografía del consumo se fragmenta entre territorios.",
+    "tema_prediccion": "El crecimiento minorista nacional cerrará el segundo trimestre de 2026 por debajo del 1% interanual.",
+    "noticias": [
+      "La apertura de supermercados en España creció un 10% en 2025 impulsada por la batalla de la proximidad",
+      "La UE impone a Temu una multa de 200 millones de euros por infracciones graves de la Ley de Servicios Digitales",
+      "Mango y Puig presentan demandas ante la Corte de Comercio Internacional de EE.UU. para recuperar aranceles pagados entre 2025 y 2026"
+    ],
+    "periodo_eurostat": "2026-03",
+    "indicador_bloc3": "cdmge_tasa_anual"
+  }
+]
