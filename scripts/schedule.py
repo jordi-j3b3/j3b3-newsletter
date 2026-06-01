@@ -75,13 +75,24 @@ def detecta_numero(historial: list) -> int:
 
 def executa_pipeline(semana: str, numero: int) -> None:
     py = sys.executable
+    # Heretem explícitament tot l'entorn perquè els subprocessos vegin les
+    # API keys passades des del workflow (en alguns contextos d'Actions, no
+    # propagar env de manera explícita pot fer que generate.py no rebi
+    # ANTHROPIC_API_KEY i caigui amb "Could not resolve authentication method").
+    child_env = os.environ.copy()
+    print(
+        f"[pipeline] env keys presents: "
+        f"ANTHROPIC_API_KEY={'OK' if child_env.get('ANTHROPIC_API_KEY') else 'MISSING'}, "
+        f"BREVO_API_KEY={'OK' if child_env.get('BREVO_API_KEY') else 'MISSING'}, "
+        f"OBSERVATORI_PATH={child_env.get('OBSERVATORI_PATH', 'MISSING')}"
+    )
     for cmd in (
         [py, "scripts/snapshot.py", "--semana", semana],
         [py, "scripts/generate.py", "--semana", semana, "--numero", str(numero)],
         [py, "scripts/compose.py", "--semana", semana, "--numero", str(numero)],
     ):
         print(f"\n$ {' '.join(cmd)}")
-        r = subprocess.run(cmd, cwd=ROOT)
+        r = subprocess.run(cmd, cwd=ROOT, env=child_env)
         if r.returncode != 0:
             raise SystemExit(f"Pas fallit: {' '.join(cmd)}")
 
