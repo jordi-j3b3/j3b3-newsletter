@@ -2,8 +2,15 @@
 Cancel·la una campanya programada a Brevo.
 
 Llegeix el `brevo_campaign_id` del historial_editorial.json per a la setmana
-indicada i passa la campanya a draft via PUT /v3/emailCampaigns/{id}/status.
-Imprimeix confirmacio i envia notificacio a jordi@j3b3.com.
+indicada i desprograma la campanya via PUT /v3/emailCampaigns/{id}/status amb
+status "suspended". Imprimeix confirmacio i envia notificacio a jordi@j3b3.com.
+
+Nota Brevo (verificat 2026-06-03 contra l'API real, no fiar-se de la doc):
+una campanya en estat "queued"/"scheduled" NOMES accepta "suspended" per
+desprogramar-la (HTTP 204). Tant "draft" com "cancel" retornen HTTP 400
+("X is an invalid status for scheduled campaign"), tot i que la doc oficial
+els llista a l'enum. "suspended" treu la campanya de la cua i Brevo no
+l'envia; scheduledAt es mante pero no es dispara.
 
 Important: NO toca el mirall al dashboard (si el mirall ja s'ha fet, el
 contingut continua visible a la web fins que es revertesqui el commit a ma).
@@ -64,7 +71,7 @@ def main() -> int:
     s = _session()
     r = s.put(
         f"https://api.brevo.com/v3/emailCampaigns/{campaign_id}/status",
-        json={"status": "draft"},
+        json={"status": "suspended"},
         timeout=30,
     )
     if not r.ok:
@@ -72,7 +79,7 @@ def main() -> int:
         print(f"Respuesta: {r.text[:500]}", file=sys.stderr)
         return 2
 
-    print(f"Campanya {campaign_id} passada a draft. Brevo no l'enviara dilluns.")
+    print(f"Campanya {campaign_id} suspesa (status=suspended). Brevo no l'enviara dilluns.")
 
     entry["cancelled_at_utc"] = datetime.now(timezone.utc).isoformat()
     HISTORIAL_PATH.write_text(
@@ -90,7 +97,7 @@ def main() -> int:
             "htmlContent": (
                 f"<h2 style='font-family:sans-serif'>Newsletter cancel·lada</h2>"
                 f"<p><strong>Núm. {numero}</strong> · setmana {args.semana}</p>"
-                f"<p>La campanya ha passat a draft. Brevo NO l'enviara dilluns.</p>"
+                f"<p>La campanya s'ha suspes (status=suspended). Brevo NO l'enviara dilluns.</p>"
                 f"<p style='color:#888;font-size:0.85em'>Campaign ID: {campaign_id}</p>"
                 f"<hr>"
                 f"<p style='color:#c0392b'><strong>Atencio:</strong> si el mirall al "
