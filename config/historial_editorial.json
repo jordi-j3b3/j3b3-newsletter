@@ -54,5 +54,14 @@
     ],
     "periodo_eurostat": "2026-03",
     "indicador_bloc3": "cdmge_tasa_anual"
+  },
+  {
+    "numero": 4,
+    "semana": "2026-06-08",
+    "brevo_campaign_id": "9",
+    "scheduled_at": "2026-06-08T08:30:00+02:00",
+    "asunto": "Inditex sube beneficio un 5,4% mientras el retail nacional frena al 0,3%",
+    "titular": "El retail se parte en dos.",
+    "created_at_utc": "2026-06-03T14:00:34.481105+00:00"
   }
 ]
