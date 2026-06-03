@@ -313,7 +313,7 @@ def render(semana_str: str, numero: int) -> tuple[str, str, str, str]:
         body_html = re.sub(rf"<p>\s*{MARKER_BARS}\s*</p>", bars_html, body_html)
         body_html = body_html.replace(MARKER_BARS, bars_html)
 
-    # Bloques restantes con marca ◆ (TRES NOTICIAS, LA PREDICCIÓN) → h2
+    # Bloques restantes con marca ◆ (NUESTRA LECTURA, LA PREDICCIÓN) → h2
     body_html = re.sub(
         r"<p>\s*<strong>◆\s*([^<]+?)\s*</strong>\s*</p>",
         r"<h2>\1</h2>",

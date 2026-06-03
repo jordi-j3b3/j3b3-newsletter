@@ -344,7 +344,7 @@ def construir_prompts(
                 "   **Fuente:** <descripción + fuente sin códigos, "
                 "p.ej. Variación interanual · Eurostat>\n\n"
                 "   <2-3 párrafos de lectura editorial con la conclusión firmada>\n\n"
-                "C. Bloque 2: **◆ TRES NOTICIAS CON ÁNGULO** con los 3 titulares "
+                "C. Bloque 2: **◆ NUESTRA LECTURA** con los 3 titulares "
                 "y su lectura editorial (sin estructura especial).\n\n"
                 + bloque3_instr + "\n\n"
                 "E. Bloque 4: **◆ LA PREDICCIÓN** con la afirmación arriesgada "
