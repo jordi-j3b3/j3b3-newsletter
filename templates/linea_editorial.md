@@ -178,6 +178,13 @@ Tres noticias seleccionadas de la Recopilación de prensa. Para cada una:
 
 La regla: el lector ya sabe qué pasó. Viene a saber qué significa.
 
+**Diversidad de fuente (regla sin excepción):** las tres noticias deben proceder
+de medios distintos. No se pueden repetir dos titulares del mismo medio en la
+misma edición. Si el snapshot solo trae noticias de uno o dos medios, elegir las
+tres con mayor diversidad de fuente posible y advertirlo en la sección
+TRAZABILIDAD. Razón: tres noticias del mismo diario sugiere sesgo de fuente y
+resta credibilidad a la lectura editorial.
+
 *Pendiente de implementar (estructura titular + sumario + lectura):* cuando se
 añada un sumario de una frase por noticia, este debe decir **por qué importa**,
 no **qué dice la noticia**. (NO: *"Ikea recorta 850 empleos."* / SÍ: *"La guerra
@@ -538,6 +545,8 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
 10. ¿Un periodista podría citar la frase tesis en un artículo?
 11. ¿El Bloque 2 parafrasea (no copia) los titulares, atribuye y enlaza, y no
     vuelca texto ajeno a ningún modelo? (§12)
+12. ¿Las tres noticias del Bloque 2 proceden de medios distintos? Si no se ha
+    podido (snapshot pobre en fuentes), ¿se ha advertido en TRAZABILIDAD?
 
 ---
 
