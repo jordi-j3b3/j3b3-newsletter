@@ -146,7 +146,19 @@ comercio"*). El asunto promete lo que el contenido cumple.
 
 ### Bloque 1 — La cifra de la semana (~150 palabras)
 
-Una sola cifra protagonista. Estructura:
+Una sola cifra protagonista.
+
+**Origen de la cifra (regla sin excepción):** la cifra protagonista procede
+SIEMPRE de un dataset propio del Observatorio —cualquier CSV del snapshot:
+`pulso_diario.csv` (CDMGE/INE), `pulso_europeo.csv` (Eurostat) o cualquier
+dataset que se añada en el futuro (VAB, ocupación, empresas, productividad,
+etc.). NUNCA procede de `recopilacion_prensa.md`. Un dato de prensa no es fuente
+primaria para el bloque 1: la cifra de este bloque debe ser verificable
+directamente por el lector en el Observatorio, y un dato de prensa no lo es. La
+prensa se comenta en el bloque 2 (Nuestra lectura), nunca como cifra
+protagonista del bloque 1.
+
+Estructura:
 - **La cifra** (grande, visualmente destacada)
 - Qué es (1 frase de contexto)
 - Por qué aparece esta semana (1 frase de actualidad)
@@ -515,14 +527,16 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
 
 1. ¿El asunto invita a abrir a un decisor (CEO + institucional + periodista)?
 2. ¿La frase tesis del bloque 1 implica una decisión?
-3. ¿Las tres noticias sostienen la misma tesis de fondo?
-4. ¿La predicción detecta una oportunidad, no solo un riesgo?
-5. ¿La predicción editorial tiene cláusula condicional con factores correctivos?
-6. ¿Hay una predicción cuantitativa falsable derivada para el `registro.csv`?
-7. ¿El tic "No X: sí Y" aparece menos de 3 veces?
-8. ¿El bloque 3 muestra datos nuevos (no repetidos de la semana anterior)?
-9. ¿Un periodista podría citar la frase tesis en un artículo?
-10. ¿El Bloque 2 parafrasea (no copia) los titulares, atribuye y enlaza, y no
+3. ¿La cifra protagonista del bloque 1 procede de un dataset propio del
+   Observatorio (no de la recopilación de prensa)?
+4. ¿Las tres noticias sostienen la misma tesis de fondo?
+5. ¿La predicción detecta una oportunidad, no solo un riesgo?
+6. ¿La predicción editorial tiene cláusula condicional con factores correctivos?
+7. ¿Hay una predicción cuantitativa falsable derivada para el `registro.csv`?
+8. ¿El tic "No X: sí Y" aparece menos de 3 veces?
+9. ¿El bloque 3 muestra datos nuevos (no repetidos de la semana anterior)?
+10. ¿Un periodista podría citar la frase tesis en un artículo?
+11. ¿El Bloque 2 parafrasea (no copia) los titulares, atribuye y enlaza, y no
     vuelca texto ajeno a ningún modelo? (§12)
 
 ---
