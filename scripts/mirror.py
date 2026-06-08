@@ -22,7 +22,10 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def mirror_to_dashboard(semana: str, numero: int) -> None:
+    # OBSERVATORI_PATH és el nom canònic que fan servir snapshot.py i el
+    # workflow; mantenim OBSERVATORI_REPO_PATH com a àlies retrocompatible.
     obs_root = Path(os.environ.get("OBSERVATORI_REPO_PATH")
+                    or os.environ.get("OBSERVATORI_PATH")
                     or (ROOT.parent / "observatori-comerc")).expanduser().resolve()
     src = ROOT / "output" / f"semana-{semana}" / "newsletter.md"
 

@@ -17,8 +17,11 @@ jobs:
       - name: Checkout j3b3-newsletter
         uses: actions/checkout@v4
 
-      - name: Clone observatori-comerc (públic, només lectura)
-        run: git clone --depth=1 https://github.com/jordi-j3b3/observatori-comerc.git /tmp/observatori-comerc
+      - name: Clone observatori-comerc (lectura de dades + escriptura del mirall)
+        run: |
+          git clone "https://x-access-token:${{ secrets.OBSERVATORI_PUSH_TOKEN }}@github.com/jordi-j3b3/observatori-comerc.git" /tmp/observatori-comerc
+          git -C /tmp/observatori-comerc config user.name 'github-actions[bot]'
+          git -C /tmp/observatori-comerc config user.email 'github-actions[bot]@users.noreply.github.com'
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -39,6 +42,7 @@ jobs:
           BREVO_FROM_EMAIL: ${{ secrets.BREVO_FROM_EMAIL }}
           BREVO_FROM_NAME: ${{ secrets.BREVO_FROM_NAME }}
           OBSERVATORI_PATH: /tmp/observatori-comerc
+          MIRROR_ON_SCHEDULE: '1'
         run: python scripts/schedule.py
 
       - name: Commit historial actualitzat

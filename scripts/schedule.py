@@ -33,6 +33,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from brevo import _session  # noqa: E402
 from compose import extraer_meta, strip_trazabilidad  # noqa: E402
+from mirror import mirror_to_dashboard  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -311,6 +312,20 @@ def main() -> int:
         from_name=from_name,
     )
     print(f"Notificació enviada a {NOTIFICATION_TO}")
+
+    # Mirall automàtic al dashboard (L_Lecturas + tesi vigent). Com que
+    # l'enviament real el fa Brevo al programat, send.py no s'executa mai en el
+    # flux automàtic; per això publiquem aquí, amb la setmana i el número ja
+    # resolts. Condicionat a MIRROR_ON_SCHEDULE=1 (només CI) perquè una
+    # execució local de schedule.py no pugi res al repo viu per sorpresa.
+    # No fatal: la campanya ja està programada; un error de mirall es resol a mà.
+    if os.environ.get("MIRROR_ON_SCHEDULE") == "1":
+        print("\n[mirror] Publicant l'edició al dashboard...")
+        try:
+            mirror_to_dashboard(semana, numero)
+        except Exception as e:  # noqa: BLE001
+            print(f"[mirror] Error no fatal en el mirall: {e}", file=sys.stderr)
+
     return 0
 
 
