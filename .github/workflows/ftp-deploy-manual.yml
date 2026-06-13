@@ -1,0 +1,27 @@
+name: Deploy manual FTP (web/)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-ftp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy web/ a Hostinet via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.HOSTINET_FTP_HOST }}
+          username: ${{ secrets.HOSTINET_FTP_USER }}
+          password: ${{ secrets.HOSTINET_FTP_PASS }}
+          local-dir: ./web/
+          server-dir: ./
+          protocol: ftp
+          exclude: |
+            **/.git*
+            **/README*
+            **/manifest.json
