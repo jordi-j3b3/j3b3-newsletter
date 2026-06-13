@@ -59,7 +59,7 @@ jobs:
           fi
 
       - name: Deploy web/ a Hostinet via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.HOSTINET_FTP_HOST }}
           username: ${{ secrets.HOSTINET_FTP_USER }}
