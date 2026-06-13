@@ -49,7 +49,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add config/historial_editorial.json web/
+          git add config/historial_editorial.json docs/
           if git diff --staged --quiet; then
             echo "Sense canvis."
           else
@@ -58,18 +58,3 @@ jobs:
             git push
           fi
 
-      - name: Deploy web/ a Hostinet via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.HOSTINET_FTP_HOST }}
-          username: ${{ secrets.HOSTINET_FTP_USER }}
-          password: ${{ secrets.HOSTINET_FTP_PASS }}
-          local-dir: ./web/
-          # A Hostinet l'usuari FTP del domini sol apuntar directament a public_html/.
-          # Si cal ajustar (arrel = home i no public_html), canvia './' per './public_html/'.
-          server-dir: ./
-          protocol: ftp
-          exclude: |
-            **/.git*
-            **/README*
-            **/manifest.json
