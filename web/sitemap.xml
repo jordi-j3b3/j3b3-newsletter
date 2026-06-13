@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://observatorio-comercio.j3b3.com/pulso/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://observatorio-comercio.j3b3.com/pulso/num-1.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Observatorio del Comercio</news:name>
+        <news:language>es</news:language>
+      </news:publication>
+      <news:publication_date>2026-05-19T08:30:00+02:00</news:publication_date>
+      <news:title>España resiste; Europa central se fractura.</news:title>
+    </news:news>
+    <lastmod>2026-05-19</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://observatorio-comercio.j3b3.com/pulso/num-2.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Observatorio del Comercio</news:name>
+        <news:language>es</news:language>
+      </news:publication>
+      <news:publication_date>2026-05-25T08:30:00+02:00</news:publication_date>
+      <news:title>El oligopolio acelera. El resto frena.</news:title>
+    </news:news>
+    <lastmod>2026-05-25</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://observatorio-comercio.j3b3.com/pulso/num-3.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Observatorio del Comercio</news:name>
+        <news:language>es</news:language>
+      </news:publication>
+      <news:publication_date>2026-06-01T08:30:00+02:00</news:publication_date>
+      <news:title>España frena, pero no por igual.</news:title>
+    </news:news>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://observatorio-comercio.j3b3.com/pulso/num-6.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Observatorio del Comercio</news:name>
+        <news:language>es</news:language>
+      </news:publication>
+      <news:publication_date>2026-06-08T08:30:00+02:00</news:publication_date>
+      <news:title>Más visitas, menos crecimiento.</news:title>
+    </news:news>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

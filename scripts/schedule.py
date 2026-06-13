@@ -91,6 +91,7 @@ def executa_pipeline(semana: str, numero: int) -> None:
         [py, "scripts/snapshot.py", "--semana", semana],
         [py, "scripts/generate.py", "--semana", semana, "--numero", str(numero)],
         [py, "scripts/compose.py", "--semana", semana, "--numero", str(numero)],
+        [py, "scripts/publish_web.py", "--semana", semana, "--numero", str(numero)],
     ):
         print(f"\n$ {' '.join(cmd)}")
         r = subprocess.run(cmd, cwd=ROOT, env=child_env)
