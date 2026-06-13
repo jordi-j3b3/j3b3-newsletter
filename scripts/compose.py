@@ -45,6 +45,13 @@ MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
 MARKER_EXHIBIT = "MARKER_EXHIBIT_X7Y2"
 MARKER_BARS = "MARKER_BARS_Z9K1"
 
+FIRMA_FOOTER = (
+    '<p style="margin:0 0 6px; font-family:\'DM Sans\',-apple-system,sans-serif; '
+    'font-size:12px; color:#7f8c8d; line-height:1.5;">'
+    'Jordi Bacaria. J3B3 Consulting.'
+    '</p>\n            '
+)
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -331,6 +338,12 @@ def render(semana_str: str, numero: int) -> tuple[str, str, str, str]:
         .replace("{{semana_str}}", semana_compacta(semana_str))
         .replace("{{body_html}}", body_html)
         .replace("{{url_publica}}", SETTINGS["newsletter"]["url_publica"])
+    )
+
+    _url = SETTINGS["newsletter"]["url_publica"]
+    rendered = rendered.replace(
+        f'<p style="margin:6px 0 0;"><a href="{_url}">Web</a>',
+        FIRMA_FOOTER + f'<p style="margin:6px 0 0;"><a href="{_url}">Web</a>',
     )
 
     rendered = transform(
