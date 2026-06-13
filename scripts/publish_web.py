@@ -44,10 +44,10 @@ from compose import (  # noqa: E402
     strip_trazabilidad,
 )
 
-WEB_DIR = ROOT / "web"
+WEB_DIR = ROOT / "docs"
 WEB_PULSO_DIR = WEB_DIR / "pulso"
 MANIFEST_PATH = WEB_PULSO_DIR / "manifest.json"
-BASE_URL = "https://observatorio-comercio.j3b3.com"
+BASE_URL = "https://pulso.j3b3.com"
 INDEX_URL = f"{BASE_URL}/pulso/"
 
 HISTORIAL_PATH = ROOT / "config" / "historial_editorial.json"
@@ -229,7 +229,7 @@ def generate_index() -> None:
 <body>
 <div class="page-wrapper">
   <nav class="breadcrumb">
-    <a href="https://observatorio-comercio.j3b3.com">Inicio</a>
+    <a href="https://pulso.j3b3.com">Inicio</a>
     <span>›</span>
     <span>El Pulso</span>
   </nav>
@@ -241,7 +241,7 @@ def generate_index() -> None:
   <ul class="edition-list">
 {items_html}  </ul>
   <div class="page-footer">
-    <a href="https://observatorio-comercio.j3b3.com">Observatorio del Comercio</a> ·
+    <a href="https://pulso.j3b3.com">Observatorio del Comercio</a> ·
     <a href="https://www.j3b3.com">J3B3 Consulting</a>
   </div>
 </div>
