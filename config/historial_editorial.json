@@ -108,6 +108,16 @@
     "scheduled_at": "2026-06-15T08:30:00+02:00",
     "asunto": "El retail se polariza: Inditex gana, el medio pierde terreno",
     "titular": "La polarización del retail avanza.",
-    "created_at_utc": "2026-06-14T20:55:00.241522+00:00"
+    "created_at_utc": "2026-06-14T20:55:00.241522+00:00",
+    "cancelled_at_utc": "2026-06-14T21:13:11.897156+00:00"
+  },
+  {
+    "numero": 7,
+    "semana": "2026-06-16",
+    "brevo_campaign_id": "14",
+    "scheduled_at": "2026-06-16T08:30:00+02:00",
+    "asunto": "El retail se polariza: Inditex gana, el medio pierde terreno",
+    "titular": "Escala o nicho. El medio ya no tiene sitio.",
+    "created_at_utc": "2026-06-14T21:16:09.841996+00:00"
   }
 ]
