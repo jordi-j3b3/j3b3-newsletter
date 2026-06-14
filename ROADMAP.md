@@ -16,3 +16,13 @@ Tareas pendientes ordenadas por momento de ejecución.
   Stopgap aplicado en Núm. 3 (2026-06-01): se eliminó manualmente el enlace de
   Google News de la noticia 1 (El Economista); las noticias de Distribución
   Actualidad mantienen sus URLs directos.
+
+- **Bloque 3: aprovechar todos los días disponibles del CDMGE, no solo los días clave** · Prioridad: media
+  El bloque 3 ("Datos de la semana") debe usar todos los días disponibles del CDMGE
+  hasta la fecha de generación, no solo los días clave preseleccionados (revisar
+  `slice_cdmge_dias_clave` en `scripts/generate.py` y/o la captura en `snapshot.py`).
+  Regla: si el mes en curso tiene 15 días de datos, el gráfico debe mostrar ~5 puntos
+  representativos (días 3, 6, 9, 12, 15), no 2.
+  Motivo / detectado en Núm. 7 (2026-06-15): el bloque mostraba solo los días 14 y 15
+  ("dos lecturas") cuando había 15 días disponibles en la serie, dando una falsa
+  sensación de serie provisional y volátil cuando en realidad había datos suficientes.
