@@ -2,7 +2,10 @@ name: Newsletter automatitzada
 
 on:
   schedule:
-    - cron: '0 20 * * 0'   # Cada diumenge 22:00 CEST (20:00 UTC)
+    # Dos intents el diumenge, fora de l'hora rodona (GitHub retarda/descarta els :00).
+    # Amb la idempotència de schedule.py, el segon intent és inofensiu (no-op si el primer va bé).
+    - cron: '23 16 * * 0'   # diumenge 18:23 CEST (16:23 UTC) — intent principal, amb marge
+    - cron: '23 19 * * 0'   # diumenge 21:23 CEST (19:23 UTC) — intent de seguretat
   workflow_dispatch:
 
 permissions:

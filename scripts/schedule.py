@@ -189,6 +189,8 @@ def main() -> int:
                    help="No executa pipeline ni crida Brevo; mostra payload simulat")
     p.add_argument("--skip-pipeline", action="store_true",
                    help="Suposa que snapshot/generate/compose ja estan fets")
+    p.add_argument("--force", action="store_true",
+                   help="Crea la campanya encara que la setmana ja en tingui una d'activa")
     args = p.parse_args()
 
     historial = carrega_historial()
@@ -197,6 +199,25 @@ def main() -> int:
 
     print(f"Setmana objectiu (dilluns d'enviament): {semana}")
     print(f"Numero d'edicio: {numero}")
+
+    # Idempotència: no crear una segona campanya si la setmana ja en té una d'activa.
+    # Protegeix contra execucions duplicades (cron tardà + disparada manual, reintents…),
+    # que abans inflaven el número i programaven dos enviaments per a la mateixa setmana.
+    actives = [e for e in historial
+               if e.get("semana") == semana
+               and e.get("brevo_campaign_id")
+               and not e.get("cancelled_at_utc")]
+    if actives:
+        ult = actives[-1]
+        msg = (f"Ja hi ha una campanya activa per a la setmana {semana}: "
+               f"núm. {ult.get('numero')}, campaign {ult.get('brevo_campaign_id')}.")
+        if args.force:
+            print(f"\n[--force] {msg} Es crea igualment.")
+        elif args.dry_run:
+            print(f"\n[DRY-RUN] {msg} En execució real NO es crearia res (--force per forçar).")
+        else:
+            print(f"\n{msg}\nNo es crea res (idempotent). Usa --force per forçar.")
+            return 0
 
     # Pipeline
     if args.dry_run:
