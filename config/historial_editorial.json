@@ -94,20 +94,20 @@
   {
     "numero": 7,
     "semana": "2026-06-15",
-    "brevo_campaign_id": "12",
-    "scheduled_at": "2026-06-15T08:30:00+02:00",
-    "asunto": "El retail europeo frena: España aguanta, pero la brecha se estrecha",
-    "titular": "La polarización del retail llega a Europa.",
-    "created_at_utc": "2026-06-14T20:34:42.165520+00:00",
-    "cifra": "+0,8%",
-    "angulo_bloc1": "España frena al +0,8% (abril) y converge con Europa; la polarización del retail llega al continente; Inditex gana, el segmento medio pierde",
-    "tema_prediccion": "Si la desaceleración del +0,8% en abril es inicio de tendencia y no efecto base, España seguirá ajustando salvo rebaja de tipos del BCE",
+    "cifra": "+4,5%",
+    "angulo_bloc1": "Las grandes cadenas crecen mientras el comercio de escala media pierde cuota estructuralmente.",
+    "tema_prediccion": "Los operadores de gama media sin diferenciación perderán entre 1,5 y 2,5 puntos de cuota en 2026.",
     "noticias": [
-      "La polarización del retail beneficia a Inditex mientras el segmento medio pierde terreno",
-      "El Mundial impulsará un 30% las ventas de los bares",
-      "El Club Carrefour supera los 11 millones de socios"
+      "La polarización ha llegado al 'retail' e Inditex tiene mucho que ganar",
+      "Los supermercados afrontan un sobrecoste por la guerra de 70 millones mientras 'contienen' sus precios",
+      "El Mundial impulsará un 30% las ventas de los bares"
     ],
     "periodo_eurostat": "2026-04",
-    "indicador_bloc3": "europeu"
+    "indicador_bloc3": "cdmge_tasa_anual",
+    "brevo_campaign_id": "13",
+    "scheduled_at": "2026-06-15T08:30:00+02:00",
+    "asunto": "El retail se polariza: Inditex gana, el medio pierde terreno",
+    "titular": "La polarización del retail avanza.",
+    "created_at_utc": "2026-06-14T20:55:00.241522+00:00"
   }
 ]
