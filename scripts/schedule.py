@@ -179,6 +179,21 @@ def extreu_metadades(semana: str) -> dict:
     }
 
 
+def suspen_campanya(campaign_id: str) -> bool:
+    """Desprograma una campanya a Brevo (PUT status=suspended; HTTP 204).
+    Retorna True si s'ha suspès. No fatal: si falla, avisa i segueix."""
+    s = _session()
+    r = s.put(
+        f"https://api.brevo.com/v3/emailCampaigns/{campaign_id}/status",
+        json={"status": "suspended"}, timeout=30,
+    )
+    if not r.ok:
+        print(f"Avís: no s'ha pogut suspendre la campanya {campaign_id}: "
+              f"HTTP {r.status_code} {r.text[:200]}", file=sys.stderr)
+        return False
+    return True
+
+
 def main() -> int:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -191,10 +206,34 @@ def main() -> int:
                    help="Suposa que snapshot/generate/compose ja estan fets")
     p.add_argument("--force", action="store_true",
                    help="Crea la campanya encara que la setmana ja en tingui una d'activa")
+    p.add_argument("--replace", action="store_true",
+                   help="Regenera: suspèn la campanya ja programada d'aquesta setmana, "
+                        "la treu de l'historial i en crea una de nova amb el mateix número")
     args = p.parse_args()
 
     historial = carrega_historial()
     semana = args.semana or proxim_dilluns()
+
+    # --replace: substitueix la campanya d'aquesta setmana. Suspèn la campanya
+    # activa a Brevo i treu l'entrada de l'historial; així la regeneració crea
+    # contingut nou amb el mateix número (i el sistema anti-repetició veu les
+    # edicions anteriors, ja enriquides).
+    if args.replace:
+        restants = []
+        for e in historial:
+            if (e.get("semana") == semana and e.get("brevo_campaign_id")
+                    and not e.get("cancelled_at_utc")):
+                cid = e["brevo_campaign_id"]
+                print(f"[replace] Suspenent campanya existent núm. {e.get('numero')} "
+                      f"(campaign {cid})…")
+                suspen_campanya(cid)
+            else:
+                restants.append(e)
+        if len(restants) != len(historial):
+            historial = restants
+            desa_historial(historial)
+            print("[replace] Entrada(es) anterior(s) suspesa(es) i tretes de l'historial.")
+
     numero = args.numero or detecta_numero(historial)
 
     print(f"Setmana objectiu (dilluns d'enviament): {semana}")

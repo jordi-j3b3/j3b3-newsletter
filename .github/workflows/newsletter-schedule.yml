@@ -7,6 +7,11 @@ on:
     - cron: '23 16 * * 0'   # diumenge 18:23 CEST (16:23 UTC) — intent principal, amb marge
     - cron: '23 19 * * 0'   # diumenge 21:23 CEST (19:23 UTC) — intent de seguretat
   workflow_dispatch:
+    inputs:
+      replace:
+        description: "Regenerar: substituir la campanya ja programada d'aquesta setmana"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -46,7 +51,7 @@ jobs:
           BREVO_FROM_NAME: ${{ secrets.BREVO_FROM_NAME }}
           OBSERVATORI_PATH: /tmp/observatori-comerc
           MIRROR_ON_SCHEDULE: '1'
-        run: python scripts/schedule.py
+        run: python scripts/schedule.py ${{ github.event.inputs.replace == 'true' && '--replace' || '' }}
 
       - name: Commit historial i web actualitzats
         run: |
