@@ -298,16 +298,26 @@ def main() -> int:
     )
     print(f"Campaign ID: {campaign_id}")
 
-    # Desa al historial
-    historial.append({
-        "numero": numero,
-        "semana": semana,
+    # Desa al historial SENSE trepitjar l'entrada enriquida que generate.py acaba
+    # d'escriure (cifra/angulo_bloc1/tema_prediccion/noticias), que és el que fa
+    # servir el sistema anti-repetició la setmana següent. Recarreguem (generate.py
+    # ha escrit després que carreguéssim historial al principi) i fusionem els camps
+    # de Brevo dins l'entrada d'aquesta edició. Si no n'hi ha (p.ex. error d'extracció
+    # a generate.py), n'afegim una de nova com a fallback.
+    brevo_fields = {
         "brevo_campaign_id": campaign_id,
         "scheduled_at": scheduled_at_iso,
         "asunto": meta["subject"],
         "titular": meta["titular"],
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-    })
+    }
+    historial = carrega_historial()
+    entrada = next((e for e in historial
+                    if e.get("numero") == numero and e.get("semana") == semana), None)
+    if entrada is not None:
+        entrada.update(brevo_fields)
+    else:
+        historial.append({"numero": numero, "semana": semana, **brevo_fields})
     desa_historial(historial)
     print(f"Historial actualitzat: {HISTORIAL_PATH.relative_to(ROOT)}")
 

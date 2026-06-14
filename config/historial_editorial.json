@@ -81,7 +81,15 @@
     "scheduled_at": "2026-06-08T08:30:00+02:00",
     "asunto": "Los centros comerciales llenan mientras España frena: la paradoja de abril",
     "titular": "Más visitas, menos crecimiento.",
-    "created_at_utc": "2026-06-07T21:15:01.168581+00:00"
+    "created_at_utc": "2026-06-07T21:15:01.168581+00:00",
+    "cifra": "+0,8%",
+    "angulo_bloc1": "España frena al +0,8% (abril); se agota el impulso del consumidor de 2024-25; más afluencia a centros comerciales pero menos conversión",
+    "tema_prediccion": "Si la moderación del +0,8% se mantiene en mayo-junio, España cerrará el semestre por debajo del ritmo de 2025",
+    "noticias": [
+      "La afluencia a los centros comerciales españoles creció un 6,4% en mayo"
+    ],
+    "periodo_eurostat": "2026-04",
+    "indicador_bloc3": "europeu"
   },
   {
     "numero": 7,
@@ -90,6 +98,16 @@
     "scheduled_at": "2026-06-15T08:30:00+02:00",
     "asunto": "El retail europeo frena: España aguanta, pero la brecha se estrecha",
     "titular": "La polarización del retail llega a Europa.",
-    "created_at_utc": "2026-06-14T20:34:42.165520+00:00"
+    "created_at_utc": "2026-06-14T20:34:42.165520+00:00",
+    "cifra": "+0,8%",
+    "angulo_bloc1": "España frena al +0,8% (abril) y converge con Europa; la polarización del retail llega al continente; Inditex gana, el segmento medio pierde",
+    "tema_prediccion": "Si la desaceleración del +0,8% en abril es inicio de tendencia y no efecto base, España seguirá ajustando salvo rebaja de tipos del BCE",
+    "noticias": [
+      "La polarización del retail beneficia a Inditex mientras el segmento medio pierde terreno",
+      "El Mundial impulsará un 30% las ventas de los bares",
+      "El Club Carrefour supera los 11 millones de socios"
+    ],
+    "periodo_eurostat": "2026-04",
+    "indicador_bloc3": "europeu"
   }
 ]
