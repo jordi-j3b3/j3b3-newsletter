@@ -82,5 +82,14 @@
     "asunto": "Los centros comerciales llenan mientras España frena: la paradoja de abril",
     "titular": "Más visitas, menos crecimiento.",
     "created_at_utc": "2026-06-07T21:15:01.168581+00:00"
+  },
+  {
+    "numero": 7,
+    "semana": "2026-06-15",
+    "brevo_campaign_id": "12",
+    "scheduled_at": "2026-06-15T08:30:00+02:00",
+    "asunto": "El retail europeo frena: España aguanta, pero la brecha se estrecha",
+    "titular": "La polarización del retail llega a Europa.",
+    "created_at_utc": "2026-06-14T20:34:42.165520+00:00"
   }
 ]
