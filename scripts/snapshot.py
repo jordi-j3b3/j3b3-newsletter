@@ -155,7 +155,7 @@ def capture_press(out_md: Path, observatori_path: Path, dias: int) -> dict:
             lines.append("")
             fecha_actual = fecha
         lines.append(f"### {row['titol']}")
-        lines.append(f"- Fuente: {row['font']} ({row['tipus']}, {row['area']})")
+        lines.append(f"- Fuente: {row['font']} ({row['tipus']}, {row['area']}, {row['segment']})")
         snippet = row.get("snippet") or ""
         if snippet:
             lines.append(f"- Snippet: {snippet}")

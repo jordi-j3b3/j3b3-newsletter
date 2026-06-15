@@ -185,6 +185,20 @@ tres con mayor diversidad de fuente posible y advertirlo en la sección
 TRAZABILIDAD. Razón: tres noticias del mismo diario sugiere sesgo de fuente y
 resta credibilidad a la lectura editorial.
 
+**Diversidad de segmento (regla de calidad):** las tres noticias deben
+representar al menos **dos de los tres segmentos** siguientes:
+- **Gran distribución** — cadenas de escala nacional, grandes superficies,
+  operadores integrados (Mercadona, Inditex, El Corte Inglés, Carrefour, Lidl…).
+- **Comerç de proximitat** — pequeño y mediano comercio, comerç urbà, associacions
+  sectorials (CEC, AGECU, ANCECO, comerç de barri…).
+- **Centres comercials / retail parks** — espais comercials col·lectius, ACES,
+  APRESCO, retail parks, formats intermedis…).
+
+Si el snapshot no aporta noticias de algún segmento, escoger la combinación
+disponible más diversa e indicarlo en TRAZABILIDAD con el campo
+`diversidad_segmentos`. Razón: tres noticias del mismo segmento presentan una
+lectura sectorial sesgada; la newsletter cubre el comercio en su conjunto.
+
 *Pendiente de implementar (estructura titular + sumario + lectura):* cuando se
 añada un sumario de una frase por noticia, este debe decir **por qué importa**,
 no **qué dice la noticia**. (NO: *"Ikea recorta 850 empleos."* / SÍ: *"La guerra
@@ -547,6 +561,9 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
     vuelca texto ajeno a ningún modelo? (§12)
 12. ¿Las tres noticias del Bloque 2 proceden de medios distintos? Si no se ha
     podido (snapshot pobre en fuentes), ¿se ha advertido en TRAZABILIDAD?
+13. ¿Las tres noticias del Bloque 2 cubren al menos dos segmentos (gran
+    distribución / comerç de proximitat / centres comercials)? Si el snapshot
+    no lo permite, ¿se ha registrado en TRAZABILIDAD (`diversidad_segmentos`)?
 
 ---
 
