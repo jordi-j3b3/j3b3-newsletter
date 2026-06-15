@@ -163,6 +163,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--force", action="store_true", help="Sobrescribir newsletter.md si existe")
     p.add_argument("--no-historial", action="store_true",
                    help="No leer ni actualizar el historial editorial")
+    p.add_argument("--context-extra", default="",
+                   help="Bloc de context addicional (p.ex. fet macro) que s'injecta "
+                        "al prompt just abans de <RECOPILACION_PRENSA>")
     return p.parse_args()
 
 
@@ -256,6 +259,7 @@ def construir_prompts(
     diccionario: str,
     historial_entries: list,
     usar_cdmge_bloc3: bool = False,
+    context_extra: str = "",
 ) -> tuple[list[dict], list[dict]]:
     """Construye (system, messages) para la llamada al modelo.
 
@@ -410,6 +414,11 @@ def construir_prompts(
             f"<PULSO_EUROPEO_EUROSTAT periodo=ultimos_24_meses>\n{europa_data}\n</PULSO_EUROPEO_EUROSTAT>",
             "",
         ])
+    if context_extra:
+        parts.extend([
+            f"<CONTEXT_MACRO>\n{context_extra}\n</CONTEXT_MACRO>",
+            "",
+        ])
     parts.extend([
         f"<RECOPILACION_PRENSA>\n{prensa}\n</RECOPILACION_PRENSA>",
         "",
@@ -462,6 +471,7 @@ def main() -> int:
     system, messages = construir_prompts(
         semana_dir, semana_str, args.numero, linea, diccionario, historial,
         usar_cdmge_bloc3=not novedad,
+        context_extra=args.context_extra,
     )
 
     modelo = SETTINGS["modelo"]["modelo"]

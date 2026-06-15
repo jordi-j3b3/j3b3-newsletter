@@ -119,5 +119,38 @@
     "asunto": "El retail se polariza: Inditex gana, el medio pierde terreno",
     "titular": "Escala o nicho. El medio ya no tiene sitio.",
     "created_at_utc": "2026-06-14T21:16:09.841996+00:00"
+  },
+  {
+    "numero": 7,
+    "semana": "2026-06-15",
+    "cifra": "+4,5%",
+    "angulo_bloc1": "Las grandes cadenas muestran resiliencia pero el riesgo recae sobre el comercio fuera de su perímetro.",
+    "tema_prediccion": "El gasto discrecional caerá entre 2 y 4 puntos interanuales en el tercer trimestre de 2026.",
+    "noticias": [
+      "El alza de tipos amenaza con una caída del consumo por primera vez desde 2024",
+      "El 63% de los consumidores ya ha cambiado sus hábitos de compra ante la inflación",
+      "El Club Carrefour supera los 11 millones de socios"
+    ],
+    "periodo_eurostat": "2026-04",
+    "indicador_bloc3": "cdmge_tasa_anual"
+  },
+  {
+    "numero": 7,
+    "semana": "2026-06-15",
+    "brevo_campaign_id": "16",
+    "scheduled_at": "2026-06-15T08:30:00+02:00",
+    "asunto": "El BCE sube tipos y el consumidor ya reescribe su cesta de la compra",
+    "titular": "Tipos al alza, cesta revisada.",
+    "created_at_utc": "2026-06-15T04:30:30.343497+00:00",
+    "cancelled_at_utc": "2026-06-15T04:35:17.798617+00:00"
+  },
+  {
+    "numero": 7,
+    "semana": "2026-06-15",
+    "brevo_campaign_id": "17",
+    "scheduled_at": "2026-06-15T08:30:00+02:00",
+    "asunto": "El BCE sube tipos y el consumidor ya reescribe su cesta de la compra",
+    "titular": "Tipos al alza, cesta revisada.",
+    "created_at_utc": "2026-06-15T04:35:57.978432+00:00"
   }
 ]
