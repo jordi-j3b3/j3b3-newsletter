@@ -26,3 +26,17 @@ Tareas pendientes ordenadas por momento de ejecución.
   Motivo / detectado en Núm. 7 (2026-06-15): el bloque mostraba solo los días 14 y 15
   ("dos lecturas") cuando había 15 días disponibles en la serie, dando una falsa
   sensación de serie provisional y volátil cuando en realidad había datos suficientes.
+
+- **Feeds de petit comerç: verificar RSS directes** · Prioridad: baixa
+  Tres feeds afegits via Google News el 2026-06-16 que cal migrar a feed directe si
+  el domini és accessible sense anti-bot (HTTP 200):
+  - **ACES** (Asociación Española de Centros y Parques Comerciales): domini oficial
+    no identificat (aces.es és salut, acescentroscomerciales.es no resol). Investigar
+    el domini corporatiu real de ACES i provar `/feed/`.
+  - **Comerç Barcelona** (Consorci de Comerç de Barcelona): provar
+    `https://comerc.barcelona/feed/` (WordPress probable). Si 200, substituir el
+    feed Google News `google_comerc_barcelona` a `observatori-comerc/modules/press.py`.
+  - **Comertia** (Associació de Franquícia i Retail Catalunya): provar
+    `https://comertia.com/feed/`. Si 200, substituir `google_comertia`.
+  Tots tres estan actius via Google News ara mateix. La migració a feed directe
+  redueix dependència de Google i millora la latència de les entrades.

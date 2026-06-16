@@ -251,6 +251,16 @@ def slice_cdmge_dias_clave(csv_path: Path) -> tuple[str, str]:
     return str(ult), "\n".join(lines)
 
 
+def cdmge_dies_mes_actual(csv_path: Path) -> int:
+    """Nombre de dies disponibles (files úniques de tasa_anual) al mes més recent del CDMGE."""
+    df = pd.read_csv(csv_path, parse_dates=["data"])
+    ta = df[df["indicador"] == "tasa_anual"].sort_values("data")
+    if ta.empty:
+        return 0
+    ult = ta["data"].max().to_period("M")
+    return int((ta["data"].dt.to_period("M") == ult).sum())
+
+
 def construir_prompts(
     semana_dir: Path,
     semana_str: str,
@@ -258,22 +268,23 @@ def construir_prompts(
     linea_editorial: str,
     diccionario: str,
     historial_entries: list,
-    usar_cdmge_bloc3: bool = False,
+    bloc3_mode: str = "europeu",
     context_extra: str = "",
 ) -> tuple[list[dict], list[dict]]:
     """Construye (system, messages) para la llamada al modelo.
 
-    Si `usar_cdmge_bloc3` es True (Eurostat sin periodo nuevo esta semana), el
-    bloque 3 usa el ritmo intramensual de la tasa_anual del CDMGE en lugar del
-    gráfico europeo de ventas por país (Opción C)."""
+    bloc3_mode: "europeu" (gràfic Eurostat), "cdmge_tasa_anual" (ritme
+    intramensual CDMGE, Eurostat sense periode nou i ≥10 dies al mes actual),
+    "editorial_contexto" (text editorial sense gràfic, <10 dies al mes actual
+    i Eurostat sense periode nou).
+    """
 
     cdmge_data = slice_cdmge(semana_dir / "pulso_diario.csv", dias=60)
     prensa = (semana_dir / "recopilacion_prensa.md").read_text(encoding="utf-8")
     meta = (semana_dir / "_meta.json").read_text(encoding="utf-8")
 
-    # Instrucción del Bloque 3 (D): gráfico europeo por defecto; ritmo CDMGE de
-    # los últimos 30 días cuando Eurostat no ha publicado periodo nuevo.
-    if usar_cdmge_bloc3:
+    # Instrucció del Bloque 3 (D): tres modes.
+    if bloc3_mode == "cdmge_tasa_anual":
         bloque3_instr = (
             "D. Bloque 3, estructura literal (RITMO INTRAMENSUAL — Eurostat sin "
             "periodo nuevo esta semana):\n\n"
@@ -294,7 +305,22 @@ def construir_prompts(
             "pocos días acumulados, son volátiles; la señal fiable es la "
             "tendencia hacia el cierre del mes."
         )
-    else:
+    elif bloc3_mode == "editorial_contexto":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (CONTEXTO EDITORIAL — inicio de mes, "
+            "menos de 10 días de datos CDMGE disponibles y Eurostat sin periodo "
+            "nuevo):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   <2-3 párrafos de lectura editorial sobre tendencias recientes del "
+            "sector. Apóyate en los datos del mes anterior de <PULSO_DIARIO_CDMGE> "
+            "(ya consolidados; evita el mes en curso, que con pocos días acumulados "
+            "es provisional y volátil). "
+            "NO incluyas subtítulo 'Datos:' ni lista de cifras — este bloque es "
+            "lectura editorial sin gráfico. "
+            "Lectura estructural por encima de la coyuntural: busca el patrón "
+            "(concentración, polarización, márgenes, eficiencia), no el dato puntual."
+        )
+    else:  # "europeu"
         bloque3_instr = (
             "D. Bloque 3, estructura literal:\n\n"
             "   **◆ DATOS DE LA SEMANA**\n\n"
@@ -347,7 +373,15 @@ def construir_prompts(
                 "del mismo diario sugieren sesgo de fuente y restan credibilidad a la "
                 "lectura editorial. Si la recopilación de prensa solo trae noticias de uno "
                 "o dos medios, elige las tres con mayor diversidad de fuente posible y "
-                "adviértelo en la sección TRAZABILIDAD.\n\n"
+                "adviértelo en la sección TRAZABILIDAD.\n"
+                "10. Cuando la cifra protagonista del Bloque 1 procede de pulso_diario.csv "
+                "(CDMGE, indicador del INE sobre grandes cadenas de distribución), incluye "
+                "siempre en el Bloque 1: (a) la fecha exacta del dato más reciente, que "
+                "encontrarás en <META_SNAPSHOT> bajo pulso_diario.ultima_fecha; y (b) la "
+                "nota literal: 'Dato más reciente disponible a [fecha]. El indicador del "
+                "INE sobre grandes cadenas se publica con un desfase habitual de 30 días.' "
+                "Puede ir en el campo Fuente: o integrada en el cuerpo, pero no puede "
+                "omitirse.\n\n"
                 "ESTRUCTURA OBLIGATORIA DEL MARKDOWN (compose.py la parsea literalmente):\n\n"
                 "A. Tres campos de cabecera, cada uno en su línea:\n"
                 "   **Asunto:** <hasta 70 caracteres, un solo hilo conductor>\n"
@@ -402,18 +436,19 @@ def construir_prompts(
         f"<PULSO_DIARIO_CDMGE periodo=ultimos_60_dias>\n{cdmge_data}\n</PULSO_DIARIO_CDMGE>",
         "",
     ])
-    if usar_cdmge_bloc3:
+    if bloc3_mode == "cdmge_tasa_anual":
         mes_clau, cdmge_clau = slice_cdmge_dias_clave(semana_dir / "pulso_diario.csv")
         parts.extend([
             f"<PULSO_CDMGE_DIAS_CLAVE mes={mes_clau}>\n{cdmge_clau}\n</PULSO_CDMGE_DIAS_CLAVE>",
             "",
         ])
-    else:
+    elif bloc3_mode == "europeu":
         europa_data = slice_europa(semana_dir / "pulso_europeo.csv", meses=24)
         parts.extend([
             f"<PULSO_EUROPEO_EUROSTAT periodo=ultimos_24_meses>\n{europa_data}\n</PULSO_EUROPEO_EUROSTAT>",
             "",
         ])
+    # "editorial_contexto": cap dataset addicional; el model treballa amb PULSO_DIARIO_CDMGE
     if context_extra:
         parts.extend([
             f"<CONTEXT_MACRO>\n{context_extra}\n</CONTEXT_MACRO>",
@@ -456,21 +491,32 @@ def main() -> int:
 
     linea, diccionario = cargar_templates()
 
-    # Decisión del Bloque 3 (Opción C): ¿Eurostat ha publicado un periodo nuevo
-    # desde la última edición? Si no, el bloque 3 muestra el ritmo intramensual
-    # del CDMGE (tasa_anual, últimos 30 días) en vez del gráfico europeo.
+    # Decisió del Bloque 3: tres modes.
+    # 1. Eurostat ha publicat periode nou → gràfic europeu.
+    # 2. Eurostat sense novetat I ≥10 dies CDMGE al mes actual → ritme intramensual.
+    # 3. Eurostat sense novetat I <10 dies CDMGE → context editorial sense gràfic
+    #    (principi de mes: la tasa_anual acumulada de pocs dies és molt volàtil).
     periodo_actual = max_periodo_europeo(semana_dir / "pulso_europeo.csv")
     novedad = detectar_novetat_eurostat(periodo_actual, historial, semana_str)
-    indicador_bloc3 = "europeu" if novedad else "cdmge_tasa_anual"
+    dies_mes = cdmge_dies_mes_actual(semana_dir / "pulso_diario.csv")
+
     if novedad:
-        print(f"  Bloc 3: gráfico europeo (Eurostat {periodo_actual} es periodo nuevo)")
+        bloc3_mode = "europeu"
+        print(f"  Bloc 3: gràfic europeu (Eurostat {periodo_actual} és periode nou)")
+    elif dies_mes >= 10:
+        bloc3_mode = "cdmge_tasa_anual"
+        print(f"  Bloc 3: ritme CDMGE últims 30 dies "
+              f"(Eurostat en {periodo_actual}, {dies_mes} dies al mes actual → ≥10)")
     else:
-        print(f"  Bloc 3: ritmo CDMGE últimos 30 días "
-              f"(Eurostat sigue en {periodo_actual}, sin periodo nuevo desde la última edición)")
+        bloc3_mode = "editorial_contexto"
+        print(f"  Bloc 3: context editorial sense gràfic "
+              f"(Eurostat en {periodo_actual}, {dies_mes} dies al mes actual → <10)")
+
+    indicador_bloc3 = bloc3_mode
 
     system, messages = construir_prompts(
         semana_dir, semana_str, args.numero, linea, diccionario, historial,
-        usar_cdmge_bloc3=not novedad,
+        bloc3_mode=bloc3_mode,
         context_extra=args.context_extra,
     )
 

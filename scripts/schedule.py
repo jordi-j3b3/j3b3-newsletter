@@ -27,6 +27,21 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+# Paraules clau macro: BCE, política monetària, PIB, inflació, Banco de España
+_MACRO_RE = re.compile(
+    r"BCE|Banco Central Europeo|banque centrale|"
+    r"tipos? de inter[eé]s|tipus d[''']inter[eè]s|pol[ií]tica monetari[ao]|"
+    r"PIB|producto interior bruto|producte interior brut|"
+    r"inflaci[oó]n?|inflaci[oó]|IPC|preus? de consum|precios? al consumo|"
+    r"Banco de Espa[nñ]a|Banc d[''']Espanya|"
+    r"\bFed\b|Reserva Federal|"
+    r"eur[ií]bor|Euribor|"
+    r"deuda p[uú]blica|deute p[uú]blic|"
+    r"recesi[oó]n?|recessió|"
+    r"creixement econ[oò]mic|crecimiento econ[oó]mico",
+    re.IGNORECASE,
+)
+
 import requests
 from dotenv import load_dotenv
 
@@ -177,6 +192,38 @@ def extreu_metadades(semana: str) -> dict:
         "prediccion": prediccion,
         "html": html_path.read_text(encoding="utf-8") if html_path.exists() else "",
     }
+
+
+def detectar_noticias_macro(semana: str) -> list[dict]:
+    """Cerca notícies amb paraules clau macro a la recopilació de premsa del snapshot."""
+    prensa_path = ROOT / "data" / f"semana-{semana}" / "recopilacion_prensa.md"
+    if not prensa_path.exists():
+        return []
+    results = []
+    current_date = ""
+    current_title = ""
+    current_source = ""
+    current_text = ""
+
+    for line in prensa_path.read_text(encoding="utf-8").splitlines():
+        if re.match(r"^## \d{4}-\d{2}-\d{2}", line):
+            current_date = line[3:].strip()
+        elif line.startswith("### "):
+            if current_title and _MACRO_RE.search(current_text):
+                results.append({"data": current_date, "titol": current_title, "font": current_source})
+            current_title = line[4:].strip()
+            current_source = ""
+            current_text = current_title
+        elif line.startswith("- Fuente: "):
+            current_source = line[10:].strip()
+            current_text += " " + current_source
+        elif line.startswith("- Snippet: "):
+            current_text += " " + line[11:].strip()
+
+    if current_title and _MACRO_RE.search(current_text):
+        results.append({"data": current_date, "titol": current_title, "font": current_source})
+
+    return results
 
 
 def suspen_campanya(campaign_id: str) -> bool:
@@ -360,6 +407,25 @@ def main() -> int:
     desa_historial(historial)
     print(f"Historial actualitzat: {HISTORIAL_PATH.relative_to(ROOT)}")
 
+    # Fets macro detectats automàticament al snapshot
+    noticias_macro = detectar_noticias_macro(semana)
+    if noticias_macro:
+        macro_items = "".join(
+            f"<li><strong>{n['data']}</strong> — {n['titol']}"
+            f"<br><span style='color:#666;font-size:0.9em'>{n['font']}</span></li>"
+            for n in noticias_macro
+        )
+        macro_html = (
+            f"<h3 style='font-family:sans-serif'>Fets macro detectats ({len(noticias_macro)})</h3>"
+            f"<ul style='font-family:sans-serif'>{macro_items}</ul>"
+        )
+    else:
+        macro_html = (
+            "<h3 style='font-family:sans-serif'>Fets macro detectats</h3>"
+            "<p style='color:#666'>Cap notícia macro detectada automàticament "
+            "(BCE, PIB, inflació, Banco de España, euríbor).</p>"
+        )
+
     # Notificacio
     notification_html = (
         f"<h2 style='font-family:sans-serif'>Newsletter programada</h2>"
@@ -369,7 +435,18 @@ def main() -> int:
         f"<p><strong>Titular:</strong> {meta['titular']}</p>"
         f"<p><strong>Predicció:</strong> {meta['prediccion']}</p>"
         f"<hr>"
-        f"<p>Si vols aturar l'enviament, executa abans de les 8:00 del dilluns:</p>"
+        f"{macro_html}"
+        f"<p style='font-family:sans-serif;font-size:0.9em;color:#444'>"
+        f"Si vols afegir context macro no detectat, cancel·la i regenera "
+        f"<strong>abans de les 8:00 del dilluns</strong>:<br>"
+        f"1. <code>python scripts/cancel.py --semana {semana}</code><br>"
+        f"2. <code>python scripts/generate.py --semana {semana} --numero {numero} "
+        f"--force --context-extra \"[context macro]\"</code><br>"
+        f"3. Recomposa i reprograma: "
+        f"<code>python scripts/schedule.py --semana {semana} --replace --skip-pipeline</code>"
+        f"</p>"
+        f"<hr>"
+        f"<p>Per cancel·lar l'enviament sense regenerar:</p>"
         f"<pre style='background:#f4f4f4;padding:12px'>"
         f"python scripts/cancel.py --semana {semana}"
         f"</pre>"
