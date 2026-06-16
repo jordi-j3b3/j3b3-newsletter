@@ -27,10 +27,15 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-# Paraules clau macro: BCE, política monetària, PIB, inflació, Banco de España
+# Paraules clau macro: BCE, política monetària, PIB, inflació, Banco de España.
+# Inclou variants de moviments de tipus ("alza/subida/bajada/recorte de tipos")
+# que apareixen als titulars mediàtics sense escriure "tipos de interés" explícitament.
 _MACRO_RE = re.compile(
-    r"BCE|Banco Central Europeo|banque centrale|"
+    r"BCE|Banco Central Europeo|banque centrale|ECB\b|"
     r"tipos? de inter[eé]s|tipus d[''']inter[eè]s|pol[ií]tica monetari[ao]|"
+    r"alza de tipos|subida de tipos|bajada de tipos|recorte de tipos|"
+    r"pujada de tipus|baixada de tipus|retallada de tipus|"
+    r"endurecimiento monetario|flexibilizaci[oó]n monetaria|"
     r"PIB|producto interior bruto|producte interior brut|"
     r"inflaci[oó]n?|inflaci[oó]|IPC|preus? de consum|precios? al consumo|"
     r"Banco de Espa[nñ]a|Banc d[''']Espanya|"

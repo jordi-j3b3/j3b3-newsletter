@@ -27,6 +27,12 @@ Tareas pendientes ordenadas por momento de ejecución.
   ("dos lecturas") cuando había 15 días disponibles en la serie, dando una falsa
   sensación de serie provisional y volátil cuando en realidad había datos suficientes.
 
+- **Banco de España RSS: feed trencat** · Prioridad: baixa
+  Verificat 2026-06-16: tot el domini `bde.es` redirigeix a `app.bde.es` que retorna
+  404 per a qualsevol URL RSS (`/rss/es/rssNovedades.xml`, etc.). Cobertura actual:
+  Google News amb query BCE/macro (`google_bce_macro` feed afegit 2026-06-16).
+  Revisar periòdicament si BdE restaura el feed RSS directe a `bde.es`.
+
 - **Feeds de petit comerç: verificar RSS directes** · Prioridad: baixa
   Tres feeds afegits via Google News el 2026-06-16 que cal migrar a feed directe si
   el domini és accessible sense anti-bot (HTTP 200):
