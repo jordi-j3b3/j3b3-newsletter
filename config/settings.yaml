@@ -11,7 +11,7 @@ newsletter:
 modelo:
   proveedor: "anthropic"
   modelo: "claude-sonnet-4-6"
-  max_tokens: 4000
+  max_tokens: 6000
   temperatura: 0.6
 
 # Palabras objetivo por bloque (referencia editorial, no límite estricto).
