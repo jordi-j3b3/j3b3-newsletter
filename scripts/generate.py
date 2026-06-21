@@ -251,6 +251,21 @@ def slice_cdmge_dias_clave(csv_path: Path) -> tuple[str, str]:
     return str(ult), "\n".join(lines)
 
 
+def eurostat_lag_setmanes(periodo_actual: str, semana_str: str) -> int:
+    """Setmanes de retard entre el darrer periode Eurostat i la data d'enviament.
+
+    periodo_actual format 'YYYY-MM', semana_str format 'YYYY-MM-DD'.
+    Retorna el nombre enter de setmanes senceres de diferència.
+    """
+    from datetime import date as _date
+    y, m = int(periodo_actual[:4]), int(periodo_actual[5:7])
+    # Darrer dia del mes Eurostat com a referència
+    last_day = 28 if m == 2 else (30 if m in (4, 6, 9, 11) else 31)
+    fi_periode = _date(y, m, last_day)
+    enviament = _date.fromisoformat(semana_str)
+    return max(0, (enviament - fi_periode).days // 7)
+
+
 def cdmge_dies_mes_actual(csv_path: Path) -> int:
     """Nombre de dies disponibles (files úniques de tasa_anual) al mes més recent del CDMGE."""
     df = pd.read_csv(csv_path, parse_dates=["data"])
@@ -270,6 +285,7 @@ def construir_prompts(
     historial_entries: list,
     bloc3_mode: str = "europeu",
     context_extra: str = "",
+    periodo_actual: str = "",
 ) -> tuple[list[dict], list[dict]]:
     """Construye (system, messages) para la llamada al modelo.
 
@@ -381,7 +397,19 @@ def construir_prompts(
                 "nota literal: 'Dato más reciente disponible a [fecha]. El indicador del "
                 "INE sobre grandes cadenas se publica con un desfase habitual de 30 días.' "
                 "Puede ir en el campo Fuente: o integrada en el cuerpo, pero no puede "
-                "omitirse.\n\n"
+                "omitirse.\n"
+                "11. En el Bloque 2, cuando la recopilación de prensa incluya noticias "
+                "sobre comerç de proximitat, eixos comercials urbans, comercio local, "
+                "comercio de barrio, supermercat de proximitat, franquicia local o "
+                "formatos de proximidad, incluye al menos una como noticia comentada. "
+                "Puede sustituir a la noticia de menor relevancia analítica del Bloque 2. "
+                "Si no hay ninguna noticia de proximidad en el snapshot, ignora esta regla.\n"
+                "12. La cifra protagonista del Bloque 1 debe ser lo más reciente posible. "
+                "Si en <AVISO_FRESCOR_DADES> se indica que el dato Eurostat tiene un "
+                "retard superior a 7 setmanes respecte la data d'enviament, la cifra del "
+                "Bloque 1 DEBE proceder del CDMGE (pulso_diario.csv), no de Eurostat. "
+                "Eurostat puede aparecer como dato de contexto en el Bloque 3, "
+                "pero no como cifra protagonista del Bloque 1.\n\n"
                 "ESTRUCTURA OBLIGATORIA DEL MARKDOWN (compose.py la parsea literalmente):\n\n"
                 "A. Tres campos de cabecera, cada uno en su línea:\n"
                 "   **Asunto:** <hasta 70 caracteres, un solo hilo conductor>\n"
@@ -448,6 +476,20 @@ def construir_prompts(
             f"<PULSO_EUROPEO_EUROSTAT periodo=ultimos_24_meses>\n{europa_data}\n</PULSO_EUROPEO_EUROSTAT>",
             "",
         ])
+    # Avís de frescor: si el darrer periode Eurostat té >7 setmanes de retard,
+    # el model ha d'usar CDMGE per a la cifra del Bloque 1 (regla 12).
+    if periodo_actual:
+        lag = eurostat_lag_setmanes(periodo_actual, semana_str)
+        if lag > 7:
+            parts.extend([
+                f"<AVISO_FRESCOR_DADES>\n"
+                f"El darrer periode Eurostat disponible és {periodo_actual}, "
+                f"que té {lag} setmanes de retard respecte la data d'enviament ({semana_str}). "
+                f"Aplica la regla 12: la cifra protagonista del Bloque 1 DOIT procedir "
+                f"del CDMGE (pulso_diario.csv), no de Eurostat.\n"
+                f"</AVISO_FRESCOR_DADES>",
+                "",
+            ])
     # "editorial_contexto": cap dataset addicional; el model treballa amb PULSO_DIARIO_CDMGE
     if context_extra:
         parts.extend([
@@ -518,6 +560,7 @@ def main() -> int:
         semana_dir, semana_str, args.numero, linea, diccionario, historial,
         bloc3_mode=bloc3_mode,
         context_extra=args.context_extra,
+        periodo_actual=periodo_actual,
     )
 
     modelo = SETTINGS["modelo"]["modelo"]
