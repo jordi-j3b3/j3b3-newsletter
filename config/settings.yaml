@@ -29,6 +29,9 @@ prensa:
 snapshot:
   cdmge_origen: "data/cache/cdmge.csv"
   europa_origen: "data/cache/europa_retail_mensual.csv"
+  productivitat_origen: "data/cache/productivitat.csv"
+  ocupacio_origen: "data/cache/ocupacio_comerc.csv"
+  ipc_origen: "data/cache/ipc.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.

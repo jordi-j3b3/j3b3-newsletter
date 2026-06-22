@@ -101,6 +101,31 @@ def europa_meta(csv_path: Path) -> dict:
     return {"ultimo_periodo": ultimo, "lag_dias": lag_dias}
 
 
+def productivitat_meta(csv_path: Path) -> dict:
+    df = pd.read_csv(csv_path)
+    return {"ultimo_any": int(df["any"].max())}
+
+
+def ocupacio_meta(csv_path: Path) -> dict:
+    df = pd.read_csv(csv_path)
+    return {"ultimo_any": int(df["any"].max())}
+
+
+def ipc_meta(csv_path: Path) -> dict:
+    df = pd.read_csv(csv_path)
+    ultimo_any = int(df["any"].max())
+    ultimo_mes = int(df[df["any"] == ultimo_any]["mes"].max())
+    return {"ultimo_periode": f"{ultimo_any}-{ultimo_mes:02d}"}
+
+
+def copy_csv_optional(src: Path, dst: Path, label: str) -> dict | None:
+    """Com copy_csv però retorna None (amb avís) si el fitxer no existeix."""
+    if not src.exists():
+        print(f"  {label}: no trobat a {src}, s'omet del snapshot", file=sys.stderr)
+        return None
+    return copy_csv(src, dst, label)
+
+
 def capture_press(out_md: Path, observatori_path: Path, dias: int) -> dict:
     """Llama a modules.press.fetch_press() del Observatorio y serializa
     los items de los últimos `dias` días a markdown legible."""
@@ -201,9 +226,15 @@ def main() -> int:
 
     cdmge_src = obs_path / SETTINGS["snapshot"]["cdmge_origen"]
     europa_src = obs_path / SETTINGS["snapshot"]["europa_origen"]
+    productivitat_src = obs_path / SETTINGS["snapshot"]["productivitat_origen"]
+    ocupacio_src = obs_path / SETTINGS["snapshot"]["ocupacio_origen"]
+    ipc_src = obs_path / SETTINGS["snapshot"]["ipc_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
+    productivitat_dst = semana_dir / "productivitat.csv"
+    ocupacio_dst = semana_dir / "ocupacio_comerc.csv"
+    ipc_dst = semana_dir / "ipc.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -223,6 +254,24 @@ def main() -> int:
         f"último periodo {europa_info['ultimo_periodo']} · lag {europa_info['lag_dias']}d"
     )
 
+    productivitat_info = copy_csv_optional(productivitat_src, productivitat_dst, "Productivitat")
+    if productivitat_info:
+        productivitat_info.update(productivitat_meta(productivitat_dst))
+        print(f"  productivitat.csv    · {productivitat_info['filas']:>6} filas · "
+              f"últim any {productivitat_info['ultimo_any']}")
+
+    ocupacio_info = copy_csv_optional(ocupacio_src, ocupacio_dst, "Ocupacio")
+    if ocupacio_info:
+        ocupacio_info.update(ocupacio_meta(ocupacio_dst))
+        print(f"  ocupacio_comerc.csv  · {ocupacio_info['filas']:>6} filas · "
+              f"últim any {ocupacio_info['ultimo_any']}")
+
+    ipc_info = copy_csv_optional(ipc_src, ipc_dst, "IPC")
+    if ipc_info:
+        ipc_info.update(ipc_meta(ipc_dst))
+        print(f"  ipc.csv              · {ipc_info['filas']:>6} filas · "
+              f"últim periode {ipc_info['ultimo_periode']}")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -237,6 +286,9 @@ def main() -> int:
         "captura": datetime.now(timezone.utc).isoformat(),
         "pulso_diario": cdmge_info,
         "pulso_europeo": europa_info,
+        "productivitat": productivitat_info,
+        "ocupacio": ocupacio_info,
+        "ipc": ipc_info,
         "prensa": prensa_info,
     }
     (semana_dir / "_meta.json").write_text(

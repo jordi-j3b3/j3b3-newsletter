@@ -82,6 +82,9 @@ def main() -> int:
                         "Combinado con --skip-preview hace un dry-run completo.")
     p.add_argument("--skip-mirror", action="store_true",
                    help="No copiar la newsletter al repo del dashboard tras el envío real.")
+    p.add_argument("--titular", default="",
+                   help="Titular fix (mode P2). Si buit, es pregunta interactivament "
+                        "o el sistema detecta el mode automàticament.")
     args = p.parse_args()
 
     semana = args.semana or next_monday().strftime("%Y-%m-%d")
@@ -111,15 +114,28 @@ def main() -> int:
         return 1
 
     # Paso 2: generación
+    # Preguntar titular (mode P2) si no s'ha passat per flag
+    titular = args.titular
+    if not titular:
+        titular = pregunta(
+            "Titular fix de l'edició (Enter per mode automàtic — dades decideixen)",
+            "",
+        )
+
+    generate_cmd = [
+        sys.executable, "scripts/generate.py",
+        "--semana", semana, "--numero", str(numero),
+    ]
+    if titular:
+        generate_cmd += ["--titular", titular]
+
     out_md = output_dir / "newsletter.md"
     if out_md.exists():
         print(f"Borrador existente en {out_md}")
         if confirmar("¿Regenerar el borrador?", default_yes=False):
-            ejecutar(sys.executable, "scripts/generate.py", "--semana", semana,
-                     "--numero", str(numero), "--force")
+            ejecutar(*generate_cmd, "--force")
     else:
-        ejecutar(sys.executable, "scripts/generate.py", "--semana", semana,
-                 "--numero", str(numero))
+        ejecutar(*generate_cmd)
 
     # Paso 3: edición opcional
     print(f"\nBorrador en: {out_md}")

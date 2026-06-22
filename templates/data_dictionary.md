@@ -147,7 +147,80 @@ rellenar con noticias de calidad inferior).
 
 ---
 
-## 4. Reglas editoriales de referencia a las fuentes
+## 4. Productivitat — `productivitat.csv`
+
+**Fuente**: INE, *Encuesta Anual de Empresas* + *Cuentas de las empresas*, sector CNAE 47.
+
+**Ámbito**: totes les empreses del comerç minorista espanyol.
+
+**Frecuencia**: anual. Lag típico: 12-18 mesos.
+
+### Columnes rellevants per a la newsletter
+
+| Columna | Tipus | Descripció |
+|---|---|---|
+| `any` | int | Any |
+| `cost_laboral_per_ocupat` | float | Cost laboral mitjà per ocupat (€/any) |
+| `cost_laboral_hora` | float | Cost laboral per hora treballada (€/hora) |
+| `quota_salarial` | float | Proporció del cost laboral sobre el valor afegit (0-1) |
+| `marge_brut` | float | Marge brut sobre vendes (0-1) |
+| `productivitat_va_hora` | float | Valor afegit per hora treballada (€/hora) |
+| `gastos_personal_constants` | float | Despeses de personal en euros constants |
+
+### Avís interpretatiu
+
+La `quota_salarial` indica quant de cada euro de valor afegit va a costos laborals. Si creix, o els marges cauen o la productivitat ha de compensar. Dada estructural, no coyuntural. Citar com "INE, comptabilitat d'empreses" — sense mencionar el codi de l'enquesta.
+
+---
+
+## 5. Ocupació — `ocupacio_comerc.csv`
+
+**Fuente**: Eurostat, *Labour Force Survey* (LFS), sector NACE G47.
+
+**Ámbito**: ocupats al comerç minorista per país, sexe i tram d'edat.
+
+**Frecuencia**: anual.
+
+### Esquema
+
+| Columna | Tipus | Descripció |
+|---|---|---|
+| `pais` | string (català) | Nom del país |
+| `pais_codi` | string | Codi Eurostat (`ES`, `EU27_2020`, etc.) |
+| `any` | int | Any |
+| `sex` | string | `F` (dones), `M` (homes), `T` (total) |
+| `edat` | string | Tram d'edat (p.ex. `15-24`, `25-54`, `65+`) |
+| `ocupats_milers` | float | Ocupats en milers |
+
+### Norma d'ús
+
+Filtrar sempre `pais_codi='ES'` i `sex='T'` per al total espanyol. Dada d'estructura, no de cicle curt. Citar com "Eurostat, enquesta de força de treball".
+
+---
+
+## 6. IPC — `ipc.csv`
+
+**Fuente**: INE, *Índice de Precios de Consumo* — índex general espanyol.
+
+**Ámbito**: economia espanyola en conjunt (no específic del sector retail).
+
+**Frecuencia**: mensual.
+
+### Esquema
+
+| Columna | Tipus | Descripció |
+|---|---|---|
+| `any` | int | Any |
+| `mes` | int | Mes (1-12) |
+| `ipc` | float | Índex (base de referència fixa) |
+
+### Avís d'ús
+
+Útil per comparar l'evolució de costos laborals amb la inflació general. No citar com "IPC del comerç": és l'índex general. Citar com "INE, IPC general".
+
+---
+
+## 7. Reglas editoriales de referencia a las fuentes
 
 Las referencias técnicas y metodológicas (códigos de serie, bases de índice,
 números de tabla) **no se citan en el cuerpo de los bloques editoriales**.
