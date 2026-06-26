@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -735,6 +736,24 @@ def main() -> int:
     )
 
     borrador = "".join(block.text for block in response.content if block.type == "text")
+
+    # Resol els enllaços de redirecció de Google News (news.google.com/rss/
+    # articles/…) a la URL real de l'editor. Només afecta els 2-3 enllaços que el
+    # model ha triat per al butlletí. Si falla (xarxa, format de Google canviat),
+    # es manté l'enllaç original: el butlletí no es bloqueja per això.
+    try:
+        obs_path = os.environ.get("OBSERVATORI_PATH")
+        if obs_path and obs_path not in sys.path:
+            sys.path.insert(0, obs_path)
+        from modules.press import resolve_links_in_text  # type: ignore
+
+        borrador, n_resolts = resolve_links_in_text(borrador)
+        if n_resolts:
+            print(f"  Enllaços Google News resolts a l'editor original: {n_resolts}")
+    except Exception as e:
+        print(f"  Aviso: no se pudieron resolver los enlaces de Google News ({e}). "
+              f"Se mantienen los enlaces de redirección.", file=sys.stderr)
+
     out_md.write_text(borrador, encoding="utf-8")
 
     usage = response.usage
