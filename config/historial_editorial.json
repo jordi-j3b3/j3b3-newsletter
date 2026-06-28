@@ -161,5 +161,27 @@
     "asunto": "El gran comercio sube salarios por encima del IPC — y eso cambia el modelo",
     "titular": "El coste laboral reordena el retail.",
     "created_at_utc": "2026-06-21T18:25:04.052744+00:00"
+  },
+  {
+    "numero": 9,
+    "semana": "2026-06-29",
+    "cifra": "24,65 €/hora",
+    "angulo_bloc1": "El retail español produce más por hora pero el margen se estrecha por la presión salarial.",
+    "tema_prediccion": "La cuota salarial del sector podría cerrar 2026 por debajo del 62%, abriendo hasta un punto de margen adicional.",
+    "noticias": [
+      "Las rebajas de verano reabren el debate entre el pequeño comercio y las grandes cadenas",
+      "Eroski vende sus 40 gasolineras a Petroprix para reforzar su negocio de alimentación",
+      "H&M sufre una caída de ventas del 7% pero mejora su rentabilidad"
+    ],
+    "periodo_eurostat": "2026-05",
+    "indicador_bloc3": "europeu",
+    "mode_editorial": "P1",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "20",
+    "scheduled_at": "2026-06-29T08:30:00+02:00",
+    "asunto": "La productividad del retail español recupera niveles de 2021 — con menos margen",
+    "titular": "Productividad sube, margen aguanta.",
+    "created_at_utc": "2026-06-28T17:41:52.515132+00:00"
   }
 ]
