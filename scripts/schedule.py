@@ -94,7 +94,34 @@ def detecta_numero(historial: list) -> int:
     return (max(nums) + 1) if nums else 1
 
 
-def executa_pipeline(semana: str, numero: int) -> None:
+def construir_contexto_macro(noticias_macro: list[dict]) -> str:
+    """Formata els fets macro detectats com a bloc de context per a generate.py.
+
+    El text s'injecta dins <CONTEXT_MACRO> al prompt de Sonnet (just abans de
+    <RECOPILACION_PRENSA>). Aquestes notícies JA figuren a la recopilació de
+    premsa; el bloc de context les ressalta perquè el model les ponderi
+    especialment a la cifra del Bloque 1 i, sobretot, a la predicció del Bloque 4.
+    """
+    items = "\n".join(
+        f"- {n['data']} — {n['titol']}" + (f" ({n['font']})" if n.get("font") else "")
+        for n in noticias_macro
+    )
+    return (
+        "CONTEXTO MACROECONÓMICO DE LA SEMANA (detectado automáticamente en la "
+        "prensa del snapshot). Estas noticias ya figuran en <RECOPILACION_PRENSA>; "
+        "se destacan aquí porque marcan el entorno monetario y de consumo de la "
+        "semana:\n\n"
+        f"{items}\n\n"
+        "Tenlos en cuenta especialmente para: (a) la lectura de la cifra del "
+        "Bloque 1, si el contexto monetario o de inflación la condiciona; y "
+        "(b) la predicción del Bloque 4, que debe ser coherente con este entorno "
+        "macro (tipos, inflación, ciclo). NO los conviertas en una de las tres "
+        "noticias del Bloque 2 solo por aparecer aquí: el Bloque 2 sigue sus "
+        "propias reglas de selección (diversidad de medio y noticia de proximidad)."
+    )
+
+
+def executa_pipeline(semana: str, numero: int, context_extra: str = "") -> None:
     py = sys.executable
     # Heretem explícitament tot l'entorn perquè els subprocessos vegin les
     # API keys passades des del workflow (en alguns contextos d'Actions, no
@@ -107,16 +134,40 @@ def executa_pipeline(semana: str, numero: int) -> None:
         f"BREVO_API_KEY={'OK' if child_env.get('BREVO_API_KEY') else 'MISSING'}, "
         f"OBSERVATORI_PATH={child_env.get('OBSERVATORI_PATH', 'MISSING')}"
     )
-    for cmd in (
-        [py, "scripts/snapshot.py", "--semana", semana],
-        [py, "scripts/generate.py", "--semana", semana, "--numero", str(numero)],
-        [py, "scripts/compose.py", "--semana", semana, "--numero", str(numero)],
-        [py, "scripts/publish_web.py", "--semana", semana, "--numero", str(numero)],
-    ):
+
+    def run(cmd: list[str]) -> None:
         print(f"\n$ {' '.join(cmd)}")
         r = subprocess.run(cmd, cwd=ROOT, env=child_env)
         if r.returncode != 0:
             raise SystemExit(f"Pas fallit: {' '.join(cmd)}")
+
+    # 1. Snapshot — congela dades + recopilacion_prensa.md (font de la detecció macro).
+    run([py, "scripts/snapshot.py", "--semana", semana])
+
+    # 2. Detecció de fets macro a la premsa del snapshot i injecció com a context
+    #    addicional al prompt de generate.py. Així Sonnet els pondera per al Bloque 1
+    #    i la predicció abans de generar, en lloc de detectar-los només a posteriori
+    #    (que era el comportament antic: la detecció alimentava només la notificació).
+    noticias_macro = detectar_noticias_macro(semana)
+    contexts = []
+    if noticias_macro:
+        contexts.append(construir_contexto_macro(noticias_macro))
+        print(f"[pipeline] {len(noticias_macro)} fet(s) macro detectat(s) a la premsa "
+              f"→ injectats a generate.py via --context-extra")
+    else:
+        print("[pipeline] Cap fet macro detectat a la premsa; generate.py sense context macro.")
+    if context_extra:
+        contexts.append(context_extra)
+        print("[pipeline] Context macro manual (--context-extra) afegit al pipeline.")
+
+    generate_cmd = [py, "scripts/generate.py", "--semana", semana, "--numero", str(numero)]
+    if contexts:
+        generate_cmd += ["--context-extra", "\n\n".join(contexts)]
+
+    # 3. Generate → 4. Compose → 5. Publica web.
+    run(generate_cmd)
+    run([py, "scripts/compose.py", "--semana", semana, "--numero", str(numero)])
+    run([py, "scripts/publish_web.py", "--semana", semana, "--numero", str(numero)])
 
 
 def crea_campanya_programada(
@@ -261,6 +312,9 @@ def main() -> int:
     p.add_argument("--replace", action="store_true",
                    help="Regenera: suspèn la campanya ja programada d'aquesta setmana, "
                         "la treu de l'historial i en crea una de nova amb el mateix número")
+    p.add_argument("--context-extra", default="",
+                   help="Context macro addicional, afegit al que es detecta "
+                        "automàticament a la premsa i passat a generate.py")
     args = p.parse_args()
 
     historial = carrega_historial()
@@ -328,7 +382,7 @@ def main() -> int:
         print("\n[--skip-pipeline] Suposo snapshot/generate/compose ja fets.")
         meta = extreu_metadades(semana)
     else:
-        executa_pipeline(semana, numero)
+        executa_pipeline(semana, numero, context_extra=args.context_extra)
         meta = extreu_metadades(semana)
 
     # Configuracio Brevo
@@ -412,7 +466,10 @@ def main() -> int:
     desa_historial(historial)
     print(f"Historial actualitzat: {HISTORIAL_PATH.relative_to(ROOT)}")
 
-    # Fets macro detectats automàticament al snapshot
+    # Fets macro detectats automàticament al snapshot. Quan n'hi ha, ja s'han
+    # injectat al prompt de generate.py via --context-extra (vegeu executa_pipeline),
+    # de manera que Sonnet els ha ponderat per al Bloque 1 i la predicció. La
+    # notificació només els llista per a transparència i auditoria.
     noticias_macro = detectar_noticias_macro(semana)
     if noticias_macro:
         macro_items = "".join(
@@ -421,14 +478,19 @@ def main() -> int:
             for n in noticias_macro
         )
         macro_html = (
-            f"<h3 style='font-family:sans-serif'>Fets macro detectats ({len(noticias_macro)})</h3>"
+            f"<h3 style='font-family:sans-serif'>Fets macro detectats i injectats "
+            f"({len(noticias_macro)})</h3>"
+            f"<p style='color:#666;font-size:0.9em'>Injectats automàticament al prompt "
+            f"de generació; Sonnet els ha ponderat per a la cifra del Bloque 1 i la "
+            f"predicció.</p>"
             f"<ul style='font-family:sans-serif'>{macro_items}</ul>"
         )
     else:
         macro_html = (
             "<h3 style='font-family:sans-serif'>Fets macro detectats</h3>"
             "<p style='color:#666'>Cap notícia macro detectada automàticament "
-            "(BCE, PIB, inflació, Banco de España, euríbor).</p>"
+            "(BCE, PIB, inflació, Banco de España, euríbor). Cap context macro "
+            "injectat a la generació.</p>"
         )
 
     # Notificacio
