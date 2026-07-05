@@ -176,6 +176,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--titular", default="",
                    help="Titular fix (mode P2). Si buit, el mode es detecta "
                         "automàticament a partir de les actualitzacions del snapshot.")
+    p.add_argument("--bloc3", default="",
+                   choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto"],
+                   help="Sobreescriu la selecció automàtica del bloc 3.")
     return p.parse_args()
 
 
@@ -514,7 +517,11 @@ def construir_prompts(
                 "<PRODUCTIVITAT_SECTOR>, <OCUPACIO_SECTOR> o <IPC_COMERC> del mensaje. "
                 "NUNCA puede proceder de <RECOPILACION_PRENSA>: un dato de prensa no es "
                 "fuente primaria del Bloque 1, porque el lector debe poder verificar la "
-                "cifra directamente en el Observatorio.\n"
+                "cifra directamente en el Observatorio. Ejemplo de violación de esta regla: "
+                "usar un dato de e-commerce (+X%) citado en un artículo de prensa aunque "
+                "el artículo cite al CNMC o a un organismo oficial — si ese dato no aparece "
+                "en pulso_diario.csv ni en los otros CSVs del snapshot, es dato de prensa, "
+                "no del Observatorio. Ponlo en el Bloque 2 como noticia comentada.\n"
                 "9. Las tres noticias del Bloque 2 deben proceder de medios DISTINTOS: no "
                 "repitas dos titulares del mismo medio en la misma edición. Si la "
                 "recopilación de prensa solo trae noticias de uno o dos medios, elige "
@@ -534,7 +541,12 @@ def construir_prompts(
                 "   **Asunto:** <hasta 70 caracteres, un solo hilo conductor>\n"
                 "   **Pre-header:** <una línea que complementa el asunto>\n"
                 "   **Titular:** <4-7 palabras, tesis editorial afirmativa, "
-                "ej. 'Dos Europas del retail.'>\n\n"
+                "ej. 'Dos Europas del retail.'> El Titular debe derivarse de la "
+                "cifra protagonista del Bloque 1 y reflejar el mismo argumento: "
+                "si la cifra es de ventas (CDMGE), el Titular habla de demanda o "
+                "ritmo de ventas; si es de coste laboral, habla de costes o márgenes. "
+                "No puede haber desconexión entre la cifra que el lector ve en el "
+                "exhibit y la tesis que lee en el Titular.\n\n"
                 + bloque1_instr
                 + "C. Bloque 2: **◆ NUESTRA LECTURA** con los 3 titulares "
                 "y su lectura editorial (sin estructura especial). Los tres deben "
@@ -701,7 +713,10 @@ def main() -> int:
     novedad = detectar_novetat_eurostat(periodo_actual, historial, semana_str)
     dies_mes = cdmge_dies_mes_actual(semana_dir / "pulso_diario.csv")
 
-    if novedad:
+    if args.bloc3:
+        bloc3_mode = args.bloc3
+        print(f"  Bloc 3: {bloc3_mode} (sobreescrit per --bloc3)")
+    elif novedad:
         bloc3_mode = "europeu"
         print(f"  Bloc 3: gràfic europeu (Eurostat {periodo_actual} és periode nou)")
     elif dies_mes >= 10:
