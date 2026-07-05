@@ -36,6 +36,9 @@ import yaml
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from macro import detectar_noticias_macro, construir_contexto_macro  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / "config" / ".env")
@@ -835,10 +838,30 @@ def main() -> int:
 
     indicador_bloc3 = bloc3_mode
 
+    # Detecció automàtica de fets macro a la premsa del snapshot. S'injecten
+    # SEMPRE al prompt (via <CONTEXT_MACRO>) perquè Sonnet els ponderi a la
+    # cifra del Bloque 1 i a la predicció, tant si generate.py s'executa dins
+    # el pipeline de schedule.py com si es crida directament. El context passat
+    # amb --context-extra s'hi AFEGEIX (no el substitueix).
+    noticias_macro = detectar_noticias_macro(semana_dir / "recopilacion_prensa.md")
+    contexts = []
+    if noticias_macro:
+        contexts.append(construir_contexto_macro(noticias_macro))
+        print(f"  Fets macro detectats a la premsa: {len(noticias_macro)} "
+              f"→ injectats al prompt")
+        for n in noticias_macro:
+            print(f"    · {n['data']} — {n['titol']}")
+    else:
+        print("  Fets macro detectats a la premsa: cap")
+    if args.context_extra:
+        contexts.append(args.context_extra)
+        print("  Context addicional (--context-extra) afegit al prompt")
+    context_efectiu = "\n\n".join(contexts)
+
     system, messages = construir_prompts(
         semana_dir, semana_str, args.numero, linea, diccionario, historial,
         bloc3_mode=bloc3_mode,
-        context_extra=args.context_extra,
+        context_extra=context_efectiu,
         periodo_actual=periodo_actual,
         mode_editorial=mode_editorial,
         titular=args.titular,

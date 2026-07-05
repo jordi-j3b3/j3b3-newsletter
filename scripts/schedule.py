@@ -27,33 +27,13 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-# Paraules clau macro: BCE, política monetària, PIB, inflació, Banco de España.
-# Inclou variants de moviments de tipus ("alza/subida/bajada/recorte de tipos")
-# que apareixen als titulars mediàtics sense escriure "tipos de interés" explícitament.
-_MACRO_RE = re.compile(
-    r"BCE|Banco Central Europeo|banque centrale|ECB\b|"
-    r"tipos? de inter[eé]s|tipus d[''']inter[eè]s|pol[ií]tica monetari[ao]|"
-    r"alza de tipos|subida de tipos|bajada de tipos|recorte de tipos|"
-    r"pujada de tipus|baixada de tipus|retallada de tipus|"
-    r"endurecimiento monetario|flexibilizaci[oó]n monetaria|"
-    r"PIB|producto interior bruto|producte interior brut|"
-    r"inflaci[oó]n?|inflaci[oó]|IPC|preus? de consum|precios? al consumo|"
-    r"Banco de Espa[nñ]a|Banc d[''']Espanya|"
-    r"\bFed\b|Reserva Federal|"
-    r"eur[ií]bor|Euribor|"
-    r"deuda p[uú]blica|deute p[uú]blic|"
-    r"recesi[oó]n?|recessió|"
-    r"creixement econ[oò]mic|crecimiento econ[oó]mico",
-    re.IGNORECASE,
-)
-
-import requests
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from brevo import _session  # noqa: E402
 from compose import extraer_meta, strip_trazabilidad  # noqa: E402
 from mirror import mirror_to_dashboard  # noqa: E402
+from macro import detectar_noticias_macro  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -94,33 +74,6 @@ def detecta_numero(historial: list) -> int:
     return (max(nums) + 1) if nums else 1
 
 
-def construir_contexto_macro(noticias_macro: list[dict]) -> str:
-    """Formata els fets macro detectats com a bloc de context per a generate.py.
-
-    El text s'injecta dins <CONTEXT_MACRO> al prompt de Sonnet (just abans de
-    <RECOPILACION_PRENSA>). Aquestes notícies JA figuren a la recopilació de
-    premsa; el bloc de context les ressalta perquè el model les ponderi
-    especialment a la cifra del Bloque 1 i, sobretot, a la predicció del Bloque 4.
-    """
-    items = "\n".join(
-        f"- {n['data']} — {n['titol']}" + (f" ({n['font']})" if n.get("font") else "")
-        for n in noticias_macro
-    )
-    return (
-        "CONTEXTO MACROECONÓMICO DE LA SEMANA (detectado automáticamente en la "
-        "prensa del snapshot). Estas noticias ya figuran en <RECOPILACION_PRENSA>; "
-        "se destacan aquí porque marcan el entorno monetario y de consumo de la "
-        "semana:\n\n"
-        f"{items}\n\n"
-        "Tenlos en cuenta especialmente para: (a) la lectura de la cifra del "
-        "Bloque 1, si el contexto monetario o de inflación la condiciona; y "
-        "(b) la predicción del Bloque 4, que debe ser coherente con este entorno "
-        "macro (tipos, inflación, ciclo). NO los conviertas en una de las tres "
-        "noticias del Bloque 2 solo por aparecer aquí: el Bloque 2 sigue sus "
-        "propias reglas de selección (diversidad de medio y noticia de proximidad)."
-    )
-
-
 def executa_pipeline(semana: str, numero: int, context_extra: str = "") -> None:
     py = sys.executable
     # Heretem explícitament tot l'entorn perquè els subprocessos vegin les
@@ -144,25 +97,14 @@ def executa_pipeline(semana: str, numero: int, context_extra: str = "") -> None:
     # 1. Snapshot — congela dades + recopilacion_prensa.md (font de la detecció macro).
     run([py, "scripts/snapshot.py", "--semana", semana])
 
-    # 2. Detecció de fets macro a la premsa del snapshot i injecció com a context
-    #    addicional al prompt de generate.py. Així Sonnet els pondera per al Bloque 1
-    #    i la predicció abans de generar, en lloc de detectar-los només a posteriori
-    #    (que era el comportament antic: la detecció alimentava només la notificació).
-    noticias_macro = detectar_noticias_macro(semana)
-    contexts = []
-    if noticias_macro:
-        contexts.append(construir_contexto_macro(noticias_macro))
-        print(f"[pipeline] {len(noticias_macro)} fet(s) macro detectat(s) a la premsa "
-              f"→ injectats a generate.py via --context-extra")
-    else:
-        print("[pipeline] Cap fet macro detectat a la premsa; generate.py sense context macro.")
-    if context_extra:
-        contexts.append(context_extra)
-        print("[pipeline] Context macro manual (--context-extra) afegit al pipeline.")
-
+    # 2. Generate. La detecció de fets macro a la premsa i la seva injecció al
+    #    prompt de Sonnet les fa ARA generate.py de manera automàtica (mòdul
+    #    macro.py compartit), de manera que passa igual tant si el pipeline
+    #    l'executa aquest script com si es crida generate.py directament. Aquí
+    #    només reenviem el context manual opcional (--context-extra).
     generate_cmd = [py, "scripts/generate.py", "--semana", semana, "--numero", str(numero)]
-    if contexts:
-        generate_cmd += ["--context-extra", "\n\n".join(contexts)]
+    if context_extra:
+        generate_cmd += ["--context-extra", context_extra]
 
     # 3. Generate → 4. Compose → 5. Publica web.
     run(generate_cmd)
@@ -248,38 +190,6 @@ def extreu_metadades(semana: str) -> dict:
         "prediccion": prediccion,
         "html": html_path.read_text(encoding="utf-8") if html_path.exists() else "",
     }
-
-
-def detectar_noticias_macro(semana: str) -> list[dict]:
-    """Cerca notícies amb paraules clau macro a la recopilació de premsa del snapshot."""
-    prensa_path = ROOT / "data" / f"semana-{semana}" / "recopilacion_prensa.md"
-    if not prensa_path.exists():
-        return []
-    results = []
-    current_date = ""
-    current_title = ""
-    current_source = ""
-    current_text = ""
-
-    for line in prensa_path.read_text(encoding="utf-8").splitlines():
-        if re.match(r"^## \d{4}-\d{2}-\d{2}", line):
-            current_date = line[3:].strip()
-        elif line.startswith("### "):
-            if current_title and _MACRO_RE.search(current_text):
-                results.append({"data": current_date, "titol": current_title, "font": current_source})
-            current_title = line[4:].strip()
-            current_source = ""
-            current_text = current_title
-        elif line.startswith("- Fuente: "):
-            current_source = line[10:].strip()
-            current_text += " " + current_source
-        elif line.startswith("- Snippet: "):
-            current_text += " " + line[11:].strip()
-
-    if current_title and _MACRO_RE.search(current_text):
-        results.append({"data": current_date, "titol": current_title, "font": current_source})
-
-    return results
 
 
 def suspen_campanya(campaign_id: str) -> bool:
@@ -466,11 +376,12 @@ def main() -> int:
     desa_historial(historial)
     print(f"Historial actualitzat: {HISTORIAL_PATH.relative_to(ROOT)}")
 
-    # Fets macro detectats automàticament al snapshot. Quan n'hi ha, ja s'han
-    # injectat al prompt de generate.py via --context-extra (vegeu executa_pipeline),
-    # de manera que Sonnet els ha ponderat per al Bloque 1 i la predicció. La
-    # notificació només els llista per a transparència i auditoria.
-    noticias_macro = detectar_noticias_macro(semana)
+    # Fets macro detectats automàticament al snapshot. generate.py ja els ha
+    # injectat al prompt (mòdul macro.py compartit), de manera que Sonnet els
+    # ha ponderat per al Bloque 1 i la predicció. Aquí només els llistem a la
+    # notificació per a transparència i auditoria.
+    noticias_macro = detectar_noticias_macro(
+        ROOT / "data" / f"semana-{semana}" / "recopilacion_prensa.md")
     if noticias_macro:
         macro_items = "".join(
             f"<li><strong>{n['data']}</strong> — {n['titol']}"
