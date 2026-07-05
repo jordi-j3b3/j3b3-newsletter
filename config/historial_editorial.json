@@ -183,5 +183,27 @@
     "asunto": "La productividad del retail español recupera niveles de 2021 — con menos margen",
     "titular": "Productividad sube, margen aguanta.",
     "created_at_utc": "2026-06-28T17:41:52.515132+00:00"
+  },
+  {
+    "numero": 10,
+    "semana": "2026-07-06",
+    "cifra": "+32%",
+    "angulo_bloc1": "El retail español sube costes laborales más rápido de lo que ensancha sus márgenes desde 2018.",
+    "tema_prediccion": "La cuota salarial del retail superará el 63% antes de fin de 2026 si no mejora la productividad.",
+    "noticias": [
+      "El comercio electrónico facturó más de 114.800 millones en España en 2025, un 20,6% más",
+      "El comercio de Granada alerta de una caída media del 28,7% en las ventas tras ocho meses de la ZBE",
+      "Unide avanza en proximidad con la apertura de 26 supermercados en la primera mitad del año"
+    ],
+    "periodo_eurostat": "2026-05",
+    "indicador_bloc3": "cdmge_tasa_anual",
+    "mode_editorial": "P2",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "21",
+    "scheduled_at": "2026-07-06T08:30:00+02:00",
+    "asunto": "El e-commerce crece al 20,6% mientras el retail físico modera — quién gana",
+    "titular": "Dos canales, dos velocidades.",
+    "created_at_utc": "2026-07-05T17:39:42.771526+00:00"
   }
 ]
