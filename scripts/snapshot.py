@@ -4,6 +4,7 @@ Captura snapshot semanal de datos del Observatorio del Comercio.
 Genera data/semana-YYYY-MM-DD/ con:
   - pulso_diario.csv        copia íntegra de cdmge.csv
   - pulso_europeo.csv       copia íntegra de europa_retail_mensual.csv
+  - pulso_icm.csv           tall de icm.csv (sèrie general nacional + branques)
   - recopilacion_prensa.md  serializado de modules.press.fetch_press(),
                             filtrado a la ventana configurada
   - _meta.json              metadatos de la captura
@@ -126,6 +127,75 @@ def copy_csv_optional(src: Path, dst: Path, label: str) -> dict | None:
     return copy_csv(src, dst, label)
 
 
+# Branca "general" de l'ICM = índex de comerç al detall CNAE 47 complet, que és
+# la xifra de titular que publica l'INE. La variant "47 sin 473" exclou les
+# estacions de servei (soroll del preu del combustible).
+ICM_BRANCA_GENERAL = "Comercio al por menor, excepto de vehículos de motor y motocicletas"
+ICM_BRANCA_SIN473 = "Comercio al por menor sin Estaciones de Servicio (47 sin 473)"
+
+
+def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
+    """Extreu del icm.csv complet (~48k files) el tall que necessita la
+    newsletter i el desa a pulso_icm.csv:
+      - sèrie general nacional (CNAE 47 i 47-sin-473), preus nominals i
+        constants, indicadors index / var_anual / var_mitjana_acum, últims
+        `meses` mesos.
+      - desglossament per branca del mes més recent (real, var_anual) per
+        poder explicar ON es concentra el moviment.
+    """
+    if not src.exists():
+        print(f"  ICM: no trobat a {src}, s'omet del snapshot", file=sys.stderr)
+        return None
+
+    df = pd.read_csv(src)
+    df = df[df["ambit"] == "nacional"].copy()
+    if df.empty:
+        print(f"  ICM: sense files nacionals a {src}, s'omet", file=sys.stderr)
+        return None
+
+    df["data"] = pd.to_datetime(df["data"], errors="coerce")
+    periodes = sorted(df["data"].dropna().unique())
+    cutoff = periodes[-meses] if len(periodes) >= meses else periodes[0]
+
+    general = df[
+        df["branca"].isin([ICM_BRANCA_GENERAL, ICM_BRANCA_SIN473])
+        & df["tipus"].isin(["nominal", "real"])
+        & df["indicador"].isin(["index", "var_anual", "var_mitjana_acum"])
+        & (df["data"] >= cutoff)
+    ]
+
+    # Desglossament per branca del mes més recent (real, var_anual)
+    ult_data = df["data"].max()
+    branques = df[
+        (df["tipus"] == "real")
+        & (df["indicador"] == "var_anual")
+        & (df["data"] == ult_data)
+    ]
+
+    out = pd.concat([general, branques]).drop_duplicates()
+    cols = ["ambit", "tipus", "branca", "indicador", "any", "mes", "data", "valor"]
+    out = out[cols].sort_values(["tipus", "branca", "indicador", "data"])
+    out.to_csv(dst, index=False)
+
+    # Metadades: últim periode i valor de titular (general real var_anual)
+    gen_real_va = df[
+        (df["branca"] == ICM_BRANCA_GENERAL)
+        & (df["tipus"] == "real")
+        & (df["indicador"] == "var_anual")
+    ].sort_values("data")
+    ultim = gen_real_va.iloc[-1] if not gen_real_va.empty else None
+    ultimo_periodo = ult_data.strftime("%Y-%m") if pd.notna(ult_data) else ""
+    lag_dias = (datetime.now() - ult_data.to_pydatetime()).days if pd.notna(ult_data) else None
+
+    return {
+        "origen": str(src),
+        "filas": len(out),
+        "ultimo_periodo": ultimo_periodo,
+        "lag_dias": lag_dias,
+        "general_real_var_anual": float(ultim["valor"]) if ultim is not None else None,
+    }
+
+
 def capture_press(out_md: Path, observatori_path: Path, dias: int) -> dict:
     """Llama a modules.press.fetch_press() del Observatorio y serializa
     los items de los últimos `dias` días a markdown legible."""
@@ -229,12 +299,14 @@ def main() -> int:
     productivitat_src = obs_path / SETTINGS["snapshot"]["productivitat_origen"]
     ocupacio_src = obs_path / SETTINGS["snapshot"]["ocupacio_origen"]
     ipc_src = obs_path / SETTINGS["snapshot"]["ipc_origen"]
+    icm_src = obs_path / SETTINGS["snapshot"]["icm_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
     productivitat_dst = semana_dir / "productivitat.csv"
     ocupacio_dst = semana_dir / "ocupacio_comerc.csv"
     ipc_dst = semana_dir / "ipc.csv"
+    icm_dst = semana_dir / "pulso_icm.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -272,6 +344,15 @@ def main() -> int:
         print(f"  ipc.csv              · {ipc_info['filas']:>6} filas · "
               f"últim periode {ipc_info['ultimo_periode']}")
 
+    icm_info = capture_icm(icm_src, icm_dst)
+    if icm_info:
+        va = icm_info.get("general_real_var_anual")
+        print(f"  pulso_icm.csv        · {icm_info['filas']:>6} filas · "
+              f"últim periode {icm_info['ultimo_periodo']} · "
+              f"general real var. anual {va:+.1f}%" if va is not None else
+              f"  pulso_icm.csv        · {icm_info['filas']:>6} filas · "
+              f"últim periode {icm_info['ultimo_periodo']}")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -289,6 +370,7 @@ def main() -> int:
         "productivitat": productivitat_info,
         "ocupacio": ocupacio_info,
         "ipc": ipc_info,
+        "icm": icm_info,
         "prensa": prensa_info,
     }
     (semana_dir / "_meta.json").write_text(

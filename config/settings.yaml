@@ -32,6 +32,7 @@ snapshot:
   productivitat_origen: "data/cache/productivitat.csv"
   ocupacio_origen: "data/cache/ocupacio_comerc.csv"
   ipc_origen: "data/cache/ipc.csv"
+  icm_origen: "data/cache/icm.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.

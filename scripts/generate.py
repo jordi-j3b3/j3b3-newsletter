@@ -177,7 +177,8 @@ def parse_args() -> argparse.Namespace:
                    help="Titular fix (mode P2). Si buit, el mode es detecta "
                         "automàticament a partir de les actualitzacions del snapshot.")
     p.add_argument("--bloc3", default="",
-                   choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto"],
+                   choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
+                            "icm_ramas"],
                    help="Sobreescriu la selecció automàtica del bloc 3.")
     return p.parse_args()
 
@@ -297,6 +298,65 @@ def slice_ipc(csv_path: Path, mesos: int = 24) -> str:
     return df.tail(mesos).to_csv(index=False)
 
 
+ICM_BRANCA_GENERAL = "Comercio al por menor, excepto de vehículos de motor y motocicletas"
+
+# Etiquetes curtes per a les branques de l'ICM (estalvia tokens al prompt).
+ICM_BRANCA_CURTA = {
+    "Comercio al por menor, excepto de vehículos de motor y motocicletas": "Total CNAE 47",
+    "Comercio al por menor sin Estaciones de Servicio (47 sin 473)": "47 sin combustible",
+    "Comercio al por menor de productos alimenticios, bebidas y tabaco en establecimientos especializados": "Alimentación especializada",
+    "Comercio al por menor en establecimientos no especializados": "No especializado (súper/hiper)",
+    "Comercio al por menor en establecimientos no especializados, con predominio en productos alimenticios, bebidas y tabaco": "No especializado alimentación",
+    "Otro comercio al por menor en establecimientos no especializados": "No especializado no alim.",
+    "Comercio al por menor de equipos para las tecnologías de la información y las comunicaciones en establecimientos especializados": "Equipos TIC",
+    "Comercio al por menor de otros artículos de uso doméstico en establecimientos especializados": "Equipamiento del hogar",
+    "Comercio al por menor de artículos culturales y recreativos en establecimientos especializados": "Cultura y ocio",
+    "Comercio al por menor de otros artículos en establecimientos especializados": "Otros especializados",
+    "Comercio al por menor de combustible para la automoción en establecimientos especializados": "Combustible",
+    "Comercio al por menor en puestos de venta y en mercadillos": "Mercadillos",
+    "Comercio al por menor por correspondencia o Internet": "Correo/Internet",
+    "Comercio al por menor no realizado ni en establecimientos, ni en puestos de venta ni en mercadillos": "Fuera de establecimiento",
+}
+
+
+def slice_icm(csv_path: Path, mesos: int = 15) -> str:
+    """Formata el pulso_icm.csv per al prompt en dos blocs compactes:
+      1. Sèrie general (CNAE 47) mes a mes: var. anual i acumulada,
+         nominal i real (constants) — mostra el gir a negatiu.
+      2. Desglossament per branca del mes més recent (real, var. anual).
+    """
+    df = pd.read_csv(csv_path, parse_dates=["data"])
+    df["periode"] = df["data"].dt.strftime("%Y-%m")
+
+    # ── Bloc 1: sèrie general mes a mes ──
+    gen = df[df["branca"] == ICM_BRANCA_GENERAL].copy()
+    piv = gen.pivot_table(index="periode", columns=["tipus", "indicador"],
+                          values="valor", aggfunc="first")
+    piv = piv.tail(mesos)
+    piv.columns = [f"{t}_{i}" for t, i in piv.columns]
+    prefer = ["real_var_anual", "nominal_var_anual",
+              "real_var_mitjana_acum", "nominal_var_mitjana_acum",
+              "real_index", "nominal_index"]
+    cols = [c for c in prefer if c in piv.columns] + \
+           [c for c in piv.columns if c not in prefer]
+    linia1 = ("Serie general (Comercio al por menor total, CNAE 47) · "
+              "variacion interanual y acumulada, precios corrientes (nominal) "
+              "y constantes (real):\n" + piv[cols].round(1).to_csv())
+
+    # ── Bloc 2: branques del mes més recent ──
+    ult = df["data"].max()
+    br = df[(df["data"] == ult) & (df["tipus"] == "real") &
+            (df["indicador"] == "var_anual") &
+            (df["branca"] != ICM_BRANCA_GENERAL)].copy()
+    br["etiqueta"] = br["branca"].map(ICM_BRANCA_CURTA).fillna(br["branca"])
+    br = br[["etiqueta", "valor"]].sort_values("valor", ascending=False)
+    linia2 = (f"\nDesglose por rama · variacion interanual real · "
+              f"{ult.strftime('%Y-%m')} (mes mas reciente):\n" +
+              br.round(1).to_csv(index=False))
+
+    return linia1 + linia2
+
+
 # ---- DETECCIÓ DE MODE EDITORIAL ----
 
 def detectar_mode_editorial(
@@ -314,6 +374,15 @@ def detectar_mode_editorial(
         return "P1", "primera edició, sense historial de comparació"
 
     ultima = previes[-1]
+
+    # ICM: nou mes de la sèrie oficial de vendes minoristes (indicador de
+    # titular de l'INE). Prioritari sobre la resta perquè és la mesura canònica
+    # del pols del sector. Si l'entrada anterior no registrava ICM (font nova al
+    # pipeline), un ICM disponible ja compta com a novetat que mana.
+    periodo_icm = meta.get("icm", {}).get("ultimo_periodo", "")
+    prev_icm = ultima.get("periodo_icm")
+    if periodo_icm and (prev_icm is None or periodo_icm > str(prev_icm)):
+        return "P1", f"ICM nou mes {periodo_icm} (anterior: {prev_icm or 'sense registre'})"
 
     # Eurostat: nou periode mensual
     periodo_eurostat = meta.get("pulso_europeo", {}).get("ultimo_periodo", "")
@@ -383,6 +452,24 @@ def construir_prompts(
             "tasa anual está acumulada dentro del mes: los primeros días, con "
             "pocos días acumulados, son volátiles; la señal fiable es la "
             "tendencia hacia el cierre del mes."
+        )
+    elif bloc3_mode == "icm_ramas":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (DESGLOSE ICM POR RAMAS — muestra la "
+            "polarización dentro del sector):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** Ventas minoristas por rama · <mes> (variación real)\n\n"
+            "   - Rama 1: <valor>%\n"
+            "   - Rama 2: <valor>%\n"
+            "   - ...\n\n"
+            "   <2-3 párrafos interpretando qué ramas caen y cuáles resisten, "
+            "conectando con la contracción general del Bloque 1>\n\n"
+            "   Usa el 'Desglose por rama' de <PULSO_ICM_INE> (variación interanual "
+            "real del mes más reciente). Selecciona 5-8 ramas relevantes que muestren "
+            "el contraste (algunas en negativo, otras en positivo). compose.py las "
+            "renderiza como barras divergentes (positivo azul, negativo rojo). "
+            "Ordena de mayor a menor valor. El subtítulo debe llevar el mes y la "
+            "palabra 'real', sin 'variación interanual' (compose.py añade la leyenda)."
         )
     elif bloc3_mode == "editorial_contexto":
         bloque3_instr = (
@@ -522,6 +609,16 @@ def construir_prompts(
                 "el artículo cite al CNMC o a un organismo oficial — si ese dato no aparece "
                 "en pulso_diario.csv ni en los otros CSVs del snapshot, es dato de prensa, "
                 "no del Observatorio. Ponlo en el Bloque 2 como noticia comentada.\n"
+                "8bis. <PULSO_ICM_INE> (Índice de Comercio al por Menor del INE) es el "
+                "indicador OFICIAL de referencia de las ventas del comercio minorista "
+                "español en su conjunto — es la cifra de titular que publica el INE cada "
+                "mes. Su variación interanual a precios constantes (real) es la medida "
+                "canónica del pulso del sector. Cuando el ICM tiene un mes fresco, es la "
+                "fuente PREFERENTE para la cifra protagonista del Bloque 1 frente al CDMGE "
+                "(pulso_diario.csv), que mide solo grandes cadenas y actúa como suelo del "
+                "ciclo, no como media sectorial. Usa el CDMGE como contraste (grandes "
+                "cadenas vs conjunto del sector), no como protagonista, si el ICM está "
+                "disponible y es más reciente o igual de reciente.\n"
                 "9. Las tres noticias del Bloque 2 deben proceder de medios DISTINTOS: no "
                 "repitas dos titulares del mismo medio en la misma edición. Si la "
                 "recopilación de prensa solo trae noticias de uno o dos medios, elige "
@@ -623,6 +720,14 @@ def construir_prompts(
         ipc_data = slice_ipc(ipc_path, mesos=24)
         parts.extend([
             f"<IPC_COMERC periodo=ultims_24_mesos>\n{ipc_data}\n</IPC_COMERC>",
+            "",
+        ])
+
+    icm_path = semana_dir / "pulso_icm.csv"
+    if icm_path.exists():
+        icm_data = slice_icm(icm_path, mesos=15)
+        parts.extend([
+            f"<PULSO_ICM_INE periodo=ultims_15_mesos>\n{icm_data}\n</PULSO_ICM_INE>",
             "",
         ])
 
@@ -799,6 +904,7 @@ def main() -> int:
                 client, modelo, args.numero, semana_str, borrador
             )
             entry["periodo_eurostat"] = periodo_actual
+            entry["periodo_icm"] = meta_dict.get("icm", {}).get("ultimo_periodo", "")
             entry["indicador_bloc3"] = indicador_bloc3
             entry["mode_editorial"] = mode_editorial
             if args.titular:

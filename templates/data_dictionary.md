@@ -220,7 +220,51 @@ Filtrar sempre `pais_codi='ES'` i `sex='T'` per al total espanyol. Dada d'estruc
 
 ---
 
-## 7. Reglas editoriales de referencia a las fuentes
+## 7. Índice de Comercio al por Menor (ICM) — `pulso_icm.csv`
+
+**Fuente**: INE, *Índices de Comercio al por Menor* (ICM), base 2021 = 100.
+Es la **estadística oficial de referencia de las ventas del comercio
+minorista español** — la cifra de titular que el INE publica cada mes.
+
+**Ámbito**: comercio al por menor, excepto vehículos de motor (CNAE 47).
+A diferencia del CDMGE (solo grandes cadenas), el ICM mide el **conjunto del
+sector**: grandes, medianas y pequeñas empresas.
+
+**Frecuencia**: mensual. **Lag típico**: 30-35 días.
+
+### Esquema
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `ambit` | string | Siempre `nacional` en este slice |
+| `tipus` | string | `nominal` (precios corrientes) o `real` (precios constantes, deflactado) |
+| `branca` | string | Rama del comercio. La general es `Comercio al por menor, excepto de vehículos de motor y motocicletas` (= Total CNAE 47) |
+| `indicador` | string | `index` (nivel base 2021=100), `var_anual` (variación interanual %), `var_mitjana_acum` (variación media acumulada del año %) |
+| `any`, `mes`, `data` | — | Periodo de la observación |
+| `valor` | float | Valor según indicador (% para las variaciones) |
+
+### Cifra de referencia (la que suele ir al titular)
+
+**`tipus=real` + `indicador=var_anual` + `branca=Total CNAE 47`**: la variación
+interanual de las ventas **a precios constantes** (descontada la inflación).
+Es la medida canónica del pulso real del sector: si es negativa, las ventas
+reales caen aunque la facturación nominal crezca.
+
+### Aviso interpretativo
+
+- El dato **real** (constante) manda sobre el **nominal**: un nominal positivo
+  con real negativo significa que el sector solo crece por precios, no por
+  volumen vendido.
+- El ICM es el **conjunto del sector**; el CDMGE (`pulso_diario.csv`) es solo
+  **grandes cadenas**. Contrastarlos revela la **polarización**: si el CDMGE
+  crece y el ICM real cae, las grandes capturan la demanda mientras la media
+  del sector se contrae.
+- Citar como "el Índice de Comercio al por Menor del INE" o "las ventas del
+  comercio minorista según el INE", sin código de tabla ni base del índice.
+
+---
+
+## 8. Reglas editoriales de referencia a las fuentes
 
 Las referencias técnicas y metodológicas (códigos de serie, bases de índice,
 números de tabla) **no se citan en el cuerpo de los bloques editoriales**.
