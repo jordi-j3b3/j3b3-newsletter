@@ -755,7 +755,7 @@ def construir_prompts(
                 f"<AVISO_FRESCOR_DADES>\n"
                 f"El darrer periode Eurostat disponible és {periodo_actual}, "
                 f"que té {lag} setmanes de retard respecte la data d'enviament ({semana_str}). "
-                f"Aplica la regla 12: la cifra protagonista del Bloque 1 DOIT procedir "
+                f"Aplica la regla 12: la cifra protagonista del Bloque 1 ha de procedir "
                 f"del CDMGE (pulso_diario.csv), no de Eurostat.\n"
                 f"</AVISO_FRESCOR_DADES>",
                 "",

@@ -46,3 +46,17 @@ Tareas pendientes ordenadas por momento de ejecución.
     `https://comertia.com/feed/`. Si 200, substituir `google_comertia`.
   Tots tres estan actius via Google News ara mateix. La migració a feed directe
   redueix dependència de Google i millora la latència de les entrades.
+
+- **Pages: migrar a desplegament Actions-based amb `concurrency` group** · Prioridad: baixa
+  Ara el site (pulso.j3b3.com) usa GitHub Pages **legacy branch-based** (source
+  `main` /docs), que dispara el workflow gestionat "pages build and deployment"
+  a cada push sense cap control de concurrència. Amb diversos push seguits (p.ex.
+  3 en 35 min el 2026-07-05), els deploys es solapen i el darrer falla amb
+  "Deployment failed, try again later." (build OK, deploy fallat en ~10s). El fix
+  puntual és re-disparar el build (`gh api -X POST repos/.../pages/builds`), però
+  la solució permanent és migrar a **Pages Actions-based**: un workflow propi al
+  repo amb `actions/upload-pages-artifact` + `actions/deploy-pages` i un bloc
+  `concurrency: { group: "pages", cancel-in-progress: true }`, que serialitza els
+  deploys i cancel·la els obsolets en lloc de fer-los xocar. No és urgent (les
+  fallades són transitòries i sense impacte de contingut), però elimina l'error
+  recurrent per pushos ràpids seguits.
