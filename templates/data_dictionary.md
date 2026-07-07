@@ -264,43 +264,45 @@ reales caen aunque la facturación nominal crezca.
 
 ---
 
-## 8. Márgenes sobre ventas por rama — `marges_branca.csv`
+## 8. Márgenes sobre ventas por rama — `marges_branca_ine.csv`
 
-**Fuente**: PATECO (Oficina Comercio y Territorio), *Informe de la Distribución
-Comercial en la Comunitat Valenciana. Perspectivas 2026/2027* (IDC 26/27), tabla
-de la p.31. PATECO elabora la serie a partir de estadística oficial (INE,
-*Encuesta Anual de Comercio* / cuentas de empresas) con metodología propia.
+**Fuente**: INE, *Estadística Estructural de Empresas: Sector Comercio* (evolución
+de la antigua *Encuesta Anual de Comercio*), tabla 76818, Total Nacional. Fuente
+primaria oficial, descargable por API. Sustituye a la estimación anterior de
+PATECO.
 
-**Ámbito**: margen sobre ventas (%) de las ramas del comercio minorista español,
-por grupo de dos dígitos de la CNAE 47 (agregación de PATECO, N470–N479).
+**Definición**: `margen = Excedente bruto de explotación (EBE) / Cifra de negocios × 100`.
+Es el *gross operating rate* estándar de las estadísticas estructurales de
+empresas: cuánto de cada euro vendido queda como excedente bruto de explotación
+(antes de amortizaciones y resultado financiero). Se calcula, no se estima.
 
-**Frecuencia**: **anual**. Solo se actualiza al publicarse un nuevo informe IDC
-de PATECO (una vez al año). No es un dato de coyuntura: es rentabilidad
-estructural, no ventas.
+**Ámbito**: ramas del comercio minorista español, CNAE 47 a 3 dígitos.
+
+**Frecuencia**: **anual**. Es rentabilidad estructural, no coyuntura.
 
 ### Esquema
 
 | Columna | Tipo | Descripción |
 |---|---|---|
-| `any` | int | Año de referencia (2019, 2022, 2023, 2024, 2025) |
-| `cnae` | string | Código de rama (`N470`–`N479`; no existe N473 en la tabla) |
-| `branca` | string | Nombre de la rama |
-| `marge_vendes_pct` | float | Margen sobre ventas, en porcentaje |
-| `font` | string | Fuente (`PATECO IDC 26/27`) |
-| `verificat` | bool | `True` solo si el valor se ha contrastado con el PDF original |
+| `any` | int | Año de referencia (2018–2024) |
+| `cnae` | int | Código de rama INE a 3 dígitos (471–479) |
+| `branca` | string | Nombre legible de la rama |
+| `marge_vendes_pct` | float | EBE / cifra de negocios × 100, a 1 decimal |
+| `font` | string | Referencia INE + URL de la API |
+| `verificat` | bool | `True` — dato oficial de fuente primaria |
 
-### ⚠ Gate de verificación (crítico)
+### Cobertura y gate
 
-Los valores actuales provienen de una **lectura aproximada de una captura de
-pantalla**, no del PDF original: `verificat=False` en todas las filas.
+Ramas 471–479 **excepto la 478** (puestos de venta y mercadillos): el INE no
+publica sus magnitudes en esta tabla, así que queda fuera de la serie.
 
-**Mientras `verificat` no sea `True`, esta serie NO se inyecta al prompt** (el
-snapshot la captura para tener histórico, pero `generate.py` no la ofrece como
-ángulo editorial). Por tanto, si ves un bloque `<MARGES_BRANCA>` en el mensaje,
-es porque ya está verificada y puedes usarla con normalidad. No cites márgenes
-por rama que no aparezcan en ese bloque.
+El **gate `verificat=True` sigue vigente**: `generate.py` solo inyecta el bloque
+`<MARGES_BRANCA>` al prompt si el dataset tiene `verificat=True`. La serie del INE
+lo cumple, así que el ángulo está disponible. Si ves un bloque `<MARGES_BRANCA>`
+en el mensaje, úsalo con normalidad; no cites márgenes por rama que no aparezcan
+en él.
 
-### Ángulo editorial (cuando esté disponible)
+### Ángulo editorial
 
 El uso previsto es **cruzar el margen con el crecimiento de ventas por rama**
 del ICM (`pulso_icm.csv`): identificar la disociación entre volumen y
@@ -309,9 +311,10 @@ rentabilidad), y cuáles al revés. Es el modo de bloque 3 `marges_branca`.
 
 ### Regla de citación
 
-Citar como **"PATECO"** o "el informe de la distribución comercial de PATECO",
-sin el código `IDC 26/27` ni el número de página en el cuerpo. Al ser una
-estimación pendiente de verificación, no publicar hasta que `verificat=True`.
+Citar como **"el INE"** o "la Encuesta Anual de Comercio del INE", sin el número
+de tabla ni el detalle metodológico en el cuerpo. El margen es el excedente bruto
+de explotación sobre ventas; si conviene, describirlo como "margen de explotación"
+en lenguaje legible.
 
 ---
 

@@ -366,8 +366,8 @@ def slice_marges(csv_path: Path) -> str:
     """Marge sobre vendes (%) per branca comercial, pivotat branca × any.
 
     Pensat per creuar-lo amb l'ICM (vendes per branca): quines branques creixen
-    en vendes però perden marge, i a l'inrevés. Font PATECO / Encuesta Anual de
-    Comercio (INE), sèrie anual estructural."""
+    en vendes però perden marge, i a l'inrevés. Font INE, Encuesta Anual de
+    Comercio (EEE Comercio); marge = EBE/vendes, sèrie anual estructural."""
     df = pd.read_csv(csv_path)
     piv = df.pivot_table(index="branca", columns="any",
                          values="marge_vendes_pct", aggfunc="first")
@@ -447,7 +447,7 @@ def construir_prompts(
     bloc3_mode: 'europeu', 'cdmge_tasa_anual', 'editorial_contexto',
         'icm_ramas' o 'marges_branca'.
     marges_disponible: injecta <MARGES_BRANCA> al prompt només si és True (el
-        dataset de marges existeix al snapshot I està verificat contra el PDF).
+        dataset de marges existeix al snapshot I té verificat=True).
     """
 
     cdmge_data = slice_cdmge(semana_dir / "pulso_diario.csv", dias=60)
@@ -511,8 +511,9 @@ def construir_prompts(
             "   Usa EXCLUSIVAMENTE los valores de <MARGES_BRANCA>. Selecciona 5-8 ramas "
             "que muestren el contraste. Ordena de mayor a menor margen. compose.py las "
             "renderiza como barras. El subtítulo debe llevar el año, sin 'variación'. "
-            "IMPORTANTE: la fuente es PATECO (Informe de la Distribución Comercial CV), "
-            "cítala como 'PATECO' en el cuerpo, nunca el código técnico."
+            "IMPORTANTE: la fuente es el INE (Encuesta Anual de Comercio); el margen es "
+            "el excedente bruto de explotación sobre ventas. Cítala como 'el INE' en el "
+            "cuerpo, nunca el código técnico ni el número de tabla."
         )
     elif bloc3_mode == "editorial_contexto":
         bloque3_instr = (
@@ -775,13 +776,13 @@ def construir_prompts(
         ])
 
     # Marges per branca: només si el dataset està verificat (gate verificat=True).
-    # Mentre sigui una estimació sense contrastar amb el PDF de PATECO, no s'injecta
-    # al prompt i l'angle editorial de marges queda latent.
+    # La sèrie ve de l'INE (Encuesta Anual de Comercio, marge=EBE/vendes) i és
+    # font primària verificada; si mai es marqués verificat=False, l'angle queda latent.
     marges_path = semana_dir / "marges_branca.csv"
     if marges_disponible and marges_path.exists():
         marges_data = slice_marges(marges_path)
         parts.extend([
-            f"<MARGES_BRANCA font=PATECO periodicidad=anual>\n{marges_data}\n</MARGES_BRANCA>",
+            f"<MARGES_BRANCA font=INE periodicidad=anual>\n{marges_data}\n</MARGES_BRANCA>",
             "",
         ])
 
@@ -873,7 +874,7 @@ def main() -> int:
     dies_mes = cdmge_dies_mes_actual(semana_dir / "pulso_diario.csv")
 
     # Gate de marges: l'angle de marges per branca només és vàlid si el dataset
-    # està verificat contra el PDF de PATECO (verificat=True al snapshot).
+    # té verificat=True al snapshot (avui, sèrie oficial de l'INE).
     marges_meta_info = meta_dict.get("marges") or {}
     marges_verificat = bool(marges_meta_info.get("verificat"))
 
