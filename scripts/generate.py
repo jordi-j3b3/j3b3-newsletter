@@ -181,8 +181,10 @@ def parse_args() -> argparse.Namespace:
                         "automàticament a partir de les actualitzacions del snapshot.")
     p.add_argument("--bloc3", default="",
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
-                            "icm_ramas"],
-                   help="Sobreescriu la selecció automàtica del bloc 3.")
+                            "icm_ramas", "marges_branca"],
+                   help="Sobreescriu la selecció automàtica del bloc 3. "
+                        "'marges_branca' només és vàlid si el dataset de marges "
+                        "està verificat (verificat=True al snapshot).")
     return p.parse_args()
 
 
@@ -360,6 +362,20 @@ def slice_icm(csv_path: Path, mesos: int = 15) -> str:
     return linia1 + linia2
 
 
+def slice_marges(csv_path: Path) -> str:
+    """Marge sobre vendes (%) per branca comercial, pivotat branca × any.
+
+    Pensat per creuar-lo amb l'ICM (vendes per branca): quines branques creixen
+    en vendes però perden marge, i a l'inrevés. Font PATECO / Encuesta Anual de
+    Comercio (INE), sèrie anual estructural."""
+    df = pd.read_csv(csv_path)
+    piv = df.pivot_table(index="branca", columns="any",
+                         values="marge_vendes_pct", aggfunc="first")
+    piv = piv.reindex(sorted(piv.columns), axis=1)
+    return ("Marge sobre vendes (%) per branca del comerç minorista · "
+            "anys disponibles:\n" + piv.round(1).to_csv())
+
+
 # ---- DETECCIÓ DE MODE EDITORIAL ----
 
 def detectar_mode_editorial(
@@ -422,12 +438,16 @@ def construir_prompts(
     periodo_actual: str = "",
     mode_editorial: str = "P1",
     titular: str = "",
+    marges_disponible: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     """Construye (system, messages) para la llamada al modelo.
 
     mode_editorial: 'P1' (dada fresca mana) o 'P2' (tesi mana, dada explica).
     titular: fixat en mode P2; buit en P1.
-    bloc3_mode: 'europeu', 'cdmge_tasa_anual' o 'editorial_contexto'.
+    bloc3_mode: 'europeu', 'cdmge_tasa_anual', 'editorial_contexto',
+        'icm_ramas' o 'marges_branca'.
+    marges_disponible: injecta <MARGES_BRANCA> al prompt només si és True (el
+        dataset de marges existeix al snapshot I està verificat contra el PDF).
     """
 
     cdmge_data = slice_cdmge(semana_dir / "pulso_diario.csv", dias=60)
@@ -473,6 +493,26 @@ def construir_prompts(
             "renderiza como barras divergentes (positivo azul, negativo rojo). "
             "Ordena de mayor a menor valor. El subtítulo debe llevar el mes y la "
             "palabra 'real', sin 'variación interanual' (compose.py añade la leyenda)."
+        )
+    elif bloc3_mode == "marges_branca":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (MÁRGENES POR RAMA — rentabilidad "
+            "estructural del comercio minorista):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** Margen sobre ventas por rama · <año más reciente>\n\n"
+            "   - Rama 1: <valor>%\n"
+            "   - Rama 2: <valor>%\n"
+            "   - ...\n\n"
+            "   <2-3 párrafos con el ángulo editorial: cruza el margen de "
+            "<MARGES_BRANCA> con el crecimiento de ventas por rama de <PULSO_ICM_INE>. "
+            "Busca la disociación: ¿qué ramas CRECEN en ventas pero PIERDEN margen "
+            "(volumen a costa de rentabilidad), y cuáles hacen lo contrario "
+            "(menos ventas pero más margen)? Ese contraste es la tesis del bloque.>\n\n"
+            "   Usa EXCLUSIVAMENTE los valores de <MARGES_BRANCA>. Selecciona 5-8 ramas "
+            "que muestren el contraste. Ordena de mayor a menor margen. compose.py las "
+            "renderiza como barras. El subtítulo debe llevar el año, sin 'variación'. "
+            "IMPORTANTE: la fuente es PATECO (Informe de la Distribución Comercial CV), "
+            "cítala como 'PATECO' en el cuerpo, nunca el código técnico."
         )
     elif bloc3_mode == "editorial_contexto":
         bloque3_instr = (
@@ -734,6 +774,17 @@ def construir_prompts(
             "",
         ])
 
+    # Marges per branca: només si el dataset està verificat (gate verificat=True).
+    # Mentre sigui una estimació sense contrastar amb el PDF de PATECO, no s'injecta
+    # al prompt i l'angle editorial de marges queda latent.
+    marges_path = semana_dir / "marges_branca.csv"
+    if marges_disponible and marges_path.exists():
+        marges_data = slice_marges(marges_path)
+        parts.extend([
+            f"<MARGES_BRANCA font=PATECO periodicidad=anual>\n{marges_data}\n</MARGES_BRANCA>",
+            "",
+        ])
+
     if bloc3_mode == "cdmge_tasa_anual":
         mes_clau, cdmge_clau = slice_cdmge_dias_clave(semana_dir / "pulso_diario.csv")
         parts.extend([
@@ -821,9 +872,20 @@ def main() -> int:
     novedad = detectar_novetat_eurostat(periodo_actual, historial, semana_str)
     dies_mes = cdmge_dies_mes_actual(semana_dir / "pulso_diario.csv")
 
+    # Gate de marges: l'angle de marges per branca només és vàlid si el dataset
+    # està verificat contra el PDF de PATECO (verificat=True al snapshot).
+    marges_meta_info = meta_dict.get("marges") or {}
+    marges_verificat = bool(marges_meta_info.get("verificat"))
+
     if args.bloc3:
         bloc3_mode = args.bloc3
-        print(f"  Bloc 3: {bloc3_mode} (sobreescrit per --bloc3)")
+        if bloc3_mode == "marges_branca" and not marges_verificat:
+            print("  Bloc 3: 'marges_branca' sol·licitat però el dataset de marges "
+                  "NO està verificat (verificat=False) o no és al snapshot; "
+                  "recau a context editorial", file=sys.stderr)
+            bloc3_mode = "editorial_contexto"
+        else:
+            print(f"  Bloc 3: {bloc3_mode} (sobreescrit per --bloc3)")
     elif novedad:
         bloc3_mode = "europeu"
         print(f"  Bloc 3: gràfic europeu (Eurostat {periodo_actual} és periode nou)")
@@ -865,6 +927,7 @@ def main() -> int:
         periodo_actual=periodo_actual,
         mode_editorial=mode_editorial,
         titular=args.titular,
+        marges_disponible=marges_verificat,
     )
 
     modelo = SETTINGS["modelo"]["modelo"]
@@ -915,6 +978,7 @@ def main() -> int:
     for fname in [
         "pulso_diario.csv", "pulso_europeo.csv", "recopilacion_prensa.md",
         "_meta.json", "productivitat.csv", "ocupacio_comerc.csv", "ipc.csv",
+        "pulso_icm.csv", "marges_branca.csv",
     ]:
         src = semana_dir / fname
         if src.exists():

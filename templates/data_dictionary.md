@@ -264,7 +264,58 @@ reales caen aunque la facturación nominal crezca.
 
 ---
 
-## 8. Reglas editoriales de referencia a las fuentes
+## 8. Márgenes sobre ventas por rama — `marges_branca.csv`
+
+**Fuente**: PATECO (Oficina Comercio y Territorio), *Informe de la Distribución
+Comercial en la Comunitat Valenciana. Perspectivas 2026/2027* (IDC 26/27), tabla
+de la p.31. PATECO elabora la serie a partir de estadística oficial (INE,
+*Encuesta Anual de Comercio* / cuentas de empresas) con metodología propia.
+
+**Ámbito**: margen sobre ventas (%) de las ramas del comercio minorista español,
+por grupo de dos dígitos de la CNAE 47 (agregación de PATECO, N470–N479).
+
+**Frecuencia**: **anual**. Solo se actualiza al publicarse un nuevo informe IDC
+de PATECO (una vez al año). No es un dato de coyuntura: es rentabilidad
+estructural, no ventas.
+
+### Esquema
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `any` | int | Año de referencia (2019, 2022, 2023, 2024, 2025) |
+| `cnae` | string | Código de rama (`N470`–`N479`; no existe N473 en la tabla) |
+| `branca` | string | Nombre de la rama |
+| `marge_vendes_pct` | float | Margen sobre ventas, en porcentaje |
+| `font` | string | Fuente (`PATECO IDC 26/27`) |
+| `verificat` | bool | `True` solo si el valor se ha contrastado con el PDF original |
+
+### ⚠ Gate de verificación (crítico)
+
+Los valores actuales provienen de una **lectura aproximada de una captura de
+pantalla**, no del PDF original: `verificat=False` en todas las filas.
+
+**Mientras `verificat` no sea `True`, esta serie NO se inyecta al prompt** (el
+snapshot la captura para tener histórico, pero `generate.py` no la ofrece como
+ángulo editorial). Por tanto, si ves un bloque `<MARGES_BRANCA>` en el mensaje,
+es porque ya está verificada y puedes usarla con normalidad. No cites márgenes
+por rama que no aparezcan en ese bloque.
+
+### Ángulo editorial (cuando esté disponible)
+
+El uso previsto es **cruzar el margen con el crecimiento de ventas por rama**
+del ICM (`pulso_icm.csv`): identificar la disociación entre volumen y
+rentabilidad — qué ramas crecen en ventas pero pierden margen (crecen a costa de
+rentabilidad), y cuáles al revés. Es el modo de bloque 3 `marges_branca`.
+
+### Regla de citación
+
+Citar como **"PATECO"** o "el informe de la distribución comercial de PATECO",
+sin el código `IDC 26/27` ni el número de página en el cuerpo. Al ser una
+estimación pendiente de verificación, no publicar hasta que `verificat=True`.
+
+---
+
+## 9. Reglas editoriales de referencia a las fuentes
 
 Las referencias técnicas y metodológicas (códigos de serie, bases de índice,
 números de tabla) **no se citan en el cuerpo de los bloques editoriales**.

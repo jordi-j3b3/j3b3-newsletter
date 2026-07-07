@@ -119,6 +119,19 @@ def ipc_meta(csv_path: Path) -> dict:
     return {"ultimo_periode": f"{ultimo_any}-{ultimo_mes:02d}"}
 
 
+def marges_meta(csv_path: Path) -> dict:
+    """Metadades del dataset de marges per branca. La clau `verificat` és True
+    només si TOTES les files estan verificades contra el PDF original de PATECO;
+    generate.py la usa com a gate per activar l'angle editorial de marges."""
+    df = pd.read_csv(csv_path)
+    verificat = bool(df["verificat"].astype(bool).all()) if "verificat" in df else False
+    return {
+        "ultimo_any": int(df["any"].max()),
+        "n_branques": int(df["cnae"].nunique()),
+        "verificat": verificat,
+    }
+
+
 def copy_csv_optional(src: Path, dst: Path, label: str) -> dict | None:
     """Com copy_csv però retorna None (amb avís) si el fitxer no existeix."""
     if not src.exists():
@@ -300,6 +313,7 @@ def main() -> int:
     ocupacio_src = obs_path / SETTINGS["snapshot"]["ocupacio_origen"]
     ipc_src = obs_path / SETTINGS["snapshot"]["ipc_origen"]
     icm_src = obs_path / SETTINGS["snapshot"]["icm_origen"]
+    marges_src = obs_path / SETTINGS["snapshot"]["marges_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
@@ -307,6 +321,7 @@ def main() -> int:
     ocupacio_dst = semana_dir / "ocupacio_comerc.csv"
     ipc_dst = semana_dir / "ipc.csv"
     icm_dst = semana_dir / "pulso_icm.csv"
+    marges_dst = semana_dir / "marges_branca.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -353,6 +368,14 @@ def main() -> int:
               f"  pulso_icm.csv        · {icm_info['filas']:>6} filas · "
               f"últim periode {icm_info['ultimo_periodo']}")
 
+    marges_info = copy_csv_optional(marges_src, marges_dst, "Marges branca")
+    if marges_info:
+        marges_info.update(marges_meta(marges_dst))
+        estat = "verificat" if marges_info["verificat"] else "SENSE verificar"
+        print(f"  marges_branca.csv    · {marges_info['filas']:>6} filas · "
+              f"{marges_info['n_branques']} branques · últim any {marges_info['ultimo_any']} · "
+              f"{estat}")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -371,6 +394,7 @@ def main() -> int:
         "ocupacio": ocupacio_info,
         "ipc": ipc_info,
         "icm": icm_info,
+        "marges": marges_info,
         "prensa": prensa_info,
     }
     (semana_dir / "_meta.json").write_text(
