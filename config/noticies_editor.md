@@ -8,6 +8,6 @@
   Angle: concentració quan el volum frena — els grans absorbeixen els petits
   Segment: gran_distribucio
 
-- URL: https://www.viaempresa.cat/economia/bonprofit-a-punt-per-menjar-supermercats-aposten-mercaurants_2270201_102.html
+- URL: https://www.viaempresa.cat/economia/bonprofit-punt-menjar-supermercats-catalans-aposten-mercaurants_2237268_102.html
   Angle: innovació de format en alimentació — mercaurants com a resposta al consum experiencial
   Segment: petit_comerc

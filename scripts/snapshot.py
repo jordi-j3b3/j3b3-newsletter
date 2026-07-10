@@ -22,6 +22,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import os
 import re
@@ -303,21 +304,21 @@ def fetch_url_titol_paragraf(url: str, timeout: int = 10) -> tuple[str, str] | N
             headers={"User-Agent": "Mozilla/5.0 (compatible; J3B3Newsletter/1.0)"},
         )
         resp.raise_for_status()
-        html = resp.text
+        html_text = resp.text
     except requests.RequestException as e:
         print(f"  Avís: no s'ha pogut fer fetch de {url} ({e})", file=sys.stderr)
         return None
 
-    titol_m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    titol_m = re.search(r"<title[^>]*>(.*?)</title>", html_text, re.IGNORECASE | re.DOTALL)
     if not titol_m:
         print(f"  Avís: fetch de {url} ha tingut èxit (HTTP {resp.status_code}) "
               f"però no s'hi ha trobat cap <title>", file=sys.stderr)
         return None
-    titol = re.sub(r"\s+", " ", titol_m.group(1)).strip()
+    titol = html.unescape(re.sub(r"\s+", " ", titol_m.group(1)).strip())
 
     paragraf = ""
-    for p_m in re.finditer(r"<p[^>]*>(.*?)</p>", html, re.IGNORECASE | re.DOTALL):
-        candidat = re.sub(r"<[^>]+>", " ", p_m.group(1))
+    for p_m in re.finditer(r"<p[^>]*>(.*?)</p>", html_text, re.IGNORECASE | re.DOTALL):
+        candidat = html.unescape(re.sub(r"<[^>]+>", " ", p_m.group(1)))
         candidat = re.sub(r"\s+", " ", candidat).strip()
         if len(candidat) > 40:
             paragraf = candidat
