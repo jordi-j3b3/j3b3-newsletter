@@ -192,6 +192,21 @@ def extreu_metadades(semana: str) -> dict:
     }
 
 
+def llegeix_avisos_noticies_editor(semana: str) -> list[str]:
+    """Llegeix els avisos de fetch fallit de notícies [EDITOR] desats a
+    _meta.json pel snapshot d'aquesta setmana (camp noticies_editor_avisos,
+    escrit per capture_noticies_editor() a snapshot.py). No fatal si falta
+    el fitxer o el camp."""
+    meta_path = ROOT / "data" / f"semana-{semana}" / "_meta.json"
+    if not meta_path.exists():
+        return []
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    return meta.get("noticies_editor_avisos") or []
+
+
 def suspen_campanya(campaign_id: str) -> bool:
     """Desprograma una campanya a Brevo (PUT status=suspended; HTTP 204).
     Retorna True si s'ha suspès. No fatal: si falla, avisa i segueix."""
@@ -404,6 +419,22 @@ def main() -> int:
             "injectat a la generació.</p>"
         )
 
+    # Avisos de notícies [EDITOR] amb fetch fallit (snapshot.py les descarta
+    # del recull; aquí es fan visibles perquè l'editor pugui corregir la URL).
+    avisos_editor = llegeix_avisos_noticies_editor(semana)
+    if avisos_editor:
+        avisos_items = "".join(f"<li>{a}</li>" for a in avisos_editor)
+        avisos_editor_html = (
+            f"<h3 style='font-family:sans-serif;color:#c0392b'>Notícies editorials "
+            f"no accessibles ({len(avisos_editor)})</h3>"
+            f"<p style='color:#666;font-size:0.9em'>No s'han afegit al recull de "
+            f"premsa perquè el fetch de la URL ha fallat. Revisa i corregeix la URL "
+            f"a config/noticies_editor.md si vols que s'usin en una propera edició.</p>"
+            f"<ul style='font-family:sans-serif'>{avisos_items}</ul>"
+        )
+    else:
+        avisos_editor_html = ""
+
     # Notificacio
     notification_html = (
         f"<h2 style='font-family:sans-serif'>Newsletter programada</h2>"
@@ -414,6 +445,7 @@ def main() -> int:
         f"<p><strong>Predicció:</strong> {meta['prediccion']}</p>"
         f"<hr>"
         f"{macro_html}"
+        f"{avisos_editor_html}"
         f"<p style='font-family:sans-serif;font-size:0.9em;color:#444'>"
         f"Si vols afegir context macro no detectat, cancel·la i regenera "
         f"<strong>abans de les 8:00 del dilluns</strong>:<br>"

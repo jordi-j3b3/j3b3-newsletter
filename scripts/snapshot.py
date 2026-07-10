@@ -291,11 +291,12 @@ def parse_noticies_editor(path: Path, semana_str: str) -> list[dict]:
     return entries
 
 
-def fetch_url_titol_paragraf(url: str, timeout: int = 10) -> tuple[str, str]:
+def fetch_url_titol_paragraf(url: str, timeout: int = 10) -> tuple[str, str] | None:
     """Fa un GET a `url` i n'extreu el <title> i el primer <p> amb text
-    substancial (>40 caràcters). Mai llança excepció: si el fetch o el
-    parsing fallen, retorna (url, "") — la notícia de l'editor s'inclou
-    igualment al recull, només sense títol ni snippet enriquits."""
+    substancial (>40 caràcters). Retorna None si el fetch falla (error de
+    xarxa o codi HTTP != 200) o si la resposta és 200 però no s'hi pot
+    extreure cap <title> — en cap dels dos casos hi ha contingut real per
+    citar, i capture_noticies_editor() ha de descartar l'entrada."""
     try:
         resp = requests.get(
             url, timeout=timeout,
@@ -305,10 +306,14 @@ def fetch_url_titol_paragraf(url: str, timeout: int = 10) -> tuple[str, str]:
         html = resp.text
     except requests.RequestException as e:
         print(f"  Avís: no s'ha pogut fer fetch de {url} ({e})", file=sys.stderr)
-        return url, ""
+        return None
 
     titol_m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-    titol = re.sub(r"\s+", " ", titol_m.group(1)).strip() if titol_m else url
+    if not titol_m:
+        print(f"  Avís: fetch de {url} ha tingut èxit (HTTP {resp.status_code}) "
+              f"però no s'hi ha trobat cap <title>", file=sys.stderr)
+        return None
+    titol = re.sub(r"\s+", " ", titol_m.group(1)).strip()
 
     paragraf = ""
     for p_m in re.finditer(r"<p[^>]*>(.*?)</p>", html, re.IGNORECASE | re.DOTALL):
@@ -321,21 +326,37 @@ def fetch_url_titol_paragraf(url: str, timeout: int = 10) -> tuple[str, str]:
     return titol, paragraf
 
 
-def capture_noticies_editor(path: Path, semana_str: str, prensa_md: Path) -> list[dict]:
+def capture_noticies_editor(
+    path: Path, semana_str: str, prensa_md: Path,
+) -> tuple[list[dict], list[str]]:
     """Llegeix les entrades de l'editor per a `semana_str`, fa fetch de cada
-    URL (títol + primer paràgraf) i les afegeix a `prensa_md` (append, ja
-    escrit per capture_press) amb el tag [EDITOR] perquè Sonnet les
-    prioritzi. Retorna la llista estructurada (url, titol, angle, segment)
-    per desar-la a _meta.json — generate.py la usa per saber quines s'han
-    citat al borrador final i registrar-les a l'historial editorial."""
+    URL (títol + primer paràgraf) i afegeix a `prensa_md` (append, ja
+    escrit per capture_press) NOMÉS les que tenen contingut real, amb el
+    tag [EDITOR] perquè Sonnet les prioritzi. Les URLs que fallen el fetch
+    NO s'afegeixen al recull (evita que Sonnet inventi contingut a partir
+    només de la URL i l'angle).
+
+    Retorna (capturades, avisos):
+      - capturades: entrades amb contingut real (url, titol, angle,
+        segment), per desar a _meta.json — generate.py les usa per saber
+        quines s'han citat al borrador final i registrar-les a l'historial.
+      - avisos: missatges "URL editorial no accessible: ..." per a les que
+        han fallat, per al log i la notificació de diumenge (schedule.py)."""
     entries = parse_noticies_editor(path, semana_str)
     if not entries:
-        return []
+        return [], []
 
     lines = ["", "## Notícies seleccionades per l'editor [EDITOR]", ""]
     capturades = []
+    avisos = []
     for e in entries:
-        titol, snippet = fetch_url_titol_paragraf(e["url"])
+        resultat = fetch_url_titol_paragraf(e["url"])
+        if resultat is None:
+            avis = f"URL editorial no accessible: {e['url']} — no s'ha afegit al recull."
+            print(f"  Avís: {avis}", file=sys.stderr)
+            avisos.append(avis)
+            continue
+        titol, snippet = resultat
         capturades.append({
             "url": e["url"], "titol": titol, "angle": e["angle"], "segment": e["segment"],
         })
@@ -347,9 +368,10 @@ def capture_noticies_editor(path: Path, semana_str: str, prensa_md: Path) -> lis
         lines.append(f"- URL: {e['url']}")
         lines.append("")
 
-    with prensa_md.open("a", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-    return capturades
+    if capturades:
+        with prensa_md.open("a", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+    return capturades, avisos
 
 
 def capture_press(out_md: Path, observatori_path: Path, dias: int) -> dict:
@@ -537,13 +559,19 @@ def main() -> int:
     if prensa_info.get("feeds_fallidos"):
         print(f"     feeds sin entradas: {', '.join(prensa_info['feeds_fallidos'])}")
 
-    noticies_editor_info = capture_noticies_editor(NOTICIES_EDITOR_PATH, semana_str, prensa_dst)
+    noticies_editor_info, noticies_editor_avisos = capture_noticies_editor(
+        NOTICIES_EDITOR_PATH, semana_str, prensa_dst)
     if noticies_editor_info:
         print(f"  noticies_editor      · {len(noticies_editor_info)} notícia(es) [EDITOR] "
               f"afegides al recull")
+    elif noticies_editor_avisos:
+        print("  noticies_editor      · totes les URLs de l'editor han fallat el fetch "
+              "(vegeu avisos), cap afegida al recull")
     else:
         print("  noticies_editor      · cap entrada per a aquesta setmana "
               "(fitxer absent o sense secció per a aquesta setmana)")
+    for avis in noticies_editor_avisos:
+        print(f"     {avis}")
 
     meta = {
         "semana_iso": lunes.strftime("%G-W%V"),
@@ -559,6 +587,7 @@ def main() -> int:
         "marges": marges_info,
         "prensa": prensa_info,
         "noticies_editor": noticies_editor_info,
+        "noticies_editor_avisos": noticies_editor_avisos,
     }
     (semana_dir / "_meta.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False),

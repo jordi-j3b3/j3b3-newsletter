@@ -751,10 +751,19 @@ def construir_prompts(
     regla_editor = (
         "9bis. Las noticias marcadas con [EDITOR] en <RECOPILACION_PRENSA> han sido "
         "seleccionadas por el editor y deben priorizarse para el Bloque 2. Si hay tres "
-        "o más, úsalas todas. Si hay menos de tres, completa con las mejores del "
-        "snapshot siguiendo el criterio de diversidad de fuentes y segmentos (regla 9). "
-        "Respeta el ángulo editorial indicado junto a cada noticia [EDITOR] al "
-        "redactar su lectura.\n"
+        "o más CON CONTENIDO REAL (ver regla 9ter), úsalas todas. Si hay menos de "
+        "tres, completa con las mejores del snapshot siguiendo el criterio de "
+        "diversidad de fuentes y segmentos (regla 9). Respeta el ángulo editorial "
+        "indicado junto a cada noticia [EDITOR] al redactar su lectura.\n"
+        "9ter. Una noticia [EDITOR] SOLO puede usarse si su entrada en "
+        "<RECOPILACION_PRENSA> incluye una línea '- Snippet:' con texto real. Si una "
+        "entrada [EDITOR] no tiene esa línea, o su título es literalmente una URL "
+        "(señal de que el fetch de la fuente falló), esa noticia NO tiene contenido "
+        "verificado: ignórala por completo —no la cites, no inventes su contenido a "
+        "partir de la URL o del ángulo editorial— y elige en su lugar una noticia "
+        "normal del snapshot, respetando la regla 9 (diversidad de medios) y la "
+        "regla 11 (proximitat) si aplica. Advierte en TRAZABILIDAD qué notícia "
+        "[EDITOR] se ha descartado y por qué.\n"
     ) if hi_ha_noticies_editor else ""
 
     system = [
