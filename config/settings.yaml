@@ -33,6 +33,7 @@ snapshot:
   ocupacio_origen: "data/cache/ocupacio_comerc.csv"
   ipc_origen: "data/cache/ipc.csv"
   icm_origen: "data/cache/icm.csv"
+  icm_distribucio_origen: "data/cache/icm_distribucion.csv"
   marges_origen: "data/cache/marges_branca_ine.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).

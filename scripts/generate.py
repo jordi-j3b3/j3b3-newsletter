@@ -205,7 +205,7 @@ def parse_args() -> argparse.Namespace:
                         "automàticament a partir de les actualitzacions del snapshot.")
     p.add_argument("--bloc3", default="",
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
-                            "icm_ramas", "marges_branca"],
+                            "icm_ramas", "marges_branca", "icm_distribucio"],
                    help="Sobreescriu la selecció automàtica del bloc 3. "
                         "'marges_branca' només és vàlid si el dataset de marges "
                         "està verificat (verificat=True al snapshot).")
@@ -386,6 +386,44 @@ def slice_icm(csv_path: Path, mesos: int = 15) -> str:
     return linia1 + linia2
 
 
+def slice_icm_distribucio(csv_path: Path, mesos: int = 15) -> str:
+    """Formata pulso_icm_distribucio.csv per al prompt en dos blocs:
+      1. Sèrie real var_anual pivotada per mode de distribució (Grandes
+         Superficies, Grandes cadenas, Pequeñas cadenas, Empresas
+         unilocalizadas), últims `mesos` mesos — mostra si la divergència
+         entre modes és estructural o puntual.
+      2. Desglossament del mes més recent, ordenat de major a menor.
+    """
+    df = pd.read_csv(csv_path, parse_dates=["data"])
+    df["periode"] = df["data"].dt.strftime("%Y-%m")
+    real = df[(df["tipus"] == "real") & (df["indicador"] == "var_anual")].copy()
+
+    piv = real.pivot_table(index="periode", columns="modo", values="valor", aggfunc="first")
+    piv = piv.tail(mesos)
+    linia1 = ("Variacion interanual real por modo de distribucion · "
+              f"ultimos {mesos} meses:\n" + piv.round(1).to_csv())
+
+    ult = df["data"].max()
+    desglose = real[real["data"] == ult][["modo", "valor"]].sort_values("valor", ascending=False)
+    linia2 = (f"\nDesglose del mes mas reciente ({ult.strftime('%Y-%m')}):\n" +
+              desglose.round(1).to_csv(index=False))
+    return linia1 + linia2
+
+
+def detectar_novetat_icm_distribucio(periodo_actual: str, historial: list, semana_actual: str) -> bool:
+    """¿icm_distribucio té un periode que no s'ha usat encara a cap edició
+    prèvia registrada? Mateix patró que detectar_novetat_eurostat: si cap
+    entrada prèvia té el camp (primer cop que es capta el dataset), es
+    considera novetat."""
+    previas = [e for e in historial if e.get("semana") != semana_actual]
+    if not previas:
+        return True
+    ultimo = previas[-1].get("periodo_icm_distribucio")
+    if not ultimo:
+        return True
+    return periodo_actual > str(ultimo)
+
+
 def slice_marges(csv_path: Path) -> str:
     """Marge sobre vendes (%) per branca comercial, pivotat branca × any.
 
@@ -469,7 +507,7 @@ def construir_prompts(
     mode_editorial: 'P1' (dada fresca mana) o 'P2' (tesi mana, dada explica).
     titular: fixat en mode P2; buit en P1.
     bloc3_mode: 'europeu', 'cdmge_tasa_anual', 'editorial_contexto',
-        'icm_ramas' o 'marges_branca'.
+        'icm_ramas', 'marges_branca' o 'icm_distribucio'.
     marges_disponible: injecta <MARGES_BRANCA> al prompt només si és True (el
         dataset de marges existeix al snapshot I té verificat=True).
     """
@@ -517,6 +555,28 @@ def construir_prompts(
             "renderiza como barras divergentes (positivo azul, negativo rojo). "
             "Ordena de mayor a menor valor. El subtítulo debe llevar el mes y la "
             "palabra 'real', sin 'variación interanual' (compose.py añade la leyenda)."
+        )
+    elif bloc3_mode == "icm_distribucio":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (ICM POR MODO DE DISTRIBUCIÓN — "
+            "muestra qué tipo de operador gana o pierde volumen):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** Ventas minoristas por modo de distribución · <mes> (variación real)\n\n"
+            "   - Grandes cadenas: <valor>%\n"
+            "   - Empresas unilocalizadas: <valor>%\n"
+            "   - Pequeñas cadenas: <valor>%\n"
+            "   - Grandes Superficies: <valor>%\n\n"
+            "   <2-3 párrafos interpretando qué modo de distribución gana o "
+            "pierde volumen, conectando con la divergencia de formatos del "
+            "Bloque 1: los operadores unilocalizados y las grandes cadenas "
+            "especializadas suelen capturar mejor los formatos que han "
+            "redefinido su propuesta de valor, mientras las grandes "
+            "superficies generalistas sienten más la presión.>\n\n"
+            "   Usa EXCLUSIVAMENTE los 4 modos del 'Desglose del mes más "
+            "reciente' de <PULSO_ICM_DISTRIBUCIO> (variación interanual real). "
+            "compose.py los renderiza como barras divergentes. Ordena de mayor "
+            "a menor valor. El subtítulo debe llevar el mes y la palabra "
+            "'real', sin 'variación interanual' (compose.py añade la leyenda)."
         )
     elif bloc3_mode == "marges_branca":
         bloque3_instr = (
@@ -799,6 +859,14 @@ def construir_prompts(
             "",
         ])
 
+    icm_distribucio_path = semana_dir / "pulso_icm_distribucio.csv"
+    if icm_distribucio_path.exists():
+        icm_dist_data = slice_icm_distribucio(icm_distribucio_path, mesos=15)
+        parts.extend([
+            f"<PULSO_ICM_DISTRIBUCIO periodo=ultims_15_mesos>\n{icm_dist_data}\n</PULSO_ICM_DISTRIBUCIO>",
+            "",
+        ])
+
     # Marges per branca: només si el dataset està verificat (gate verificat=True).
     # La sèrie ve de l'INE (Encuesta Anual de Comercio, marge=EBE/vendes) i és
     # font primària verificada; si mai es marqués verificat=False, l'angle queda latent.
@@ -892,10 +960,21 @@ def main() -> int:
 
     print(f"  Mode editorial: {mode_editorial} ({mode_motiu})")
 
-    # Decisió del Bloque 3: tres modes.
+    # Decisió del Bloque 3: quatre modes automàtics + dos manuals.
     periodo_actual = max_periodo_europeo(semana_dir / "pulso_europeo.csv")
     novedad = detectar_novetat_eurostat(periodo_actual, historial, semana_str)
     dies_mes = cdmge_dies_mes_actual(semana_dir / "pulso_diario.csv")
+
+    # ICM per format de distribució: disponible si el snapshot l'ha capturat;
+    # "novetat" si el periode no s'ha usat encara a cap edició prèvia (mateix
+    # patró que l'Eurostat).
+    icm_dist_disponible = (semana_dir / "pulso_icm_distribucio.csv").exists()
+    periodo_icm_dist_actual = meta_dict.get("icm_distribucio", {}).get("ultimo_periodo", "") \
+        if icm_dist_disponible else ""
+    novetat_icm_dist = (
+        detectar_novetat_icm_distribucio(periodo_icm_dist_actual, historial, semana_str)
+        if icm_dist_disponible else False
+    )
 
     # Gate de marges: l'angle de marges per branca només és vàlid si el dataset
     # té verificat=True al snapshot (avui, sèrie oficial de l'INE).
@@ -909,8 +988,16 @@ def main() -> int:
                   "NO està verificat (verificat=False) o no és al snapshot; "
                   "recau a context editorial", file=sys.stderr)
             bloc3_mode = "editorial_contexto"
+        elif bloc3_mode == "icm_distribucio" and not icm_dist_disponible:
+            print("  Bloc 3: 'icm_distribucio' sol·licitat però pulso_icm_distribucio.csv "
+                  "no és al snapshot; recau a context editorial", file=sys.stderr)
+            bloc3_mode = "editorial_contexto"
         else:
             print(f"  Bloc 3: {bloc3_mode} (sobreescrit per --bloc3)")
+    elif icm_dist_disponible and novetat_icm_dist:
+        bloc3_mode = "icm_distribucio"
+        print(f"  Bloc 3: ICM per format de distribució "
+              f"({periodo_icm_dist_actual} és periode nou)")
     elif novedad:
         bloc3_mode = "europeu"
         print(f"  Bloc 3: gràfic europeu (Eurostat {periodo_actual} és periode nou)")
@@ -1024,6 +1111,7 @@ def main() -> int:
             )
             entry["periodo_eurostat"] = periodo_actual
             entry["periodo_icm"] = meta_dict.get("icm", {}).get("ultimo_periodo", "")
+            entry["periodo_icm_distribucio"] = periodo_icm_dist_actual
             entry["indicador_bloc3"] = indicador_bloc3
             entry["mode_editorial"] = mode_editorial
             if args.titular:

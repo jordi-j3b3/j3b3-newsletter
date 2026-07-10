@@ -209,6 +209,50 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
     }
 
 
+def capture_icm_distribucio(src: Path, dst: Path, meses: int = 24) -> dict | None:
+    """Extreu d'icm_distribucion.csv (4 modes de distribució: Grandes
+    Superficies, Grandes cadenas, Pequeñas cadenas, Empresas unilocalizadas)
+    el tall que necessita la newsletter: sèrie nominal+real dels últims
+    `meses` mesos per als 4 modes, i el desa a pulso_icm_distribucio.csv."""
+    if not src.exists():
+        print(f"  ICM distribució: no trobat a {src}, s'omet del snapshot", file=sys.stderr)
+        return None
+
+    df = pd.read_csv(src)
+    df["data"] = pd.to_datetime(df["data"], errors="coerce")
+    periodes = sorted(df["data"].dropna().unique())
+    if not periodes:
+        print(f"  ICM distribució: sense dates vàlides a {src}, s'omet", file=sys.stderr)
+        return None
+    cutoff = periodes[-meses] if len(periodes) >= meses else periodes[0]
+
+    out = df[
+        df["tipus"].isin(["nominal", "real"])
+        & df["indicador"].isin(["index", "var_anual", "var_mitjana_acum"])
+        & (df["data"] >= cutoff)
+    ]
+    cols = ["tipus", "modo", "indicador", "any", "mes", "data", "valor"]
+    out = out[cols].sort_values(["tipus", "modo", "indicador", "data"])
+    out.to_csv(dst, index=False)
+
+    ult_data = df["data"].max()
+    ultimo_periodo = ult_data.strftime("%Y-%m") if pd.notna(ult_data) else ""
+    lag_dias = (datetime.now() - ult_data.to_pydatetime()).days if pd.notna(ult_data) else None
+    modes_ult = df[
+        (df["data"] == ult_data) & (df["tipus"] == "real") & (df["indicador"] == "var_anual")
+    ][["modo", "valor"]]
+
+    return {
+        "origen": str(src),
+        "filas": len(out),
+        "ultimo_periodo": ultimo_periodo,
+        "lag_dias": lag_dias,
+        "modes_real_var_anual": {
+            row["modo"]: float(row["valor"]) for _, row in modes_ult.iterrows()
+        },
+    }
+
+
 def capture_press(out_md: Path, observatori_path: Path, dias: int) -> dict:
     """Llama a modules.press.fetch_press() del Observatorio y serializa
     los items de los últimos `dias` días a markdown legible."""
@@ -313,6 +357,7 @@ def main() -> int:
     ocupacio_src = obs_path / SETTINGS["snapshot"]["ocupacio_origen"]
     ipc_src = obs_path / SETTINGS["snapshot"]["ipc_origen"]
     icm_src = obs_path / SETTINGS["snapshot"]["icm_origen"]
+    icm_distribucio_src = obs_path / SETTINGS["snapshot"]["icm_distribucio_origen"]
     marges_src = obs_path / SETTINGS["snapshot"]["marges_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
@@ -321,6 +366,7 @@ def main() -> int:
     ocupacio_dst = semana_dir / "ocupacio_comerc.csv"
     ipc_dst = semana_dir / "ipc.csv"
     icm_dst = semana_dir / "pulso_icm.csv"
+    icm_distribucio_dst = semana_dir / "pulso_icm_distribucio.csv"
     marges_dst = semana_dir / "marges_branca.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
@@ -368,6 +414,14 @@ def main() -> int:
               f"  pulso_icm.csv        · {icm_info['filas']:>6} filas · "
               f"últim periode {icm_info['ultimo_periodo']}")
 
+    icm_dist_info = capture_icm_distribucio(icm_distribucio_src, icm_distribucio_dst)
+    if icm_dist_info:
+        modes_str = " · ".join(
+            f"{m}: {v:+.1f}%" for m, v in icm_dist_info["modes_real_var_anual"].items()
+        )
+        print(f"  pulso_icm_distribucio· {icm_dist_info['filas']:>6} filas · "
+              f"últim periode {icm_dist_info['ultimo_periodo']} · {modes_str}")
+
     marges_info = copy_csv_optional(marges_src, marges_dst, "Marges branca")
     if marges_info:
         marges_info.update(marges_meta(marges_dst))
@@ -394,6 +448,7 @@ def main() -> int:
         "ocupacio": ocupacio_info,
         "ipc": ipc_info,
         "icm": icm_info,
+        "icm_distribucio": icm_dist_info,
         "marges": marges_info,
         "prensa": prensa_info,
     }
