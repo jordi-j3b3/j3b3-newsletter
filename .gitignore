@@ -12,6 +12,11 @@ data/
 config/tesi_setmana.md
 config/tesi_setmana.used.md
 
+# Notícies seleccionades per l'editor (input manual setmanal, consumit i
+# renombrat). config/noticies_editor.example.md SÍ es trackeja (plantilla).
+config/noticies_editor.md
+config/noticies_editor.used.md
+
 # Python
 __pycache__/
 *.py[cod]

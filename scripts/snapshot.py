@@ -6,7 +6,9 @@ Genera data/semana-YYYY-MM-DD/ con:
   - pulso_europeo.csv       copia íntegra de europa_retail_mensual.csv
   - pulso_icm.csv           tall de icm.csv (sèrie general nacional + branques)
   - recopilacion_prensa.md  serializado de modules.press.fetch_press(),
-                            filtrado a la ventana configurada
+                            filtrado a la ventana configurada, con las
+                            entradas [EDITOR] de config/noticies_editor.md
+                            (si existe) añadidas al final
   - _meta.json              metadatos de la captura
 
 El snapshot se congela una vez generado. Para regenerarlo, usar --force
@@ -22,12 +24,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
+import requests
 import yaml
 from dotenv import load_dotenv
 
@@ -37,6 +41,8 @@ load_dotenv(ROOT / "config" / ".env")
 
 with open(ROOT / "config" / "settings.yaml", encoding="utf-8") as f:
     SETTINGS = yaml.safe_load(f)
+
+NOTICIES_EDITOR_PATH = ROOT / "config" / "noticies_editor.md"
 
 
 def next_monday(today: datetime | None = None) -> datetime:
@@ -253,6 +259,99 @@ def capture_icm_distribucio(src: Path, dst: Path, meses: int = 24) -> dict | Non
     }
 
 
+def parse_noticies_editor(path: Path, semana_str: str) -> list[dict]:
+    """Parseja config/noticies_editor.md i retorna les entrades de la secció
+    '## Setmana YYYY-MM-DD' que coincideix amb `semana_str`. Format esperat:
+
+        ## Setmana 2026-07-13
+
+        - URL: https://exemple.com/noticia
+          Angle: ...
+          Segment: petit_comerc
+
+    Si el fitxer no existeix o no hi ha secció per a aquesta setmana,
+    retorna [] (no s'aplica cap entrada d'una setmana diferent)."""
+    if not path.exists():
+        return []
+    text = path.read_text(encoding="utf-8")
+    sections = re.split(r"^##\s*Setmana\s+(\S+)\s*$", text, flags=re.MULTILINE)
+    entries: list[dict] = []
+    for i in range(1, len(sections), 2):
+        if sections[i].strip() != semana_str:
+            continue
+        for bloc_m in re.finditer(
+            r"-\s*URL:\s*(\S+)\s*\n\s*Angle:\s*(.+?)\s*\n\s*Segment:\s*(\S+)",
+            sections[i + 1],
+        ):
+            entries.append({
+                "url": bloc_m.group(1).strip(),
+                "angle": bloc_m.group(2).strip(),
+                "segment": bloc_m.group(3).strip(),
+            })
+    return entries
+
+
+def fetch_url_titol_paragraf(url: str, timeout: int = 10) -> tuple[str, str]:
+    """Fa un GET a `url` i n'extreu el <title> i el primer <p> amb text
+    substancial (>40 caràcters). Mai llança excepció: si el fetch o el
+    parsing fallen, retorna (url, "") — la notícia de l'editor s'inclou
+    igualment al recull, només sense títol ni snippet enriquits."""
+    try:
+        resp = requests.get(
+            url, timeout=timeout,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; J3B3Newsletter/1.0)"},
+        )
+        resp.raise_for_status()
+        html = resp.text
+    except requests.RequestException as e:
+        print(f"  Avís: no s'ha pogut fer fetch de {url} ({e})", file=sys.stderr)
+        return url, ""
+
+    titol_m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    titol = re.sub(r"\s+", " ", titol_m.group(1)).strip() if titol_m else url
+
+    paragraf = ""
+    for p_m in re.finditer(r"<p[^>]*>(.*?)</p>", html, re.IGNORECASE | re.DOTALL):
+        candidat = re.sub(r"<[^>]+>", " ", p_m.group(1))
+        candidat = re.sub(r"\s+", " ", candidat).strip()
+        if len(candidat) > 40:
+            paragraf = candidat
+            break
+
+    return titol, paragraf
+
+
+def capture_noticies_editor(path: Path, semana_str: str, prensa_md: Path) -> list[dict]:
+    """Llegeix les entrades de l'editor per a `semana_str`, fa fetch de cada
+    URL (títol + primer paràgraf) i les afegeix a `prensa_md` (append, ja
+    escrit per capture_press) amb el tag [EDITOR] perquè Sonnet les
+    prioritzi. Retorna la llista estructurada (url, titol, angle, segment)
+    per desar-la a _meta.json — generate.py la usa per saber quines s'han
+    citat al borrador final i registrar-les a l'historial editorial."""
+    entries = parse_noticies_editor(path, semana_str)
+    if not entries:
+        return []
+
+    lines = ["", "## Notícies seleccionades per l'editor [EDITOR]", ""]
+    capturades = []
+    for e in entries:
+        titol, snippet = fetch_url_titol_paragraf(e["url"])
+        capturades.append({
+            "url": e["url"], "titol": titol, "angle": e["angle"], "segment": e["segment"],
+        })
+        lines.append(f"### [EDITOR] {titol}")
+        lines.append(f"- Fuente: Selección editorial ({e['segment']})")
+        lines.append(f"- Angle editorial: {e['angle']}")
+        if snippet:
+            lines.append(f"- Snippet: {snippet}")
+        lines.append(f"- URL: {e['url']}")
+        lines.append("")
+
+    with prensa_md.open("a", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    return capturades
+
+
 def capture_press(out_md: Path, observatori_path: Path, dias: int) -> dict:
     """Llama a modules.press.fetch_press() del Observatorio y serializa
     los items de los últimos `dias` días a markdown legible."""
@@ -438,6 +537,14 @@ def main() -> int:
     if prensa_info.get("feeds_fallidos"):
         print(f"     feeds sin entradas: {', '.join(prensa_info['feeds_fallidos'])}")
 
+    noticies_editor_info = capture_noticies_editor(NOTICIES_EDITOR_PATH, semana_str, prensa_dst)
+    if noticies_editor_info:
+        print(f"  noticies_editor      · {len(noticies_editor_info)} notícia(es) [EDITOR] "
+              f"afegides al recull")
+    else:
+        print("  noticies_editor      · cap entrada per a aquesta setmana "
+              "(fitxer absent o sense secció per a aquesta setmana)")
+
     meta = {
         "semana_iso": lunes.strftime("%G-W%V"),
         "fecha_envio_prevista": semana_str,
@@ -451,6 +558,7 @@ def main() -> int:
         "icm_distribucio": icm_dist_info,
         "marges": marges_info,
         "prensa": prensa_info,
+        "noticies_editor": noticies_editor_info,
     }
     (semana_dir / "_meta.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False),

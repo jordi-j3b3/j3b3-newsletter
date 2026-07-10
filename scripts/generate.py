@@ -29,6 +29,7 @@ import os
 import re
 import shutil
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -73,6 +74,48 @@ def marcar_tesi_usada() -> None:
     used_path = TESI_SETMANA_PATH.with_name("tesi_setmana.used.md")
     TESI_SETMANA_PATH.replace(used_path)
     print(f"  Tesi setmanal consumida i marcada com a usada: {used_path.name}")
+
+
+NOTICIES_EDITOR_PATH = ROOT / "config" / "noticies_editor.md"
+HISTORIAL_NOTICIES_PATH = ROOT / "config" / "historial_editorial_noticies.jsonl"
+
+
+def marcar_noticies_editor_usades() -> None:
+    """Renombra config/noticies_editor.md a noticies_editor.used.md perquè
+    no s'apliqui per error a una edició futura. Mateix patró que
+    marcar_tesi_usada()."""
+    if not NOTICIES_EDITOR_PATH.exists():
+        return
+    used_path = NOTICIES_EDITOR_PATH.with_name("noticies_editor.used.md")
+    NOTICIES_EDITOR_PATH.replace(used_path)
+    print(f"  Notícies editor consumides i marcades com a usades: {used_path.name}")
+
+
+def registrar_noticies_editor_usades(candidats: list, borrador: str, semana_str: str) -> None:
+    """Detecta quins candidats [EDITOR] (capturats per snapshot.py a
+    _meta.json) apareixen citats al borrador final —per la URL, que Sonnet
+    manté literal al link del Bloque 2— i els afegeix a
+    historial_editorial_noticies.jsonl. Aquest fitxer construeix el perfil
+    editorial de l'editor al llarg del temps: quins angles i segments tria
+    setmana rere setmana."""
+    usats = [c for c in candidats if c.get("url") and c["url"] in borrador]
+    if not usats:
+        print("  Notícies editor [EDITOR]: cap ha estat citada literalment "
+              "al borrador final", file=sys.stderr)
+        return
+    ara = datetime.now(timezone.utc).isoformat()
+    HISTORIAL_NOTICIES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with HISTORIAL_NOTICIES_PATH.open("a", encoding="utf-8") as f:
+        for c in usats:
+            f.write(json.dumps({
+                "url": c["url"],
+                "titular": c.get("titol", ""),
+                "angle": c.get("angle", ""),
+                "segment": c.get("segment", ""),
+                "semana": semana_str,
+                "data_us": ara,
+            }, ensure_ascii=False) + "\n")
+    print(f"  Notícies editor [EDITOR] usades i registrades a l'historial: {len(usats)}")
 
 # Triggers de revisión del sistema anti-repetición (acordados 2026-05-15):
 #   - Núm. 3-4 repite ángulos → añadir salvaguarda barata: segunda llamada a Sonnet
@@ -501,6 +544,7 @@ def construir_prompts(
     mode_editorial: str = "P1",
     titular: str = "",
     marges_disponible: bool = False,
+    hi_ha_noticies_editor: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     """Construye (system, messages) para la llamada al modelo.
 
@@ -510,6 +554,8 @@ def construir_prompts(
         'icm_ramas', 'marges_branca' o 'icm_distribucio'.
     marges_disponible: injecta <MARGES_BRANCA> al prompt només si és True (el
         dataset de marges existeix al snapshot I té verificat=True).
+    hi_ha_noticies_editor: si és True, afegeix la regla 9bis que demana
+        prioritzar les notícies marcades [EDITOR] a <RECOPILACION_PRENSA>.
     """
 
     cdmge_data = slice_cdmge(semana_dir / "pulso_diario.csv", dias=60)
@@ -702,6 +748,15 @@ def construir_prompts(
             "ser més adequats per a tesis estructurals que les vendes (CDMGE/Eurostat).\n\n"
         )
 
+    regla_editor = (
+        "9bis. Las noticias marcadas con [EDITOR] en <RECOPILACION_PRENSA> han sido "
+        "seleccionadas por el editor y deben priorizarse para el Bloque 2. Si hay tres "
+        "o más, úsalas todas. Si hay menos de tres, completa con las mejores del "
+        "snapshot siguiendo el criterio de diversidad de fuentes y segmentos (regla 9). "
+        "Respeta el ángulo editorial indicado junto a cada noticia [EDITOR] al "
+        "redactar su lectura.\n"
+    ) if hi_ha_noticies_editor else ""
+
     system = [
         {
             "type": "text",
@@ -752,6 +807,7 @@ def construir_prompts(
                 "recopilación de prensa solo trae noticias de uno o dos medios, elige "
                 "las tres con mayor diversidad de fuente posible y adviértelo en "
                 "TRAZABILIDAD.\n"
+                + regla_editor
                 + rule_10
                 + "11. El Bloque 2 debe incluir SIEMPRE al menos una noticia sobre comerç "
                 "de proximitat, eixos comercials urbans, comercio local, comercio de "
@@ -950,6 +1006,7 @@ def main() -> int:
     # Llegir meta del snapshot per a la detecció de mode
     meta_path = semana_dir / "_meta.json"
     meta_dict = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+    noticies_editor_meta = meta_dict.get("noticies_editor") or []
 
     # Detecció del mode editorial P1/P2
     if args.titular:
@@ -1044,6 +1101,7 @@ def main() -> int:
         mode_editorial=mode_editorial,
         titular=args.titular,
         marges_disponible=marges_verificat,
+        hi_ha_noticies_editor=bool(noticies_editor_meta),
     )
 
     modelo = SETTINGS["modelo"]["modelo"]
@@ -1080,6 +1138,10 @@ def main() -> int:
 
     if tesi_setmana:
         marcar_tesi_usada()
+
+    if noticies_editor_meta:
+        registrar_noticies_editor_usades(noticies_editor_meta, borrador, semana_str)
+        marcar_noticies_editor_usades()
 
     usage = response.usage
     cache_creation = getattr(usage, "cache_creation_input_tokens", 0) or 0
