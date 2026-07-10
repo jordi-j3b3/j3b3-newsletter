@@ -8,6 +8,10 @@ APIS NEWSLETER/
 output/
 data/
 
+# Tesi setmanal (input manual de l'editor, consumit i renombrat cada setmana)
+config/tesi_setmana.md
+config/tesi_setmana.used.md
+
 # Python
 __pycache__/
 *.py[cod]

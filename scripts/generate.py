@@ -50,6 +50,30 @@ with open(ROOT / "config" / "settings.yaml", encoding="utf-8") as f:
 HISTORIAL_PATH = ROOT / "config" / "historial_editorial.json"
 HISTORIAL_VENTANA = 6  # ediciones recientes a inyectar en el prompt
 
+TESI_SETMANA_PATH = ROOT / "config" / "tesi_setmana.md"
+
+
+def load_tesi_setmana() -> str:
+    """Llegeix la tesi setmanal fixada per l'editor, si existeix.
+
+    Equivalent a --context-extra però llegit automàticament del fitxer, sense
+    haver de passar el flag a mà. Retorna "" si el fitxer no existeix (el
+    pipeline funciona igual que fins ara). No l'esborra ni el renombra aquí
+    — això es fa a marcar_tesi_usada() després d'una generació exitosa."""
+    if not TESI_SETMANA_PATH.exists():
+        return ""
+    return TESI_SETMANA_PATH.read_text(encoding="utf-8").strip()
+
+
+def marcar_tesi_usada() -> None:
+    """Renombra config/tesi_setmana.md a tesi_setmana.used.md perquè no
+    s'apliqui per error a una edició futura."""
+    if not TESI_SETMANA_PATH.exists():
+        return
+    used_path = TESI_SETMANA_PATH.with_name("tesi_setmana.used.md")
+    TESI_SETMANA_PATH.replace(used_path)
+    print(f"  Tesi setmanal consumida i marcada com a usada: {used_path.name}")
+
 # Triggers de revisión del sistema anti-repetición (acordados 2026-05-15):
 #   - Núm. 3-4 repite ángulos → añadir salvaguarda barata: segunda llamada a Sonnet
 #     tipo "novedad check" (¿este ángulo es novedoso vs los N previos? JSON
@@ -916,6 +940,10 @@ def main() -> int:
             print(f"    · {n['data']} — {n['titol']}")
     else:
         print("  Fets macro detectats a la premsa: cap")
+    tesi_setmana = load_tesi_setmana()
+    if tesi_setmana:
+        contexts.append(tesi_setmana)
+        print("  Tesi setmanal (config/tesi_setmana.md) afegida al prompt")
     if args.context_extra:
         contexts.append(args.context_extra)
         print("  Context addicional (--context-extra) afegit al prompt")
@@ -962,6 +990,9 @@ def main() -> int:
               f"Se mantienen los enlaces de redirección.", file=sys.stderr)
 
     out_md.write_text(borrador, encoding="utf-8")
+
+    if tesi_setmana:
+        marcar_tesi_usada()
 
     usage = response.usage
     cache_creation = getattr(usage, "cache_creation_input_tokens", 0) or 0
