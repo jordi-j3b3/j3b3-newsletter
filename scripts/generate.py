@@ -3,6 +3,7 @@ Genera el borrador en Markdown de la edición semanal con Sonnet 4.6.
 
 Lee:
 - templates/linea_editorial.md     (cacheable vía prompt cache)
+- config/estil_editorial.md        (cacheable vía prompt cache; permanente, no se consume)
 - templates/data_dictionary.md     (cacheable vía prompt cache)
 - data/semana-YYYY-MM-DD/*         (snapshot semanal, ya congelado)
 
@@ -255,10 +256,11 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def cargar_templates() -> tuple[str, str]:
+def cargar_templates() -> tuple[str, str, str]:
     linea = (ROOT / "templates" / "linea_editorial.md").read_text(encoding="utf-8")
+    estil = (ROOT / "config" / "estil_editorial.md").read_text(encoding="utf-8")
     diccionario = (ROOT / "templates" / "data_dictionary.md").read_text(encoding="utf-8")
-    return linea, diccionario
+    return linea, estil, diccionario
 
 
 def slice_cdmge(csv_path: Path, dias: int = 60) -> str:
@@ -536,6 +538,7 @@ def construir_prompts(
     semana_str: str,
     numero: int,
     linea_editorial: str,
+    estil_editorial: str,
     diccionario: str,
     historial_entries: list,
     bloc3_mode: str = "europeu",
@@ -856,6 +859,11 @@ def construir_prompts(
         },
         {
             "type": "text",
+            "text": f"<ESTILO_EDITORIAL>\n{estil_editorial}\n</ESTILO_EDITORIAL>",
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "text",
             "text": f"<DICCIONARIO_DATOS>\n{diccionario}\n</DICCIONARIO_DATOS>",
             "cache_control": {"type": "ephemeral"},
         },
@@ -1010,7 +1018,7 @@ def main() -> int:
     elif not args.no_historial:
         print("  Memoria editorial: vacía (primera edición o historial no encontrado)")
 
-    linea, diccionario = cargar_templates()
+    linea, estil, diccionario = cargar_templates()
 
     # Llegir meta del snapshot per a la detecció de mode
     meta_path = semana_dir / "_meta.json"
@@ -1103,7 +1111,7 @@ def main() -> int:
     context_efectiu = "\n\n".join(contexts)
 
     system, messages = construir_prompts(
-        semana_dir, semana_str, args.numero, linea, diccionario, historial,
+        semana_dir, semana_str, args.numero, linea, estil, diccionario, historial,
         bloc3_mode=bloc3_mode,
         context_extra=context_efectiu,
         periodo_actual=periodo_actual,
