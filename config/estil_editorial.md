@@ -212,3 +212,49 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
 14. **Evita la simetría de redacción "IA"**: nada de "no solo... sino también"
     como muletilla, nada de estructuras idénticas edición tras edición, nada
     de autocalificarse ("un análisis honesto muestra que...").
+
+---
+
+## 4. Patrons a evitar — tics de redacció IA
+
+Els patrons següents han aparegut al Núm. 11 i Jordi els ha identificat com
+aliens al seu estil. No és que siguin incorrectes lògicament — és que el ritme
+és mecànic i previsible.
+
+**Patró "No A. Sí B." (negació + afirmació binària)**
+Estructura: negar una cosa i afirmar la contrària en dues frases curtes simètriques.
+Exemples del Núm. 11 a evitar:
+- "La diferencia la pone la inflación, no el volumen. El sector no crece; encoge en términos reales."
+- "El freno no es sectorial. Es selectivo."
+
+Per què no funciona: sona a titular de LinkedIn o a conclusió de presentació de
+PowerPoint. El lector el percep com a fórmula, no com a judici genuí.
+
+Alternativa: construir la cadena causal i deixar que el judici emergeixi al final,
+sense anunciar-lo amb una negació prèvia. En lloc de negar A i afirmar B,
+mostrar per què A no explica el que passa i quin mecanisme sí ho explica.
+
+**Patró "X fa Y; qui no tingui X, perdrà Z"**
+Estructura: afirmació sobre qui fa les coses bé + sentència sobre qui no les fa.
+Exemple del Núm. 11 a evitar:
+- "Bon Preu lo entiende; quien siga vendiendo solo producto sin propuesta de
+  experiencia o servicio perderá cuota ante formatos que sí la tienen."
+
+Per què no funciona: la segona part és una predicció genèrica que no afegeix
+informació nova — ja s'inferia de la primera. I la simetria "qui sí / qui no"
+és massa mecànica.
+
+Alternativa: si la implicació és important, donar-li una frase pròpia amb el
+mecanisme concret. Si no és important, tallar la frase a la primera part.
+
+**Patró "La contradicció és només aparent"**
+Estructura: anunciar que hi ha una contradicció i resoldre-la immediatament.
+Exemple del Núm. 11 a evitar:
+- "La contradicción es solo aparente: el centro comercial ha dejado de ser un
+  destino de compra para convertirse en un destino de tiempo."
+
+Per què no funciona: "la contradicció és només aparent" és una fórmula de
+divulgació que avisa el lector que ve una explicació. Jordi no avisa — explica
+directament. El lector ja entendrà que la contradicció es resol.
+
+Alternativa: entrar directament a l'explicació sense el meta-comentari previ.

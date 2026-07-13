@@ -150,20 +150,34 @@ def semana_compacta(semana_str: str) -> str:
 
 CIFRA_PATTERN = re.compile(
     r"\*\*◆\s*LA CIFRA DE LA SEMANA\s*\*\*\s*\n+"
-    r"\*\*Cifra:\*\*\s*(.+?)\s*\n"
+    r"\*\*(?:Cifra|El dato):\*\*\s*(.+?)\s*\n"
     r"\*\*Contexto:\*\*\s*(.+?)\s*\n"
     r"\*\*Fuente:\*\*\s*(.+?)\s*\n",
     re.IGNORECASE,
 )
 
 
+# En modo P2 el campo se etiqueta **El dato:** y puede traer la cláusula
+# completa ("−0,4% ventas reales... (variación interanual)") en vez de solo
+# el número (modo P1, **Cifra:** +4,1%). Si hay texto tras el número/unidad,
+# se traslada al inicio del Contexto para que la caja-exhibit muestre un
+# número corto en tipografía grande y la frase completa como subtítulo.
+CIFRA_VALOR_PATTERN = re.compile(r"^([+\-−]?\s*\d[\d.,]*\s*(?:%|pp|p\.p\.))\s*(.*)$")
+
+
 def extraer_cifra(body: str) -> tuple[str, dict | None]:
     m = CIFRA_PATTERN.search(body)
     if not m:
         return body, None
+    cifra_raw = m.group(1).strip()
+    contexto = m.group(2).strip()
+    vm = CIFRA_VALOR_PATTERN.match(cifra_raw)
+    if vm and vm.group(2):
+        cifra_raw = vm.group(1).strip()
+        contexto = f"{vm.group(2).strip()} · {contexto}"
     data = {
-        "cifra": m.group(1).strip(),
-        "contexto": m.group(2).strip(),
+        "cifra": cifra_raw,
+        "contexto": contexto,
         "fuente": m.group(3).strip(),
     }
     new_body = body[:m.start()] + f"\n\n{MARKER_EXHIBIT}\n\n" + body[m.end():]
