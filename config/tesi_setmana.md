@@ -1,10 +1,11 @@
-Tesi editorial de la setmana: la caiguda del ICM real (−0,4% maig) amaga una divergència profunda per formats. El tràfic als centres comercials puja (+3,1% juny), els formats experiencials i híbrids (mercaurants, digitals natius amb física) creixen, mentre el petit comerç generalista perd volum. El sector no frena de manera uniforme: frena en formats que no han evolucionat i creix en formats que han redefinit la seva proposta de valor.
+Tesi editorial de la setmana: el ICM real cau a nivell nacional però la divergència territorial és enorme. La pregunta rellevant no és per què una CCAA creix, sinó per quins mecanismes econòmics unes CCAA resisteixen quan la mitjana cau. La resposta és estructura de mercat laboral + base industrial + renda disponible real. On hi ha aquestes tres coses, el comerç minorista resisteix. On no, cau. El mapa del retail ja no és pla.
 
-Predicció: la justificació ha de connectar la divergència de formats amb els marges estructurals per branca. Les Grans Superfícies generalistes tenen marges EBE/vendes baixos (~4-5%) i competeixen en preu — quan el volum frena no tenen palanca de marge per absorbir la pressió. Les Grans Cadenes (model marca pròpia, eficiència logística) protegeixen el marge fins i tot amb volum pla. Per tant la predicció ha d'explicar per què les Grans Superfícies generalistes són les més vulnerables, no només anunciar-ho.
+Context macro obligatori: l'Estret d'Ormuz segueix tancat. La CEOE preveu inflació del 3,1% el 2026 condicionada a la normalització del tràfic marítim. Si el bloqueig es prolonga, l'energia cara es trasllada a costos logístics i de climatització, pressiona marges, i les CCAA sense base industrial absorbiran pitjor l'impacte. La premsa generalista explica què passa; l'Observatori ha d'explicar per a qui és pitjor i quan arribarà al punt de venda.
 
-Notícies concretes per al Bloc 2 (usar exactament aquestes tres):
-— Afluència centres comercials +3,1% juny (Hi Retail, 7 juliol)
-— Mercaurants i formats de restauració integrada com a innovació de proximitat (VIA Empresa o AGECU si VIA Empresa no és al snapshot)
-— Decathlon absorbeix 18 Intersport — concentració quan el volum frena (El Economista, 8 juliol)
+Bloc 1: usar ICM real per CCAA del mes més recent disponible (icm.csv). Mostrar la bretxa entre la CCAA que més creix i la que més cau en termes reals — aquesta bretxa és la cifra protagonista, no la mitjana nacional.
 
-Bloc 3: usar ICM per format de distribució (icm_distribucion.csv) — quatre formats, variació interanual real, mes més recent disponible.
+Bloc 3: barres divergents ICM real per CCAA — totes les CCAA disponibles, ordenades de major creixement a major caiguda.
+
+Predicció: si l'Estret d'Ormuz segueix tancat i la inflació es manté per sobre del 3%, les CCAA sense base industrial ni mercat laboral tens veuran el seu ICM real entrar en negatiu abans de finals de Q3 2026. Les CCAA amb estructura econòmica forta resistiran. La bretxa territorial s'ampliarà.
+
+Important: no repetir la dada del −0,4% ICM nacional de maig — ja ha sortit als Núm. 10 i 11. Usar dades per CCAA o el mes de juny si ja és disponible.
