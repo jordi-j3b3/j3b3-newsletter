@@ -206,5 +206,31 @@
     "brevo_campaign_id": "22",
     "created_at_utc": "2026-07-05T17:39:42.771526+00:00",
     "scheduled_at": "2026-07-06T08:30:00+02:00"
+  },
+  {
+    "numero": 11,
+    "semana": "2026-07-20",
+    "cifra": "4,9 puntos",
+    "dataset_bloc1": "ICM real por CCAA - brecha Aragón/Illes Balears",
+    "periodo_bloc1": "2026-05",
+    "angulo_bloc1": "La brecha territorial del retail refleja estructuras productivas que divergen, no ruido estadístico",
+    "tema_prediccion": "La brecha ICM por CCAA superará 7 puntos en octubre 2026 si Ormuz sigue cerrado",
+    "noticias": [
+      "Los supermercados han absorbido ya 90 millones de euros de sobrecoste energético por la guerra",
+      "Lidl firma con los sindicatos una subida salarial del 15% hasta 2030",
+      "La Xunta lleva la campaña 'Comercio Compensa' a 60 localidades para promover el comercio de proximidad"
+    ],
+    "periodo_eurostat": "2026-05",
+    "periodo_icm": "2026-05",
+    "periodo_icm_distribucio": "2026-05",
+    "indicador_bloc3": "icm_ccaa",
+    "mode_editorial": "P2",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "25",
+    "scheduled_at": "2026-07-20T08:30:00+02:00",
+    "asunto": "El mapa del retail ya no es plano: 4,9 puntos separan las CCAA",
+    "titular": "España rota: dos ritmos, un mercado.",
+    "created_at_utc": "2026-07-19T17:30:50.172033+00:00"
   }
 ]
