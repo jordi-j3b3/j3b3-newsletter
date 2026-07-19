@@ -17,6 +17,12 @@ Modos editoriales:
   P2 — tesi mana: cap dataset clau actualitzat. L'editor fixa el Titular
        (--titular) i l'AI tria la dada que millor l'argumenta.
 
+Anti-repetició de la cifra protagonista:
+  Si la cifra del Bloque 1 repeteix dataset+periode respecte l'edició
+  anterior (mateix indicador, mateix mes), es reintenta la generació fins a
+  MAX_REINTENTOS_CIFRA_REPETIDA vegades amb una instrucció explícita de triar
+  un altre dataset o un altre periode del snapshot (veure es_dada_repetida).
+
 Uso:
     python scripts/generate.py --semana 2026-05-19 --numero 1
     python scripts/generate.py --semana 2026-06-23 --numero 9 \\
@@ -51,6 +57,7 @@ with open(ROOT / "config" / "settings.yaml", encoding="utf-8") as f:
 
 HISTORIAL_PATH = ROOT / "config" / "historial_editorial.json"
 HISTORIAL_VENTANA = 6  # ediciones recientes a inyectar en el prompt
+MAX_REINTENTOS_CIFRA_REPETIDA = 1  # reintentos si la cifra del Bloque 1 repite dataset+periodo
 
 TESI_SETMANA_PATH = ROOT / "config" / "tesi_setmana.md"
 
@@ -190,11 +197,15 @@ def format_historial_para_prompt(entries: list, max_n: int = HISTORIAL_VENTANA) 
 def extract_historial_entry(
     client: "Anthropic", modelo: str, numero: int, semana: str, borrador: str
 ) -> dict:
-    """Segunda llamada barata a Sonnet para extraer los 4 campos del historial.
+    """Segunda llamada barata a Sonnet para extraer los campos del historial.
 
-    Devuelve un dict con numero, semana, cifra, angulo_bloc1, tema_prediccion,
-    noticias[3]. Lanza excepción si el modelo no devuelve JSON parseable —
-    el caller la captura y omite la actualización sin romper el pipeline.
+    Devuelve un dict con numero, semana, cifra, dataset_bloc1, periodo_bloc1,
+    angulo_bloc1, tema_prediccion, noticias[3]. dataset_bloc1/periodo_bloc1
+    identifican la fuente y el periodo exactos de la cifra protagonista —
+    se usan para detectar repetición frente a la edición anterior (ver
+    es_dada_repetida). Lanza excepción si el modelo no devuelve JSON
+    parseable — el caller la captura y omite la actualización sin romper
+    el pipeline.
     """
     prompt = (
         "Has generado esta edición de la newsletter 'El Pulso de la semana':\n\n"
@@ -203,6 +214,12 @@ def extract_historial_entry(
         "(sin texto adicional, sin code fences):\n\n"
         "{\n"
         '  "cifra": "<la cifra protagonista del bloque 1, p.ej. +4,1%>",\n'
+        '  "dataset_bloc1": "<el dataset/indicador exacto del que procede la '
+        'cifra protagonista, p.ej. \'ICM real nacional\', \'ICM real por CCAA '
+        '- Cataluña\', \'CDMGE grandes cadenas\', \'Productividad - coste '
+        'laboral por ocupado\'>",\n'
+        '  "periodo_bloc1": "<el periodo exacto de esa cifra, p.ej. 2026-06, '
+        'o 2018-2024 si es una serie>",\n'
         '  "angulo_bloc1": "<una frase de 12-20 palabras sintetizando la tesis '
         'editorial del bloque 1>",\n'
         '  "tema_prediccion": "<una frase de 12-20 palabras sintetizando la '
@@ -228,10 +245,42 @@ def extract_historial_entry(
         "numero": numero,
         "semana": semana,
         "cifra": str(data.get("cifra", "")),
+        "dataset_bloc1": str(data.get("dataset_bloc1", "")),
+        "periodo_bloc1": str(data.get("periodo_bloc1", "")),
         "angulo_bloc1": str(data.get("angulo_bloc1", "")),
         "tema_prediccion": str(data.get("tema_prediccion", "")),
         "noticias": list(data.get("noticias", [])),
     }
+
+
+def es_dada_repetida(entry_actual: dict, historial: list, semana_actual: str) -> tuple[bool, str]:
+    """¿La cifra protagonista del Bloque 1 repite dataset Y periodo respecto
+    a la edición anterior? Compara dataset_bloc1+periodo_bloc1 (no la cifra
+    en sí, que puede variar levemente con una revisión de la serie) contra
+    la última entrada del historial distinta de la semana actual.
+
+    Devuelve (True, motivo) si coinciden exactamente ambos campos (repetición
+    real: mismo indicador Y mismo periodo). Si falta alguno de los dos campos
+    en la entrada actual (extracción incompleta) no se considera repetición
+    — mejor no bloquear el pipeline por un dato ambiguo.
+    """
+    previas = [e for e in historial if e.get("semana") != semana_actual]
+    if not previas:
+        return False, ""
+    ultima = previas[-1]
+    dataset_actual = str(entry_actual.get("dataset_bloc1", "")).strip().lower()
+    periodo_actual = str(entry_actual.get("periodo_bloc1", "")).strip().lower()
+    if not dataset_actual or not periodo_actual:
+        return False, ""
+    dataset_prev = str(ultima.get("dataset_bloc1", "")).strip().lower()
+    periodo_prev = str(ultima.get("periodo_bloc1", "")).strip().lower()
+    if dataset_actual == dataset_prev and periodo_actual == periodo_prev:
+        return True, (
+            f"la cifra protagonista repite el dataset '{entry_actual.get('dataset_bloc1')}' "
+            f"y el periodo '{entry_actual.get('periodo_bloc1')}' ya usados en la edición "
+            f"Núm. {ultima.get('numero', '?')} ({ultima.get('semana', '?')})"
+        )
+    return False, ""
 
 
 def parse_args() -> argparse.Namespace:
@@ -1120,46 +1169,92 @@ def main() -> int:
         print("  Context addicional (--context-extra) afegit al prompt")
     context_efectiu = "\n\n".join(contexts)
 
-    system, messages = construir_prompts(
-        semana_dir, semana_str, args.numero, linea, estil, diccionario, historial,
-        bloc3_mode=bloc3_mode,
-        context_extra=context_efectiu,
-        periodo_actual=periodo_actual,
-        mode_editorial=mode_editorial,
-        titular=args.titular,
-        marges_disponible=marges_verificat,
-        hi_ha_noticies_editor=bool(noticies_editor_meta),
-    )
-
     modelo = SETTINGS["modelo"]["modelo"]
-    print(f"Generando borrador con {modelo} (mode {mode_editorial})...")
     client = Anthropic()
-    response = client.messages.create(
-        model=modelo,
-        max_tokens=SETTINGS["modelo"]["max_tokens"],
-        temperature=SETTINGS["modelo"]["temperatura"],
-        system=system,
-        messages=messages,
-    )
 
-    borrador = "".join(block.text for block in response.content if block.type == "text")
+    # Bucle de generació amb comprovació anti-repetició: si la cifra
+    # protagonista del Bloque 1 repeteix dataset+periode respecte l'edició
+    # anterior (es_dada_repetida), es reintenta amb una instrucció explícita
+    # d'usar un dataset o periode diferent, fins a MAX_REINTENTOS_CIFRA_REPETIDA
+    # vegades. Si args.no_historial, no hi ha historial amb què comparar i el
+    # bucle s'executa una sola vegada (comportament idèntic al d'abans).
+    entry_candidate = None
+    intentos = 0
+    while True:
+        system, messages = construir_prompts(
+            semana_dir, semana_str, args.numero, linea, estil, diccionario, historial,
+            bloc3_mode=bloc3_mode,
+            context_extra=context_efectiu,
+            periodo_actual=periodo_actual,
+            mode_editorial=mode_editorial,
+            titular=args.titular,
+            marges_disponible=marges_verificat,
+            hi_ha_noticies_editor=bool(noticies_editor_meta),
+        )
 
-    # Resol els enllaços de redirecció de Google News (news.google.com/rss/
-    # articles/…) a la URL real de l'editor. Només afecta els 2-3 enllaços que el
-    # model ha triat per al butlletí. Si falla (xarxa, format de Google canviat),
-    # es manté l'enllaç original: el butlletí no es bloqueja per això.
-    try:
-        obs_path = os.environ.get("OBSERVATORI_PATH")
-        if obs_path and obs_path not in sys.path:
-            sys.path.insert(0, obs_path)
-        from modules.press import resolve_links_in_text  # type: ignore
+        etiqueta_intento = f", reintento {intentos}/{MAX_REINTENTOS_CIFRA_REPETIDA}" if intentos else ""
+        print(f"Generando borrador con {modelo} (mode {mode_editorial}{etiqueta_intento})...")
+        response = client.messages.create(
+            model=modelo,
+            max_tokens=SETTINGS["modelo"]["max_tokens"],
+            temperature=SETTINGS["modelo"]["temperatura"],
+            system=system,
+            messages=messages,
+        )
 
-        borrador, n_resolts = resolve_links_in_text(borrador)
-        if n_resolts:
-            print(f"  Enllaços Google News resolts a l'editor original: {n_resolts}")
-    except Exception as e:
-        print(f"  Aviso: no se pudieron resolver los enlaces de Google News ({e}). "
-              f"Se mantienen los enlaces de redirección.", file=sys.stderr)
+        borrador = "".join(block.text for block in response.content if block.type == "text")
+
+        # Resol els enllaços de redirecció de Google News (news.google.com/rss/
+        # articles/…) a la URL real de l'editor. Només afecta els 2-3 enllaços que el
+        # model ha triat per al butlletí. Si falla (xarxa, format de Google canviat),
+        # es manté l'enllaç original: el butlletí no es bloqueja per això.
+        try:
+            obs_path = os.environ.get("OBSERVATORI_PATH")
+            if obs_path and obs_path not in sys.path:
+                sys.path.insert(0, obs_path)
+            from modules.press import resolve_links_in_text  # type: ignore
+
+            borrador, n_resolts = resolve_links_in_text(borrador)
+            if n_resolts:
+                print(f"  Enllaços Google News resolts a l'editor original: {n_resolts}")
+        except Exception as e:
+            print(f"  Aviso: no se pudieron resolver los enlaces de Google News ({e}). "
+                  f"Se mantienen los enlaces de redirección.", file=sys.stderr)
+
+        if args.no_historial:
+            break
+
+        try:
+            entry_candidate = extract_historial_entry(
+                client, modelo, args.numero, semana_str, borrador
+            )
+        except Exception as e:
+            print(f"  Aviso: no se pudo comprobar la repetición de la cifra protagonista "
+                  f"({e}). Se mantiene el borrador sin ese chequeo.", file=sys.stderr)
+            break
+
+        repetida, motivo = es_dada_repetida(entry_candidate, historial, semana_str)
+        if not repetida:
+            break
+        if intentos >= MAX_REINTENTOS_CIFRA_REPETIDA:
+            print(f"  Aviso: {motivo}, pero se agotaron los reintentos "
+                  f"({MAX_REINTENTOS_CIFRA_REPETIDA}). Se mantiene la cifra.", file=sys.stderr)
+            break
+
+        intentos += 1
+        print(f"  Cifra protagonista repetida: {motivo}. "
+              f"Reintentando ({intentos}/{MAX_REINTENTOS_CIFRA_REPETIDA}) "
+              f"con instrucción explícita de cambiar de dataset o periodo...")
+        contexts.append(
+            "ATENCIÓN — LA CIFRA PROTAGONISTA GENERADA REPETÍA UN DATO YA USADO: "
+            f"{motivo}. Para esta edición, elige en el Bloque 1 una cifra "
+            "protagonista DIFERENTE: un dataset distinto del snapshot, o el "
+            "mismo dataset con un periodo distinto (un mes más reciente si "
+            "está disponible, o un desglose distinto —CCAA, rama, modo de "
+            "distribución— en vez de la media nacional ya usada). No repitas "
+            "el dataset ni el periodo de la edición anterior."
+        )
+        context_efectiu = "\n\n".join(contexts)
 
     out_md.write_text(borrador, encoding="utf-8")
 
@@ -1195,7 +1290,10 @@ def main() -> int:
     # Actualizar historial editorial
     if not args.no_historial:
         try:
-            entry = extract_historial_entry(
+            # Reaprofita l'extracció feta al bucle anti-repetició; si per algun
+            # motiu no es va poder fer (excepció capturada allà), es reintenta
+            # aquí una última vegada.
+            entry = entry_candidate if entry_candidate is not None else extract_historial_entry(
                 client, modelo, args.numero, semana_str, borrador
             )
             entry["periodo_eurostat"] = periodo_actual
