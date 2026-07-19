@@ -4,7 +4,7 @@ Captura snapshot semanal de datos del Observatorio del Comercio.
 Genera data/semana-YYYY-MM-DD/ con:
   - pulso_diario.csv        copia íntegra de cdmge.csv
   - pulso_europeo.csv       copia íntegra de europa_retail_mensual.csv
-  - pulso_icm.csv           tall de icm.csv (sèrie general nacional + branques)
+  - pulso_icm.csv           tall de icm.csv (sèrie general nacional + branques + CCAA)
   - recopilacion_prensa.md  serializado de modules.press.fetch_press(),
                             filtrado a la ventana configurada, con las
                             entradas [EDITOR] de config/noticies_editor.md
@@ -162,18 +162,22 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
         `meses` mesos.
       - desglossament per branca del mes més recent (real, var_anual) per
         poder explicar ON es concentra el moviment.
+      - desglossament per CCAA del mes més recent disponible (real,
+        var_anual, branca general): permet el Bloc 3 territorial
+        (mode icm_ccaa de generate.py) quan la tesi editorial ho demana.
     """
     if not src.exists():
         print(f"  ICM: no trobat a {src}, s'omet del snapshot", file=sys.stderr)
         return None
 
-    df = pd.read_csv(src)
-    df = df[df["ambit"] == "nacional"].copy()
+    df_raw = pd.read_csv(src)
+    df_raw["data"] = pd.to_datetime(df_raw["data"], errors="coerce")
+
+    df = df_raw[df_raw["ambit"] == "nacional"].copy()
     if df.empty:
         print(f"  ICM: sense files nacionals a {src}, s'omet", file=sys.stderr)
         return None
 
-    df["data"] = pd.to_datetime(df["data"], errors="coerce")
     periodes = sorted(df["data"].dropna().unique())
     cutoff = periodes[-meses] if len(periodes) >= meses else periodes[0]
 
@@ -192,9 +196,26 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
         & (df["data"] == ult_data)
     ]
 
-    out = pd.concat([general, branques]).drop_duplicates()
+    # Desglossament per CCAA del mes més recent disponible (real, var_anual,
+    # branca general). Ve de df_raw (no de df, que ja està filtrat a
+    # ambit == "nacional").
+    ccaa_full = df_raw[
+        (df_raw["ambit"] != "nacional")
+        & (df_raw["branca"] == ICM_BRANCA_GENERAL)
+        & (df_raw["tipus"] == "real")
+        & (df_raw["indicador"] == "var_anual")
+    ]
+    ccaa_ultimo_periodo = ""
+    if not ccaa_full.empty:
+        ult_data_ccaa = ccaa_full["data"].max()
+        ccaa = ccaa_full[ccaa_full["data"] == ult_data_ccaa]
+        ccaa_ultimo_periodo = ult_data_ccaa.strftime("%Y-%m")
+    else:
+        ccaa = ccaa_full
+
+    out = pd.concat([general, branques, ccaa]).drop_duplicates()
     cols = ["ambit", "tipus", "branca", "indicador", "any", "mes", "data", "valor"]
-    out = out[cols].sort_values(["tipus", "branca", "indicador", "data"])
+    out = out[cols].sort_values(["tipus", "branca", "indicador", "ambit", "data"])
     out.to_csv(dst, index=False)
 
     # Metadades: últim periode i valor de titular (general real var_anual)
@@ -213,6 +234,8 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
         "ultimo_periodo": ultimo_periodo,
         "lag_dias": lag_dias,
         "general_real_var_anual": float(ultim["valor"]) if ultim is not None else None,
+        "ccaa_disponible": bool(not ccaa_full.empty),
+        "ccaa_ultimo_periodo": ccaa_ultimo_periodo,
     }
 
 
@@ -535,6 +558,9 @@ def main() -> int:
               f"general real var. anual {va:+.1f}%" if va is not None else
               f"  pulso_icm.csv        · {icm_info['filas']:>6} filas · "
               f"últim periode {icm_info['ultimo_periodo']}")
+        if icm_info.get("ccaa_disponible"):
+            print(f"  pulso_icm.csv (CCAA) · desglossament territorial "
+                  f"disponible · {icm_info['ccaa_ultimo_periodo']}")
 
     icm_dist_info = capture_icm_distribucio(icm_distribucio_src, icm_distribucio_dst)
     if icm_dist_info:

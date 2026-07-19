@@ -298,10 +298,11 @@ def parse_args() -> argparse.Namespace:
                         "automàticament a partir de les actualitzacions del snapshot.")
     p.add_argument("--bloc3", default="",
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
-                            "icm_ramas", "marges_branca", "icm_distribucio"],
+                            "icm_ramas", "marges_branca", "icm_distribucio", "icm_ccaa"],
                    help="Sobreescriu la selecció automàtica del bloc 3. "
                         "'marges_branca' només és vàlid si el dataset de marges "
-                        "està verificat (verificat=True al snapshot).")
+                        "està verificat (verificat=True al snapshot). 'icm_ccaa' "
+                        "només és vàlid si pulso_icm.csv té desglossament per CCAA.")
     return p.parse_args()
 
 
@@ -447,8 +448,14 @@ def slice_icm(csv_path: Path, mesos: int = 15) -> str:
       1. Sèrie general (CNAE 47) mes a mes: var. anual i acumulada,
          nominal i real (constants) — mostra el gir a negatiu.
       2. Desglossament per branca del mes més recent (real, var. anual).
+
+    Filtra sempre ambit == "nacional": pulso_icm.csv també conté el
+    desglossament per CCAA (mateixa branca general, ambit = nom de la
+    comunitat) que consumeix slice_icm_ccaa() — cal excloure'l aquí per no
+    barrejar-lo amb la sèrie i el desglossament nacionals.
     """
     df = pd.read_csv(csv_path, parse_dates=["data"])
+    df = df[df["ambit"] == "nacional"].copy()
     df["periode"] = df["data"].dt.strftime("%Y-%m")
 
     # ── Bloc 1: sèrie general mes a mes ──
@@ -478,6 +485,48 @@ def slice_icm(csv_path: Path, mesos: int = 15) -> str:
               br.round(1).to_csv(index=False))
 
     return linia1 + linia2
+
+
+# Etiquetes curtes per als noms de CCAA de l'INE (format oficial invertit,
+# p.ex. "Rioja, La") a format llegible per a la newsletter.
+ICM_CCAA_CURTA = {
+    "Rioja, La": "La Rioja",
+    "Navarra, Comunidad Foral de": "Navarra",
+    "Murcia, Región de": "Murcia",
+    "Madrid, Comunidad de": "Madrid",
+    "Castilla - La Mancha": "Castilla-La Mancha",
+    "Balears, Illes": "Illes Balears",
+    "Asturias, Principado de": "Asturias",
+}
+
+
+def icm_ccaa_disponible(csv_path: Path) -> bool:
+    """¿pulso_icm.csv conté desglossament per CCAA (ambit != nacional)?
+    Necessari perquè el snapshot pot ser d'abans que snapshot.py capturés
+    aquesta dimensió, o si la font no la publica aquell periode."""
+    if not csv_path.exists():
+        return False
+    df = pd.read_csv(csv_path, usecols=["ambit"])
+    return bool((df["ambit"] != "nacional").any())
+
+
+def slice_icm_ccaa(csv_path: Path) -> str:
+    """Desglossament per CCAA de pulso_icm.csv (real, var_anual, branca
+    general, mes més recent disponible per a aquesta dimensió), ordenat de
+    major creixement a major caiguda. Mateix patró que el desglossament per
+    branca de slice_icm(), amb 'ambit' (CCAA) com a dimensió."""
+    df = pd.read_csv(csv_path, parse_dates=["data"])
+    ccaa = df[(df["ambit"] != "nacional") & (df["tipus"] == "real") &
+              (df["indicador"] == "var_anual")].copy()
+    if ccaa.empty:
+        return ""
+    ult = ccaa["data"].max()
+    ccaa = ccaa[ccaa["data"] == ult].copy()
+    ccaa["etiqueta"] = ccaa["ambit"].map(ICM_CCAA_CURTA).fillna(ccaa["ambit"])
+    ccaa = ccaa[["etiqueta", "valor"]].sort_values("valor", ascending=False)
+    return (f"Desglose por Comunidad Autonoma (CCAA) · variacion interanual real · "
+            f"{ult.strftime('%Y-%m')} (mes mas reciente):\n" +
+            ccaa.round(1).to_csv(index=False))
 
 
 def slice_icm_distribucio(csv_path: Path, mesos: int = 15) -> str:
@@ -516,6 +565,31 @@ def detectar_novetat_icm_distribucio(periodo_actual: str, historial: list, seman
     if not ultimo:
         return True
     return periodo_actual > str(ultimo)
+
+
+# Frases que, si apareixen a config/tesi_setmana.md, indiquen que l'editor
+# demana una comparativa territorial (per CCAA) al Bloc 3. Es comprova en
+# minúscules, com a substring — no cal que siguin paraules senceres.
+TRIGGERS_TERRITORIAL = [
+    "ccaa", "comunitat autònoma", "comunitats autònomes", "comunitat autonoma",
+    "comunidad autónoma", "comunidad autonoma", "comunidades autónomas",
+    "comunidades autonomas", "comparativa territorial", "divergència territorial",
+    "divergencia territorial", "per territoris", "por territorios",
+    "entre ccaa", "entre comunidades", "entre comunitats", "per comunitats",
+    "por comunidades",
+]
+
+
+def tesi_demana_comparativa_territorial(tesi_text: str) -> bool:
+    """¿La tesi setmanal (config/tesi_setmana.md) demana explícitament una
+    comparativa territorial (CCAA) al Bloc 3? Si és així, el mode 'icm_ccaa'
+    s'activa automàticament (si hi ha dades disponibles), per davant dels
+    criteris de novetat de la resta de modes: la intenció editorial explícita
+    mana sobre l'heurística de frescor de dades."""
+    if not tesi_text:
+        return False
+    t = tesi_text.lower()
+    return any(trigger in t for trigger in TRIGGERS_TERRITORIAL)
 
 
 def slice_marges(csv_path: Path) -> str:
@@ -653,6 +727,26 @@ def construir_prompts(
             "renderiza como barras divergentes (positivo azul, negativo rojo). "
             "Ordena de mayor a menor valor. El subtítulo debe llevar el mes y la "
             "palabra 'real', sin 'variación interanual' (compose.py añade la leyenda)."
+        )
+    elif bloc3_mode == "icm_ccaa":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (DESGLOSE ICM POR CCAA — muestra la "
+            "divergencia territorial dentro del sector):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** Ventas minoristas por Comunidad Autónoma · <mes> (variación real)\n\n"
+            "   - Comunidad 1: <valor>%\n"
+            "   - Comunidad 2: <valor>%\n"
+            "   - ...\n\n"
+            "   <2-3 párrafos interpretando qué comunidades crecen y cuáles caen, "
+            "conectando con la tesis territorial del Bloque 1: la divergencia entre "
+            "CCAA no es ruido, responde a estructura de mercado laboral, base "
+            "industrial y renta disponible real.>\n\n"
+            "   Usa el 'Desglose por Comunidad Autonoma (CCAA)' de <PULSO_ICM_CCAA> "
+            "(variación interanual real del mes más reciente disponible para esta "
+            "dimensión). Incluye TODAS las CCAA disponibles (compose.py las renderiza "
+            "como barras divergentes, positivo azul, negativo rojo). Ordena de mayor a "
+            "menor valor. El subtítulo debe llevar el mes y la palabra 'real', sin "
+            "'variación interanual' (compose.py añade la leyenda)."
         )
     elif bloc3_mode == "icm_distribucio":
         bloque3_instr = (
@@ -990,6 +1084,12 @@ def construir_prompts(
             f"<PULSO_ICM_INE periodo=ultims_15_mesos>\n{icm_data}\n</PULSO_ICM_INE>",
             "",
         ])
+        if icm_ccaa_disponible(icm_path):
+            icm_ccaa_data = slice_icm_ccaa(icm_path)
+            parts.extend([
+                f"<PULSO_ICM_CCAA>\n{icm_ccaa_data}\n</PULSO_ICM_CCAA>",
+                "",
+            ])
 
     icm_distribucio_path = semana_dir / "pulso_icm_distribucio.csv"
     if icm_distribucio_path.exists():
@@ -1093,7 +1193,13 @@ def main() -> int:
 
     print(f"  Mode editorial: {mode_editorial} ({mode_motiu})")
 
-    # Decisió del Bloque 3: quatre modes automàtics + dos manuals.
+    # Tesi setmanal: es llegeix ja aquí (abans de decidir el Bloc 3) perquè
+    # pot demanar explícitament una comparativa territorial (mode icm_ccaa).
+    # No es consumeix/renombra fins després de generar (marcar_tesi_usada()),
+    # així que llegir-la ara no interfereix amb el seu ús més avall.
+    tesi_setmana = load_tesi_setmana()
+
+    # Decisió del Bloque 3: cinc modes automàtics + tres manuals.
     periodo_actual = max_periodo_europeo(semana_dir / "pulso_europeo.csv")
     novedad = detectar_novetat_eurostat(periodo_actual, historial, semana_str)
     dies_mes = cdmge_dies_mes_actual(semana_dir / "pulso_diario.csv")
@@ -1108,6 +1214,16 @@ def main() -> int:
         detectar_novetat_icm_distribucio(periodo_icm_dist_actual, historial, semana_str)
         if icm_dist_disponible else False
     )
+
+    # ICM per CCAA: disponible si pulso_icm.csv té desglossament territorial;
+    # s'activa quan la tesi setmanal ho demana explícitament (regla d'intenció
+    # editorial, no de novetat de dataset — ver tesi_demana_comparativa_territorial).
+    icm_ccaa_ok = icm_ccaa_disponible(semana_dir / "pulso_icm.csv")
+    demana_ccaa = tesi_demana_comparativa_territorial(tesi_setmana)
+    if demana_ccaa and not icm_ccaa_ok:
+        print("  Avís: la tesi setmanal demana comparativa territorial (CCAA) però "
+              "pulso_icm.csv no té aquest desglossament; es recorre als criteris "
+              "automàtics del Bloc 3.", file=sys.stderr)
 
     # Gate de marges: l'angle de marges per branca només és vàlid si el dataset
     # té verificat=True al snapshot (avui, sèrie oficial de l'INE).
@@ -1125,8 +1241,15 @@ def main() -> int:
             print("  Bloc 3: 'icm_distribucio' sol·licitat però pulso_icm_distribucio.csv "
                   "no és al snapshot; recau a context editorial", file=sys.stderr)
             bloc3_mode = "editorial_contexto"
+        elif bloc3_mode == "icm_ccaa" and not icm_ccaa_ok:
+            print("  Bloc 3: 'icm_ccaa' sol·licitat però pulso_icm.csv no té "
+                  "desglossament per CCAA; recau a context editorial", file=sys.stderr)
+            bloc3_mode = "editorial_contexto"
         else:
             print(f"  Bloc 3: {bloc3_mode} (sobreescrit per --bloc3)")
+    elif icm_ccaa_ok and demana_ccaa:
+        bloc3_mode = "icm_ccaa"
+        print("  Bloc 3: ICM per CCAA (la tesi setmanal demana comparativa territorial)")
     elif icm_dist_disponible and novetat_icm_dist:
         bloc3_mode = "icm_distribucio"
         print(f"  Bloc 3: ICM per format de distribució "
@@ -1160,7 +1283,6 @@ def main() -> int:
             print(f"    · {n['data']} — {n['titol']}")
     else:
         print("  Fets macro detectats a la premsa: cap")
-    tesi_setmana = load_tesi_setmana()
     if tesi_setmana:
         contexts.append(tesi_setmana)
         print("  Tesi setmanal (config/tesi_setmana.md) afegida al prompt")
