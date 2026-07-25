@@ -47,6 +47,29 @@ Tareas pendientes ordenadas por momento de ejecución.
   Tots tres estan actius via Google News ara mateix. La migració a feed directe
   redueix dependència de Google i millora la latència de les entrades.
 
+- **Font canònica del CDMGE: fixar-la i sincronitzar la còpia d'OneDrive** · Prioridad: mitjana
+  El valor titular del CDMGE (mitjana mòbil 30d de la `tasa_anual`, `cdmge.csv`)
+  difereix segons l'origen de dades: **+25,9%** citat manualment, **+21,2%** al repo
+  `~/repos/observatori-comerc` (fins 15-jun-2026), **+2,3%** a la còpia d'OneDrive de
+  l'observatori (desactualitzada, fins 15-maig-2026). Abans de tornar a usar aquesta
+  dada a cap edició cal (1) fixar quina còpia és la font canònica —presumiblement
+  `~/repos/observatori-comerc`, la que corre el pipeline— i (2) actualitzar/descartar
+  la còpia d'OneDrive perquè no s'agafi per error. Avís tècnic associat: el valor
+  **281,5%** de l'1-jun-2026 és un **efecte base real** (denominador baix del 2025),
+  no un error de parseig, i **contamina qualsevol mitjana de finestra** que el toqui
+  (l'avg30 baixa de 21,2% a 12,2% si s'exclou; mediana 8,1%). Detectat 2026-07-25 en
+  validar (i descartar) la hipòtesi calor→CDMGE del Núm. 13.
+
+- **Sèrie d'anomalia tèrmica per CCAA (AEMET) com a possible font futura** · Prioridad: baixa
+  Per poder validar hipòtesis climàtiques (p.ex. calor→consum, calor→divergència
+  territorial de l'ICM) caldria integrar al pipeline de l'observatori una sèrie
+  d'**anomalia tèrmica mensual per CCAA** (font candidata: AEMET, API OpenData).
+  Avui el cache de l'observatori no té cap dataset meteo/clima, i sense temperatura
+  per territori aquestes hipòtesis no són testables amb dades pròpies. Investigar
+  si AEMET OpenData exposa sèries mensuals agregables a CCAA i el seu format/límits
+  abans de comprometre-hi cap desenvolupament. Origen 2026-07-25 (hipòtesi calor
+  descartada per manca d'aquesta dada).
+
 - **Pages: migrar a desplegament Actions-based amb `concurrency` group** · Prioridad: baixa
   Ara el site (pulso.j3b3.com) usa GitHub Pages **legacy branch-based** (source
   `main` /docs), que dispara el workflow gestionat "pages build and deployment"
