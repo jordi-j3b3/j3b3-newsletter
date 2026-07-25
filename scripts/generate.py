@@ -671,6 +671,7 @@ def construir_prompts(
     titular: str = "",
     marges_disponible: bool = False,
     hi_ha_noticies_editor: bool = False,
+    noticies_forcades: list | None = None,
 ) -> tuple[list[dict], list[dict]]:
     """Construye (system, messages) para la llamada al modelo.
 
@@ -911,6 +912,22 @@ def construir_prompts(
         "regla 11 (proximitat) si aplica. Advierte en TRAZABILIDAD qué notícia "
         "[EDITOR] se ha descartado y por qué.\n"
     ) if hi_ha_noticies_editor else ""
+
+    if hi_ha_noticies_editor and noticies_forcades:
+        titols_forcats = "; ".join(f'"{t}"' for t in noticies_forcades if t)
+        regla_editor += (
+            "9quater. Las noticias [EDITOR] que en <RECOPILACION_PRENSA> lleven la "
+            "línea '- Inclusión: OBLIGATORIA' son de inclusión FORZOSA en el Bloque 2: "
+            "el editor ha decidido que deben aparecer y NO pueden descartarse por "
+            "criterio editorial (a diferencia de las [EDITOR] normales de la regla "
+            "9bis, que sí son descartables). Cada una ocupa una de las tres plazas del "
+            "Bloque 2 obligatoriamente, respetando su ángulo editorial; las plazas "
+            "restantes se completan con la regla 9bis/9/11. Única excepción: la regla "
+            "9ter sigue mandando por encima de esta —si una noticia obligatoria no "
+            "tiene línea '- Snippet:' con texto real (su fetch falló), NO inventes su "
+            "contenido: omítela y advierte en TRAZABILIDAD que una noticia obligatoria "
+            f"no pudo verificarse. En esta edición son obligatorias: {titols_forcats}.\n"
+        )
 
     system = [
         {
@@ -1312,6 +1329,7 @@ def main() -> int:
             titular=args.titular,
             marges_disponible=marges_verificat,
             hi_ha_noticies_editor=bool(noticies_editor_meta),
+            noticies_forcades=[n.get("titol", "") for n in noticies_editor_meta if n.get("forced")],
         )
 
         etiqueta_intento = f", reintento {intentos}/{MAX_REINTENTOS_CIFRA_REPETIDA}" if intentos else ""

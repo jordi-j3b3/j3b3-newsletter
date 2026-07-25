@@ -293,6 +293,14 @@ def parse_noticies_editor(path: Path, semana_str: str) -> list[dict]:
           Angle: ...
           Segment: petit_comerc
 
+    Dos nivells de prioritat segons el prefix de la primera línia:
+      - `- URL:`        → prioritària al Bloc 2 però descartable si el model
+                          té bon criteri editorial (comportament per defecte).
+      - `- FORCE-URL:`  → inclusió OBLIGATÒRIA al Bloc 2, no descartable
+                          (sempre que el fetch tingui contingut real; si falla,
+                          l'anti-al·lucinació de capture_noticies_editor mana).
+
+    Cada entrada retornada porta el flag `forced` (True per a `FORCE-URL:`).
     Si el fitxer no existeix o no hi ha secció per a aquesta setmana,
     retorna [] (no s'aplica cap entrada d'una setmana diferent)."""
     if not path.exists():
@@ -304,13 +312,14 @@ def parse_noticies_editor(path: Path, semana_str: str) -> list[dict]:
         if sections[i].strip() != semana_str:
             continue
         for bloc_m in re.finditer(
-            r"-\s*URL:\s*(\S+)\s*\n\s*Angle:\s*(.+?)\s*\n\s*Segment:\s*(\S+)",
+            r"-\s*(FORCE-)?URL:\s*(\S+)\s*\n\s*Angle:\s*(.+?)\s*\n\s*Segment:\s*(\S+)",
             sections[i + 1],
         ):
             entries.append({
-                "url": bloc_m.group(1).strip(),
-                "angle": bloc_m.group(2).strip(),
-                "segment": bloc_m.group(3).strip(),
+                "url": bloc_m.group(2).strip(),
+                "angle": bloc_m.group(3).strip(),
+                "segment": bloc_m.group(4).strip(),
+                "forced": bool(bloc_m.group(1)),
             })
     return entries
 
@@ -382,11 +391,14 @@ def capture_noticies_editor(
             continue
         titol, snippet = resultat
         capturades.append({
-            "url": e["url"], "titol": titol, "angle": e["angle"], "segment": e["segment"],
+            "url": e["url"], "titol": titol, "angle": e["angle"],
+            "segment": e["segment"], "forced": e.get("forced", False),
         })
         lines.append(f"### [EDITOR] {titol}")
         lines.append(f"- Fuente: Selección editorial ({e['segment']})")
         lines.append(f"- Angle editorial: {e['angle']}")
+        if e.get("forced"):
+            lines.append("- Inclusión: OBLIGATORIA (seleccionada como no descartable por el editor)")
         if snippet:
             lines.append(f"- Snippet: {snippet}")
         lines.append(f"- URL: {e['url']}")
