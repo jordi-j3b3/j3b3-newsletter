@@ -300,13 +300,56 @@ def render_bars(data: dict) -> str:
             '</tr>'
         )
 
+    # Leyenda según el tipo de dato del subtítulo. Por defecto, variación
+    # interanual (ICM/CDMGE/Eurostat); si el subtítulo indica márgenes o
+    # capacidad de absorción, la leyenda describe el margen, no una variación.
+    _sub = subtitle.lower()
+    if any(k in _sub for k in ("margen", "marge", "absorci")):
+        legend = "Margen de explotación (EBE/ventas) · a mayor margen, mayor capacidad de absorción"
+    else:
+        legend = "↑ variación interanual"
+
     return (
         f'<h2 class="data-title">Datos de la semana · {subtitle}</h2>'
         '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="bars-table">'
         + "".join(rows) +
         '</table>'
-        '<p class="bars-legend">↑ variación interanual</p>'
+        f'<p class="bars-legend">{legend}</p>'
     )
+
+
+# --- Pie de fuentes técnicas --------------------------------------------------
+
+# El pie era una lista fija (Eurostat sts_trtu_m + CDMGE tabla 37808 + "12
+# medios"). Cada edición usa datasets distintos: en ediciones de márgenes por
+# rama o de ICM territorial, ese pie citaba fuentes que no se habían usado. Se
+# construye ahora a partir de lo que el propio borrador declara: la línea
+# **Fuente:** del Bloque 1 y, si aporta una fuente distinta, el subtítulo del
+# Bloque 3. El recuento de medios de prensa se omite: varía cada semana.
+FUENTES_ANCLA = ("eurostat", "ine", "idescat", "eustat", "cnmc", "bce", "ecb",
+                 "aeat", "banco de españa")
+
+FUENTE_PRENSA = "Recopilación propia de prensa sectorial"
+
+
+def construir_fuentes(cifra_data: dict | None, datos_data: dict | None) -> str:
+    partes = []
+    fuente_cifra = (cifra_data or {}).get("fuente", "").strip()
+    if fuente_cifra:
+        partes.append(fuente_cifra.rstrip(" ."))
+
+    # El subtítulo del Bloque 3 solo se añade si nombra una fuente que el pie
+    # todavía no cita (ej.: Bloque 1 con CDMGE del INE y Bloque 3 con Eurostat).
+    if datos_data:
+        subtitle = datos_data.get("subtitle", "").strip()
+        ya_citado = " ".join(partes).lower()
+        nuevas = [a for a in FUENTES_ANCLA
+                  if a in subtitle.lower() and a not in ya_citado]
+        if nuevas:
+            partes.append(subtitle.rstrip(" ."))
+
+    partes.append(FUENTE_PRENSA)
+    return " · ".join(partes) + "."
 
 
 # --- Render principal --------------------------------------------------------
@@ -354,6 +397,7 @@ def render(semana_str: str, numero: int) -> tuple[str, str, str, str]:
         .replace("{{numero}}", str(numero))
         .replace("{{semana_str}}", semana_compacta(semana_str))
         .replace("{{body_html}}", body_html)
+        .replace("{{fuentes}}", construir_fuentes(cifra_data, datos_data))
         .replace("{{url_publica}}", SETTINGS["newsletter"]["url_publica"])
     )
 

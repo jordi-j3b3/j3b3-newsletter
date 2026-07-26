@@ -34,6 +34,7 @@ from compose import (  # noqa: E402
     MARKER_BARS,
     MARKER_EXHIBIT,
     MESES_ES,
+    construir_fuentes,
     extraer_cifra,
     extraer_datos,
     extraer_meta,
@@ -149,6 +150,7 @@ def render_web(semana: str, numero: int, output_root: Path | None = None) -> str
         .replace("{{numero}}", str(numero))
         .replace("{{semana_str}}", semana_compacta(semana))
         .replace("{{body_html}}", body_html)
+        .replace("{{fuentes}}", construir_fuentes(cifra_data, datos_data))
         .replace("{{canonical_url}}", canonical_url)
         .replace("{{published_iso}}", published_iso)
         .replace("{{index_url}}", INDEX_URL)
