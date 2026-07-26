@@ -259,5 +259,31 @@
     "asunto": "El mapa del retail ya no es plano: 5 puntos de brecha territorial en mayo",
     "titular": "El mapa del retail ya no es plano.",
     "created_at_utc": "2026-07-19T18:09:00.969911+00:00"
+  },
+  {
+    "numero": 13,
+    "semana": "2026-07-27",
+    "cifra": "11,8%",
+    "dataset_bloc1": "Margen de explotación por rama del comercio minorista - Moda, calzado y otros artículos",
+    "periodo_bloc1": "2024",
+    "angulo_bloc1": "El margen de explotación determina qué ramas del retail pueden absorber el choque energético sin trasladar precios",
+    "tema_prediccion": "Ramas con margen inferior al 6% trasladarán el sobrecoste energético al precio final antes de que acabe Q4 2026",
+    "noticias": [
+      "España impulsa el crecimiento de Carrefour hasta junio, liderando sus tres mercados estratégicos",
+      "Sevilla impulsa un plan para recuperar población y reforzar el comercio de proximidad en su centro histórico",
+      "La factura del 'frío verde' europeo: 2.500 millones de coste adicional para los supermercados"
+    ],
+    "periodo_eurostat": "2026-06",
+    "periodo_icm": "2026-05",
+    "periodo_icm_distribucio": "2026-05",
+    "indicador_bloc3": "europeu",
+    "mode_editorial": "P1",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "27",
+    "scheduled_at": "2026-07-27T08:30:00+02:00",
+    "asunto": "El choque energético no ha llegado al lineal — pero el margen ya no aguanta",
+    "titular": "Márgenes bajo presión energética.",
+    "created_at_utc": "2026-07-26T17:32:18.866826+00:00"
   }
 ]
