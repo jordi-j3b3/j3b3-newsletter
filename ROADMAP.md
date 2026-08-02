@@ -4,6 +4,28 @@ Tareas pendientes ordenadas por momento de ejecución.
 
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
+- **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · Prioridad: alta
+  Avui una edició acaba en **tres llocs independents** generats cadascun amb la
+  seva pròpia comanda a partir del mateix `output/semana-X/newsletter.md`: la
+  campanya de Brevo (contingut pujat via `crea_campanya_programada()` a
+  `schedule.py`), el mirall del dashboard (`mirror_to_dashboard()` a
+  `scripts/mirror.py`, cap a `observatori-comerc/data/newsletter/semana-X.md`)
+  i la web estàtica (`scripts/publish_web.py`, cap a `docs/pulso/num-N.html`).
+  Cap dels tres es torna a disparar automàticament quan es corregeix el
+  contingut després de la generació inicial — cal fer-ho manualment un per un.
+  Ja ha causat el mateix patró d'incident tres vegades: Núm. 10 (2026-07-06,
+  mirall no regenerat després de re-generar l'edició), Núm. 12 (2026-07-20,
+  mirall i web amb el contingut de la campanya cancel·lada) i la correcció
+  del Núm. 14 (2026-08-02, contingut afegit al Bloc 1 després que el cron
+  automàtic ja hagués publicat als tres llocs amb la versió incompleta).
+  Proposta: un únic punt d'entrada (p.ex. `scripts/resync.py --semana X
+  --numero N`) que agafi `output/semana-X/newsletter.md` com a font única de
+  veritat i actualitzi els tres destins en una sola crida — PUT del
+  `htmlContent` a la campanya de Brevo existent (sense tocar `scheduledAt`),
+  `mirror_to_dashboard()` i `publish_web.py` — de manera que una correcció
+  d'última hora sigui una sola comanda en lloc de tres passos manuals fàcils
+  d'oblidar-ne un.
+
 - **Resolución automática de URLs de Google News** · Prioridad: media
   En el pipeline de `scripts/snapshot.py` o `scripts/generate.py`, añadir un paso
   que resuelva los URLs `news.google.com/rss/articles/...` al URL directo del medio
