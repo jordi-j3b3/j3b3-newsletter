@@ -332,5 +332,31 @@
     "asunto": "El choque energético no ha llegado al lineal — pero el margen ya no aguanta",
     "titular": "Márgenes bajo presión energética.",
     "created_at_utc": "2026-07-26T18:33:12.619510+00:00"
+  },
+  {
+    "numero": 14,
+    "semana": "2026-08-03",
+    "cifra": "-6,4%",
+    "dataset_bloc1": "ICM real por modo de distribución - Pequeñas cadenas",
+    "periodo_bloc1": "2026-06",
+    "angulo_bloc1": "Las pequeñas cadenas caen sin suelo por carecer de ventaja competitiva en precio o diferenciación",
+    "tema_prediccion": "Al menos dos pequeñas cadenas anunciarán cierres o fusiones antes del primer trimestre de 2027",
+    "noticias": [
+      "La Laguna pone en marcha una estrategia para asegurar el relevo generacional del comercio local",
+      "Norges Bank lidera la compra de tres grandes centros comerciales españoles: La Vaguada, Plaza Norte 2 y Gran Vía 2",
+      "Dia gana 22,8 millones hasta junio, un 38% menos, pese a disparar sus ventas en España"
+    ],
+    "periodo_eurostat": "2026-06",
+    "periodo_icm": "2026-06",
+    "periodo_icm_distribucio": "2026-06",
+    "indicador_bloc3": "icm_distribucio",
+    "mode_editorial": "P1",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "29",
+    "scheduled_at": "2026-08-03T08:30:00+02:00",
+    "asunto": "Las pequeñas cadenas pierden un 6,4% mientras el sector sube: la bifurcación se acelera",
+    "titular": "El formato intermedio, sin salida.",
+    "created_at_utc": "2026-08-02T17:32:19.910818+00:00"
   }
 ]
