@@ -209,6 +209,26 @@
   },
   {
     "numero": 11,
+    "semana": "2026-07-13",
+    "cifra": "-0,4%",
+    "dataset_bloc1": "ICM real por modo de distribución (Unilocalizadas/Grandes cadenas/Grandes Superficies)",
+    "periodo_bloc1": "2026-05",
+    "angulo_bloc1": "La caída nacional del -0,4% oculta una divergencia por formato: grandes cadenas (+3,6%) y unilocalizadas (+3,1%) capturan demanda mientras las grandes superficies generalistas (+0,8%) quedan atrapadas sin ventaja competitiva",
+    "tema_prediccion": "Si la divergencia entre grandes cadenas (+3,6% real) y grandes superficies generalistas (+0,8% real) se mantiene en el tercer trimestre de 2026, al menos un operador de gran superficie generalista en España anunciará un plan de reestructuración de red antes de fin de año",
+    "noticias": [
+      "La afluencia a los centros comerciales sube un 3,1% en junio pese a la caída del volumen de ventas",
+      "Los supermercados catalanes apuestan por los mercaurants ante el auge de los platos preparados",
+      "Competencia autoriza a Decathlon la compra de 18 tiendas de Intersport con condiciones"
+    ],
+    "periodo_icm": "2026-05",
+    "periodo_icm_distribucio": "2026-05",
+    "titular": "El freno no es uniforme.",
+    "asunto": "El sector frena en volumen, pero no todos frenan igual",
+    "scheduled_at": "2026-07-13T08:30:00+02:00",
+    "estat": "BACKFILL 2026-08-02 — entrada real absent de l'historial (gap silenciós del pipeline: extract_historial_entry degué fallar aquella setmana). Reconstruïda a partir del contingut públic a pulso.j3b3.com/pulso/num-11.html i manifest.json. Camps no verificables (brevo_campaign_id, created_at_utc, indicador_bloc3, mode_editorial, periodo_eurostat, productivitat_any, ocupacio_any) deixats fora per no inventar-los."
+  },
+  {
+    "numero": 11,
     "semana": "2026-07-20",
     "cifra": "4,9 puntos",
     "dataset_bloc1": "ICM real por CCAA - brecha Aragón/Illes Balears",
