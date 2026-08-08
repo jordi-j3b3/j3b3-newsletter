@@ -78,7 +78,15 @@ espanyola del juny, un 4,2% més que fa un any.
 Al juny, les dues comunitats amb pitjor comportament de vendes reals de tot
 Espanya són Catalunya (−1,4%) i Balears (−0,6%), totes dues per sota del +2,4%
 nacional, mentre lideren comunitats d'interior com Extremadura (+6,3%) i Aragó
-(+5,8%). L'euro turístic existeix, és rècord i creix: 46,567 milions de turistes
+(+5,8%).
+
+ATENCIÓ, error de fet a evitar: la ratxa de sis mesos consecutius en negatiu és
+NOMÉS de Balears (gener a juny de 2026). Catalunya va estar en positiu de gener a
+maig (+2,7, +0,1, +3,5, +2,3, +0,4) i només ha entrat en negatiu al juny. No
+atribueixis a Catalunya la ratxa de Balears ni diguis que Catalunya acumula mesos
+en negatiu: en acumulat del semestre Catalunya és +1,2%, positiu. El −1,1%
+acumulat és de Balears i ha d'aparèixer literalment al bloc, perquè és el que
+demostra que no és un mes aïllat. L'euro turístic existeix, és rècord i creix: 46,567 milions de turistes
 al primer semestre, un 4,6% més, amb 63.800 milions d'euros de despesa, un 7%
 més. Però es queda a l'allotjament, la restauració i el transport, i no travessa
 cap al comerç al detall.
@@ -119,6 +127,14 @@ quan s'acaba la temporada: el moment de veritat és el quart trimestre, quan
 l'ocupació turística es retira i el comerç ja no té on col·locar la plantilla que
 no necessita. Formula-la sobre les expectatives financeres personals o sobre
 l'ocupació del comerç al quart trimestre, amb llindar numèric i data.
+
+IDIOMA
+
+Aquest fitxer és en català perquè és una nota de l'editor, però el producte va en
+castellà. No deixis passar cap paraula catalana al cos de l'edició. Les que s'han
+escapat en proves anteriors: "atur" (és "paro"), "despesa" (és "gasto"), "xifra"
+(és "cifra"), "dada" (és "dato"), "milers" (és "miles"). Concordança: "en toda
+España", no "en todo España".
 
 ANTI-REPETICIÓ (comprovat contra historial_editorial.json)
 
