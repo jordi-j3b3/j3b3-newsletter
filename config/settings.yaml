@@ -35,6 +35,9 @@ snapshot:
   icm_origen: "data/cache/icm.csv"
   icm_distribucio_origen: "data/cache/icm_distribucion.csv"
   marges_origen: "data/cache/marges_branca_ine.csv"
+  epa_origen: "data/cache/epa_retail.csv"
+  confianza_origen: "data/cache/confianza_consumidor.csv"
+  ipc_coicop_origen: "data/cache/ipc_coicop.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.

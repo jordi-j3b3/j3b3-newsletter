@@ -422,6 +422,109 @@ def slice_ipc(csv_path: Path, mesos: int = 24) -> str:
     return df.tail(mesos).to_csv(index=False)
 
 
+def slice_epa(csv_path: Path, trimestres: int = 12) -> str:
+    """EPA del comerç (sexe=total) en dos blocs:
+      1. Sèrie dels últims `trimestres` trimestres amb ocupats CNAE 47, aturats
+         de secció G i hores efectives de secció G.
+      2. Variació interanual d'ocupats de cada trimestre de la sèrie, calculada
+         aquí perquè el model no hagi de fer aritmètica, i mínim històric
+         d'aturats de secció G (permet dir "mínim de la sèrie" amb fonament).
+
+    Les tres columnes NO tenen la mateixa cobertura (ocupats = CNAE 47 net;
+    aturats i hores = secció G, que inclou engròs i reparació de vehicles).
+    Això va explicat al prompt com a regla, no només al diccionari."""
+    df = pd.read_csv(csv_path)
+    tot = df[df["sexe"] == "total"].sort_values(["any", "trimestre"]).copy()
+    if tot.empty:
+        return "Sense files amb sexe=total."
+
+    tot["var_anual_ocupats_pct"] = (
+        100 * (tot["ocupats_cnae47_milers"] / tot["ocupats_cnae47_milers"].shift(4) - 1)
+    ).round(2)
+
+    cols = ["periode", "ocupats_cnae47_milers", "var_anual_ocupats_pct",
+            "aturats_seccio_g_milers", "hores_setmana_seccio_g"]
+    serie = tot[cols].tail(trimestres)
+    bloc1 = (f"EPA comerç (sexe=total) · ultims {trimestres} trimestres.\n"
+             "ocupats_cnae47_milers = CNAE 47 net. "
+             "aturats_seccio_g_milers i hores_setmana_seccio_g = seccio G "
+             "(inclou engros i reparacio de vehicles; l'INE no ho desglossa a 2 digits).\n"
+             + serie.to_csv(index=False))
+
+    min_row = tot.loc[tot["aturats_seccio_g_milers"].idxmin()]
+    ult = tot.iloc[-1]
+    negatius = tot[tot["var_anual_ocupats_pct"] < 0]["periode"].tolist()
+    anterior_negatiu = negatius[-2] if len(negatius) >= 2 else "cap anterior a la serie"
+    bloc2 = (
+        f"\nContext historic (serie completa des de {tot.iloc[0]['periode']}):\n"
+        f"- Minim d'aturats de seccio G de tota la serie: "
+        f"{min_row['aturats_seccio_g_milers']} mil a {min_row['periode']}.\n"
+        f"- Ultim trimestre ({ult['periode']}): aturats seccio G "
+        f"{ult['aturats_seccio_g_milers']} mil.\n"
+        f"- Trimestre negatiu en ocupats immediatament anterior a l'ultim: "
+        f"{anterior_negatiu}.\n"
+    )
+    return bloc1 + bloc2
+
+
+def slice_confianza(csv_path: Path, mesos: int = 18) -> str:
+    """Confiança del consumidor (Eurostat) en dos blocs:
+      1. Sèrie dels últims `mesos` mesos amb els cinc components i la bretxa
+         entre expectatives pròpies i expectatives de país.
+      2. Posició històrica d'aquesta bretxa dins tota la sèrie (percentil i
+         mesos que la superen), perquè la predicció pugui ancorar-s'hi sense
+         que el model hagi d'estimar res."""
+    df = pd.read_csv(csv_path).sort_values(["any", "mes"])
+    df = df.dropna(subset=["expectatives_financera", "expectatives_economica"])
+    if df.empty:
+        return "Sense observacions valides."
+    df["bretxa_exp"] = (df["expectatives_financera"] - df["expectatives_economica"]).round(1)
+
+    cols = ["periode", "index_confianca", "situacio_actual_financera",
+            "situacio_actual_economica", "expectatives_financera",
+            "expectatives_economica", "bretxa_exp"]
+    bloc1 = (f"Confianca del consumidor (Eurostat, saldos de respostes -100..+100) · "
+             f"ultims {mesos} mesos:\n" + df[cols].tail(mesos).to_csv(index=False))
+
+    ult = df.iloc[-1]
+    bretxa = float(ult["bretxa_exp"])
+    superiors = df[df["bretxa_exp"] > bretxa]
+    pct = round(100 * float((df["bretxa_exp"] <= bretxa).mean()), 1)
+    llista = ", ".join(superiors.tail(8)["periode"].astype(str).tolist()) or "cap"
+    bloc2 = (
+        f"\nPosicio historica de la bretxa expectatives_financera - expectatives_economica:\n"
+        f"- Valor a {ult['periode']}: {bretxa} punts "
+        f"({ult['expectatives_financera']} vs {ult['expectatives_economica']}).\n"
+        f"- Percentil dins la serie: {pct} de {len(df)} observacions mensuals "
+        f"des de {df.iloc[0]['periode']}.\n"
+        f"- Mesos amb bretxa superior (ultims 8 dels {len(superiors)} que hi ha): {llista}.\n"
+    )
+    return bloc1 + bloc2
+
+
+def slice_ipc_coicop(csv_path: Path, mesos: int = 15) -> str:
+    """IPC per grup COICOP: nivells pivotats grup × periode dels últims `mesos`
+    mesos, més la variació interanual de cada grup al mes més recent (calculada
+    aquí: el CSV porta nivells d'índex, no taxes)."""
+    df = pd.read_csv(csv_path).sort_values(["any", "mes"])
+    piv = df.pivot_table(index="periode", columns="grup", values="ipc", aggfunc="first")
+    bloc1 = (f"IPC per grup COICOP (nivells d'index) · ultims {mesos} mesos:\n"
+             + piv.tail(mesos).round(2).to_csv())
+
+    ult = df["periode"].max()
+    any_ult, mes_ult = ult.split("-")
+    prev = f"{int(any_ult) - 1}-{mes_ult}"
+    linies = []
+    for grup in sorted(df["grup"].unique()):
+        a = df[(df["grup"] == grup) & (df["periode"] == ult)]["ipc"]
+        b = df[(df["grup"] == grup) & (df["periode"] == prev)]["ipc"]
+        if not a.empty and not b.empty and float(b.iloc[0]):
+            linies.append(f"{grup},{round(100 * (float(a.iloc[0]) / float(b.iloc[0]) - 1), 2)}")
+    bloc2 = (f"\nVariacio interanual per grup a {ult} (vs {prev}), en %:\ngrup,var_anual_pct\n"
+             + "\n".join(linies) + "\n")
+    return bloc1 + bloc2
+
+
 ICM_BRANCA_GENERAL = "Comercio al por menor, excepto de vehículos de motor y motocicletas"
 
 # Etiquetes curtes per a les branques de l'ICM (estalvia tokens al prompt).
@@ -738,10 +841,14 @@ def construir_prompts(
             "   - Comunidad 1: <valor>%\n"
             "   - Comunidad 2: <valor>%\n"
             "   - ...\n\n"
-            "   <2-3 párrafos interpretando qué comunidades crecen y cuáles caen, "
-            "conectando con la tesis territorial del Bloque 1: la divergencia entre "
-            "CCAA no es ruido, responde a estructura de mercado laboral, base "
-            "industrial y renta disponible real.>\n\n"
+            "   <2-3 párrafos interpretando qué comunidades crecen y cuáles caen. "
+            "El eje interpretativo lo fija la tesis de la edición: si <CONTEXT_MACRO> "
+            "define un mecanismo concreto (por ejemplo, si el gasto turístico llega o no "
+            "al comercio), el desglose por CCAA es la EVIDENCIA de ese mecanismo y los "
+            "párrafos deben argumentarlo. Solo si la tesis no fija ningún mecanismo, "
+            "recurre a la lectura genérica de que la divergencia entre CCAA responde a "
+            "estructura de mercado laboral, base industrial y renta disponible real. "
+            "No conviertas el mapa en el tema cuando la tesis pide que sea la prueba.>\n\n"
             "   Usa el 'Desglose por Comunidad Autonoma (CCAA)' de <PULSO_ICM_CCAA> "
             "(variación interanual real del mes más reciente disponible para esta "
             "dimensión). Incluye TODAS las CCAA disponibles (compose.py las renderiza "
@@ -956,7 +1063,8 @@ def construir_prompts(
                 "previos. El primer carácter de la respuesta debe ser '**Asunto:**'.\n"
                 "8. La cifra protagonista del Bloque 1 debe proceder SIEMPRE de un dataset "
                 "propio del Observatorio: cualquiera de los bloques de datos <PULSO_...>, "
-                "<PRODUCTIVITAT_SECTOR>, <OCUPACIO_SECTOR> o <IPC_COMERC> del mensaje. "
+                "<PRODUCTIVITAT_SECTOR>, <OCUPACIO_SECTOR>, <IPC_COMERC>, <EPA_COMERC>, "
+                "<CONFIANCA_CONSUMIDOR> o <IPC_GRUPS_COICOP> del mensaje. "
                 "NUNCA puede proceder de <RECOPILACION_PRENSA>: un dato de prensa no es "
                 "fuente primaria del Bloque 1, porque el lector debe poder verificar la "
                 "cifra directamente en el Observatorio. Ejemplo de violación de esta regla: "
@@ -973,7 +1081,11 @@ def construir_prompts(
                 "(pulso_diario.csv), que mide solo grandes cadenas y actúa como suelo del "
                 "ciclo, no como media sectorial. Usa el CDMGE como contraste (grandes "
                 "cadenas vs conjunto del sector), no como protagonista, si el ICM está "
-                "disponible y es más reciente o igual de reciente.\n"
+                "disponible y es más reciente o igual de reciente. EXCEPCIÓN: si "
+                "<CONTEXT_MACRO> fija una tesis editorial que designa explícitamente otro "
+                "dataset como cifra protagonista, manda la tesis. La preferencia por el ICM "
+                "es la regla por defecto cuando el editor no ha decidido, no un veto sobre "
+                "una decisión editorial explícita.\n"
                 "9. Las tres noticias del Bloque 2 deben proceder de medios DISTINTOS: no "
                 "repitas dos titulares del mismo medio en la misma edición. Si la "
                 "recopilación de prensa solo trae noticias de uno o dos medios, elige "
@@ -999,6 +1111,21 @@ def construir_prompts(
                 "diferenciados) y establecimientos que contraen (los genéricos sin "
                 "propuesta de valor). Nunca uses ambos términos como si fueran "
                 "categorías opuestas o independientes.\n"
+                "14. Coberturas del empleo en el comercio: <EPA_COMERC> mezcla dos "
+                "granularidades y NUNCA se pueden presentar como si fueran la misma. Los "
+                "ocupados son CNAE 47 (comercio al por menor); el paro y las horas "
+                "trabajadas son sección G, que incluye además el comercio al por mayor y la "
+                "reparación de vehículos, porque el INE no desglosa esas dos variables a dos "
+                "dígitos. Si una edición usa las tres cifras juntas, DEBE incluir una frase "
+                "breve y legible que lo advierta, del tipo: 'el paro y las horas se publican "
+                "para el conjunto del comercio —mayorista incluido—, porque el INE no los "
+                "desglosa solo para el minorista'. Sin números de tabla ni jerga. "
+                "Adicionalmente, la EPA (encuesta a hogares) y el índice de ocupación del "
+                "ICM (encuesta a empresas) pueden divergir en el mismo periodo: si se cita "
+                "una y la otra apunta en dirección distinta, hay que mencionarlo y explicar "
+                "en una frase que miden cosas distintas, no elegir en silencio la que "
+                "conviene al argumento. Esta advertencia va en el cuerpo, no solo en "
+                "TRAZABILIDAD.\n"
                 + "ESTRUCTURA OBLIGATORIA DEL MARKDOWN (compose.py la parsea literalmente):\n\n"
                 "A. Tres campos de cabecera, cada uno en su línea:\n"
                 "   **Asunto:** <hasta 70 caracteres, un solo hilo conductor>\n"
@@ -1091,6 +1218,31 @@ def construir_prompts(
         ipc_data = slice_ipc(ipc_path, mesos=24)
         parts.extend([
             f"<IPC_COMERC periodo=ultims_24_mesos>\n{ipc_data}\n</IPC_COMERC>",
+            "",
+        ])
+
+    epa_path = semana_dir / "epa_retail.csv"
+    if epa_path.exists():
+        epa_data = slice_epa(epa_path, trimestres=12)
+        parts.extend([
+            f"<EPA_COMERC periodo=ultims_12_trimestres>\n{epa_data}\n</EPA_COMERC>",
+            "",
+        ])
+
+    confianza_path = semana_dir / "confianza_consumidor.csv"
+    if confianza_path.exists():
+        confianza_data = slice_confianza(confianza_path, mesos=18)
+        parts.extend([
+            f"<CONFIANCA_CONSUMIDOR font=Eurostat periodo=ultims_18_mesos>\n"
+            f"{confianza_data}\n</CONFIANCA_CONSUMIDOR>",
+            "",
+        ])
+
+    ipc_coicop_path = semana_dir / "ipc_coicop.csv"
+    if ipc_coicop_path.exists():
+        ipc_coicop_data = slice_ipc_coicop(ipc_coicop_path, mesos=15)
+        parts.extend([
+            f"<IPC_GRUPS_COICOP periodo=ultims_15_mesos>\n{ipc_coicop_data}\n</IPC_GRUPS_COICOP>",
             "",
         ])
 

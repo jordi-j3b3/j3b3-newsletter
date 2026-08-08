@@ -5,6 +5,9 @@ Genera data/semana-YYYY-MM-DD/ con:
   - pulso_diario.csv        copia íntegra de cdmge.csv
   - pulso_europeo.csv       copia íntegra de europa_retail_mensual.csv
   - pulso_icm.csv           tall de icm.csv (sèrie general nacional + branques + CCAA)
+  - epa_retail.csv          copia íntegra de epa_retail.csv (EPA, trimestral)
+  - confianza_consumidor.csv copia íntegra de confianza_consumidor.csv (ICC, mensual)
+  - ipc_coicop.csv          copia íntegra de ipc_coicop.csv (IPC per grup, mensual)
   - recopilacion_prensa.md  serializado de modules.press.fetch_press(),
                             filtrado a la ventana configurada, con las
                             entradas [EDITOR] de config/noticies_editor.md
@@ -124,6 +127,69 @@ def ipc_meta(csv_path: Path) -> dict:
     ultimo_any = int(df["any"].max())
     ultimo_mes = int(df[df["any"] == ultimo_any]["mes"].max())
     return {"ultimo_periode": f"{ultimo_any}-{ultimo_mes:02d}"}
+
+
+def epa_meta(csv_path: Path) -> dict:
+    """Metadades de l'EPA del comerç. Retorna l'últim trimestre i la variació
+    interanual d'ocupats a CNAE 47 (sexe=total), que és la xifra que el Bloc 1
+    pot fer servir com a protagonista. La var. interanual es calcula aquí i no
+    al prompt perquè el model no ha de fer aritmètica amb dades: se li dona
+    resolta i verificable contra el CSV."""
+    df = pd.read_csv(csv_path)
+    tot = df[df["sexe"] == "total"].sort_values(["any", "trimestre"])
+    if tot.empty:
+        return {"ultimo_periode": "", "ocupats_var_anual_pct": None}
+    ult = tot.iloc[-1]
+    prev = tot[(tot["any"] == ult["any"] - 1) & (tot["trimestre"] == ult["trimestre"])]
+    var = None
+    if not prev.empty:
+        base = float(prev.iloc[0]["ocupats_cnae47_milers"])
+        if base:
+            var = round(100 * (float(ult["ocupats_cnae47_milers"]) / base - 1), 2)
+    return {
+        "ultimo_periode": str(ult["periode"]),
+        "ocupats_cnae47_milers": float(ult["ocupats_cnae47_milers"]),
+        "ocupats_var_anual_pct": var,
+        "aturats_seccio_g_milers": float(ult["aturats_seccio_g_milers"]),
+        "hores_setmana_seccio_g": float(ult["hores_setmana_seccio_g"]),
+    }
+
+
+def confianza_meta(csv_path: Path) -> dict:
+    """Metadades de l'ICC (Eurostat ei_bsco_m). Inclou la bretxa entre
+    expectatives financeres pròpies i expectatives de l'economia general, que
+    és l'indicador de desconnexió entre percepció personal i percepció de país,
+    i el seu percentil dins tota la sèrie històrica disponible."""
+    df = pd.read_csv(csv_path).sort_values(["any", "mes"])
+    if df.empty:
+        return {"ultimo_periode": ""}
+    df = df.dropna(subset=["expectatives_financera", "expectatives_economica"])
+    if df.empty:
+        return {"ultimo_periode": ""}
+    df["bretxa"] = df["expectatives_financera"] - df["expectatives_economica"]
+    ult = df.iloc[-1]
+    bretxa = float(ult["bretxa"])
+    pct = round(100 * float((df["bretxa"] <= bretxa).mean()), 1)
+    return {
+        "ultimo_periode": str(ult["periode"]),
+        "index_confianca": float(ult["index_confianca"]),
+        "expectatives_financera": float(ult["expectatives_financera"]),
+        "expectatives_economica": float(ult["expectatives_economica"]),
+        "bretxa_expectatives": round(bretxa, 1),
+        "bretxa_percentil": pct,
+        "n_observacions": int(len(df)),
+        "primer_periode": str(df.iloc[0]["periode"]),
+    }
+
+
+def ipc_coicop_meta(csv_path: Path) -> dict:
+    df = pd.read_csv(csv_path)
+    ultimo_any = int(df["any"].max())
+    ultimo_mes = int(df[df["any"] == ultimo_any]["mes"].max())
+    return {
+        "ultimo_periode": f"{ultimo_any}-{ultimo_mes:02d}",
+        "n_grups": int(df["grup_codi"].nunique()),
+    }
 
 
 def marges_meta(csv_path: Path) -> dict:
@@ -516,6 +582,9 @@ def main() -> int:
     icm_src = obs_path / SETTINGS["snapshot"]["icm_origen"]
     icm_distribucio_src = obs_path / SETTINGS["snapshot"]["icm_distribucio_origen"]
     marges_src = obs_path / SETTINGS["snapshot"]["marges_origen"]
+    epa_src = obs_path / SETTINGS["snapshot"]["epa_origen"]
+    confianza_src = obs_path / SETTINGS["snapshot"]["confianza_origen"]
+    ipc_coicop_src = obs_path / SETTINGS["snapshot"]["ipc_coicop_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
@@ -525,6 +594,9 @@ def main() -> int:
     icm_dst = semana_dir / "pulso_icm.csv"
     icm_distribucio_dst = semana_dir / "pulso_icm_distribucio.csv"
     marges_dst = semana_dir / "marges_branca.csv"
+    epa_dst = semana_dir / "epa_retail.csv"
+    confianza_dst = semana_dir / "confianza_consumidor.csv"
+    ipc_coicop_dst = semana_dir / "ipc_coicop.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -590,6 +662,31 @@ def main() -> int:
               f"{marges_info['n_branques']} branques · últim any {marges_info['ultimo_any']} · "
               f"{estat}")
 
+    epa_info = copy_csv_optional(epa_src, epa_dst, "EPA comerç")
+    if epa_info:
+        epa_info.update(epa_meta(epa_dst))
+        var = epa_info.get("ocupats_var_anual_pct")
+        var_str = f"{var:+.2f}%" if var is not None else "s/d"
+        print(f"  epa_retail.csv       · {epa_info['filas']:>6} filas · "
+              f"últim trimestre {epa_info['ultimo_periode']} · "
+              f"ocupats CNAE 47 {var_str} interanual")
+
+    confianza_info = copy_csv_optional(confianza_src, confianza_dst, "Confiança consumidor")
+    if confianza_info:
+        confianza_info.update(confianza_meta(confianza_dst))
+        print(f"  confianza_consumidor · {confianza_info['filas']:>6} filas · "
+              f"últim mes {confianza_info['ultimo_periode']} · "
+              f"ICC {confianza_info.get('index_confianca')} · "
+              f"bretxa expectatives {confianza_info.get('bretxa_expectatives')} "
+              f"(percentil {confianza_info.get('bretxa_percentil')})")
+
+    ipc_coicop_info = copy_csv_optional(ipc_coicop_src, ipc_coicop_dst, "IPC COICOP")
+    if ipc_coicop_info:
+        ipc_coicop_info.update(ipc_coicop_meta(ipc_coicop_dst))
+        print(f"  ipc_coicop.csv       · {ipc_coicop_info['filas']:>6} filas · "
+              f"{ipc_coicop_info['n_grups']} grups · "
+              f"últim periode {ipc_coicop_info['ultimo_periode']}")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -624,6 +721,9 @@ def main() -> int:
         "icm": icm_info,
         "icm_distribucio": icm_dist_info,
         "marges": marges_info,
+        "epa": epa_info,
+        "confianza": confianza_info,
+        "ipc_coicop": ipc_coicop_info,
         "prensa": prensa_info,
         "noticies_editor": noticies_editor_info,
         "noticies_editor_avisos": noticies_editor_avisos,

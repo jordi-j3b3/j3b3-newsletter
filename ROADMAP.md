@@ -105,3 +105,30 @@ Tareas pendientes ordenadas por momento de ejecución.
   deploys i cancel·la els obsolets en lloc de fer-los xocar. No és urgent (les
   fallades són transitòries i sense impacte de contingut), però elimina l'error
   recurrent per pushos ràpids seguits.
+
+## Causa arrel del Núm. 14: la tesi setmanal no arriba mai a la CI (prioritat alta)
+
+Detectat 2026-08-08 preparant el Núm. 15. `config/tesi_setmana.md` i
+`config/noticies_editor.md` estan al `.gitignore` i no estaven trackejats. El
+workflow `newsletter-schedule.yml` treballa sobre un clon net des d'origin, de
+manera que `generate.py` no troba cap dels dos fitxers i genera l'edició
+**ignorant la tesi de l'editor sense avisar**. Això és exactament el que va
+passar amb el Núm. 14 del 2026-08-03, i que es va deixar apuntat com a "causa
+arrel no investigada".
+
+Aquesta setmana s'ha resolt a mà: els dos fitxers s'han afegit amb `git add -f`
+perquè el cron els trobi. Un cop trackejats, el `git add -A -- config/ docs/`
+del workflow ja captura la seva eliminació quan `generate.py` els consumeix i
+els renombra a `.used.md`, així que el cicle es tanca sol.
+
+Queda pendent el fix estructural, perquè `git add -f` cada setmana és un rasclet
+que algú s'oblidarà de passar:
+
+1. Treure `config/tesi_setmana.md` i `config/noticies_editor.md` del
+   `.gitignore` (mantenir-hi només els `.used.md`), igual que ja es fa amb
+   `config/estil_editorial.md`, que sí està trackejat.
+2. Afegir a `generate.py` un avís explícit i visible quan s'esperava tesi i no
+   n'hi ha cap: avui el fallback és silenciós, i un fallback silenciós en un
+   pipeline supervisat un cop per setmana és indistingible d'un èxit.
+3. Fer que `schedule.py` inclogui a la notificació de diumenge si l'edició
+   s'ha generat amb tesi o sense.

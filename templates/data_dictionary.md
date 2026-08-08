@@ -318,7 +318,130 @@ en lenguaje legible.
 
 ---
 
-## 9. Reglas editoriales de referencia a las fuentes
+## 9. EPA del comercio — `epa_retail.csv`
+
+Encuesta de Población Activa del INE, trimestral, desde 2008-T1. Es la fuente de
+**empleo por el lado de los hogares**: cuenta personas que declaran trabajar en
+el comercio, incluidos autónomos.
+
+### Esquema
+
+| Columna | Significado |
+|---|---|
+| `any`, `trimestre`, `periode` | año, trimestre (1-4), periodo (`YYYY-TQ`) |
+| `sexe` | `total` / `homes` / `dones` |
+| `ocupats_cnae47_milers` | ocupados en CNAE 47 (comercio al por menor), en miles |
+| `aturats_seccio_g_milers` | parados de la sección G, en miles |
+| `hores_setmana_seccio_g` | horas efectivas semanales trabajadas, sección G |
+
+### Aviso interpretativo crítico (citar siempre que se cruce con las otras dos)
+
+Las tres columnas **no tienen la misma cobertura**, y esto se debe explicar al
+lector en una frase breve cuando se usen juntas:
+
+- `ocupats_cnae47_milers` es **CNAE 47 puro**: comercio al por menor.
+- `aturats_seccio_g_milers` y `hores_setmana_seccio_g` son **sección G**, que
+  incluye además el comercio al por mayor y la reparación de vehículos. El INE
+  no desglosa el paro ni las horas a dos dígitos: no existe ninguna tabla de la
+  EPA que lo haga, así que no es una elección del Observatorio sino un límite de
+  la fuente.
+
+Además, la EPA y el **índice de ocupación del ICM** miden cosas distintas y
+pueden divergir en el mismo trimestre: la EPA es encuesta a **hogares** (personas
+que dicen trabajar en el comercio) y el índice de ocupación del ICM es encuesta a
+**empresas** (puestos en la muestra de establecimientos). Cuando ambas apunten en
+direcciones distintas, hay que decirlo y explicar por qué, nunca elegir la que
+convenga al argumento sin mencionar la otra.
+
+### Ángulo editorial
+
+Permite distinguir **destrucción de empleo** de **reasignación sectorial**: si
+caen los ocupados pero también cae el paro del sector y suben las horas por
+persona, la mano de obra no se ha quedado sin trabajo, se ha ido a otro sector.
+Es la lectura que separa el caso español del anglosajón.
+
+### Regla de citación
+
+Citar como **"la EPA"** o "la Encuesta de Población Activa del INE". Nunca los
+números de tabla (65123, 65249, 65159).
+
+---
+
+## 10. Confianza del consumidor — `confianza_consumidor.csv`
+
+Encuesta armonizada de confianza del consumidor (Business and Consumer Surveys,
+coordinadas por la Comisión Europea y publicadas por Eurostat). Mensual, serie
+española desde 1986. **No existe tabla equivalente en el INE**: la operación es
+europea, España solo participa como país encuestado.
+
+Suele ser **el dato más reciente de todo el snapshot**: se publica a final del
+mes en curso, mientras el ICM lleva unos dos meses de retardo.
+
+### Esquema
+
+| Columna | Significado |
+|---|---|
+| `any`, `mes`, `periode` | año, mes, periodo (`YYYY-MM`) |
+| `index_confianca` | indicador compuesto |
+| `situacio_actual_financera` | situación financiera actual del hogar |
+| `situacio_actual_economica` | situación económica general actual |
+| `expectatives_financera` | expectativas financieras del hogar a 12 meses |
+| `expectatives_economica` | expectativas de la economía general a 12 meses |
+
+### Cómo se leen los valores
+
+Son **saldos de respuestas**, no índices: porcentaje de respuestas positivas
+menos porcentaje de negativas, en una escala de −100 a +100. El cero no es un
+nivel neutro histórico, es el punto en que hay tantos optimistas como
+pesimistas. Por eso lo interesante casi nunca es el nivel absoluto, sino la
+**distancia entre dos componentes** o la posición del valor dentro de su propia
+serie histórica.
+
+### Ángulo editorial
+
+La **brecha entre `expectatives_financera` y `expectatives_economica`** mide la
+desconexión entre lo que el consumidor piensa de su propio bolsillo y lo que
+piensa del país. Una brecha muy alta indica que el pesimismo es de titular pero
+todavía no ha llegado a la decisión de gasto: es el indicador que permite datar
+si un choque exterior está cruzando o no hacia el consumo. `_meta.json` trae la
+brecha y su percentil histórico ya calculados.
+
+### Regla de citación
+
+Citar como **"Eurostat"** o "la encuesta europea de confianza del consumidor".
+Nunca el código `ei_bsco_m`. No atribuirlo al INE: sería un error de fuente.
+
+---
+
+## 11. IPC por grupos COICOP — `ipc_coicop.csv`
+
+IPC del INE desglosado por grupo de gasto COICOP, mensual, desde 2002.
+Cobertura parcial: solo los grupos cargados en el Observatorio (índice general,
+alimentación, vestido y calzado, menaje del hogar). **No están todos los grupos
+COICOP**: antes de afirmar nada sobre un grupo, comprobar que existe en el CSV.
+
+### Esquema
+
+| Columna | Significado |
+|---|---|
+| `any`, `mes`, `periode` | año, mes, periodo (`YYYY-MM`) |
+| `grup_codi` | código COICOP (`00` general, `01` alimentación, `03` vestido, `05` menaje) |
+| `grup` | nombre legible del grupo |
+| `ipc` | valor del índice |
+
+### Aviso de uso
+
+Son **niveles de índice, no variaciones**. Cualquier tasa interanual hay que
+calcularla dividiendo el índice del mes por el del mismo mes del año anterior.
+Distinguirlo de `ipc.csv` (sección 6), que es solo el índice general.
+
+Uso previsto: **contexto de la inflación por tipo de gasto**, para separar
+crecimiento nominal de crecimiento real. No es fuente de cifra protagonista
+salvo que la tesis sea explícitamente de precios.
+
+---
+
+## 12. Reglas editoriales de referencia a las fuentes
 
 Las referencias técnicas y metodológicas (códigos de serie, bases de índice,
 números de tabla) **no se citan en el cuerpo de los bloques editoriales**.
