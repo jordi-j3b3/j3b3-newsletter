@@ -358,5 +358,31 @@
     "asunto": "Las pequeñas cadenas pierden un 6,4% mientras el sector sube: la bifurcación se acelera",
     "titular": "El formato intermedio, sin salida.",
     "created_at_utc": "2026-08-02T17:32:19.910818+00:00"
+  },
+  {
+    "numero": 15,
+    "semana": "2026-08-10",
+    "cifra": "-2,41%",
+    "dataset_bloc1": "EPA ocupados CNAE 47 (comercio al por menor)",
+    "periodo_bloc1": "2026-T2",
+    "angulo_bloc1": "El comercio minorista cede empleo que el turismo absorbe, sin destrucción neta de puestos.",
+    "tema_prediccion": "El ICM real interanual del cuarto trimestre de 2026 cerrará en negativo, publicación enero 2027.",
+    "noticias": [
+      "El empleo turístico supera los 3,18 millones de ocupados, un 5,4% más que en el segundo trimestre de 2025",
+      "La economía estadounidense pierde 23.000 empleos en julio, con el comercio minorista cediendo 19.000",
+      "Gijón activa un plan de 1,15 millones para reforzar el comercio de proximidad hasta septiembre"
+    ],
+    "periodo_eurostat": "2026-06",
+    "periodo_icm": "2026-06",
+    "periodo_icm_distribucio": "2026-06",
+    "indicador_bloc3": "icm_ccaa",
+    "mode_editorial": "P2",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "30",
+    "scheduled_at": "2026-08-10T08:30:00+02:00",
+    "asunto": "El comercio cede empleo, no lo destruye — el turismo lo absorbe",
+    "titular": "El comercio cede. El turismo recoge.",
+    "created_at_utc": "2026-08-08T11:41:45.077297+00:00"
   }
 ]

@@ -161,16 +161,16 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pulso.j3b3.com/pulso/num-14.html</loc>
+    <loc>https://pulso.j3b3.com/pulso/num-15.html</loc>
     <news:news>
       <news:publication>
         <news:name>Observatorio del Comercio</news:name>
         <news:language>es</news:language>
       </news:publication>
-      <news:publication_date>2026-08-03T08:30:00+02:00</news:publication_date>
-      <news:title>El formato intermedio no vende ni emplea.</news:title>
+      <news:publication_date>2026-08-10T08:30:00+02:00</news:publication_date>
+      <news:title>El comercio cede. El turismo recoge.</news:title>
     </news:news>
-    <lastmod>2026-08-03</lastmod>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>never</changefreq>
     <priority>0.8</priority>
   </url>
