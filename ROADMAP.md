@@ -2,6 +2,66 @@
 
 Tareas pendientes ordenadas por momento de ejecución.
 
+## `scripts/verify.py` — verificació numèrica del borrador abans de compose · Prioridad: ALTA
+
+Pendent de disseny conjunt amb el Jordi (acordat 2026-08-08: es dissenya en una
+sessió dedicada, amb calma).
+
+**Per què.** El Núm. 15 (2026-08-10) ha estat l'edició amb més marge d'error
+detectat fins ara, i per primera vegada amb un **error factual**, no d'estil: el
+borrador afirmava que "Cataluña acumula seis meses consecutivos en negativo en
+ventas reales". És fals. La ratxa de sis mesos consecutius (gener-juny 2026) és
+de **Balears**; Catalunya va estar en positiu de gener a maig (+2,7, +0,1, +3,5,
++2,3, +0,4), només entra en negatiu al juny i tanca el semestre en **+1,2%
+acumulat**. El model havia llegit correctament la sèrie de Balears a la tesi i
+n'havia traslladat la propietat a l'altra comunitat que apareixia al costat.
+L'error va sobreviure a la generació i el va enxampar la revisió humana, que és
+precisament el que no ha de ser l'única barrera.
+
+**Principi de disseny (el mateix que l'anti-al·lucinació de notícies).** El gate
+va a la **capa de dades**, no al prompt: una regla al system prompt és defensa en
+profunditat, no la defensa principal. `verify.py` s'executa **entre `generate.py`
+i `compose.py`** i falla en dur si una xifra del cos no es pot ancorar a una
+cel·la concreta d'un CSV del snapshot.
+
+**Esbós del que hauria de fer.**
+
+1. Extreure del borrador (ja sense TRAZABILIDAD) tots els números amb el seu
+   context textual: percentatges, milers, valors absoluts, punts.
+2. Per a cada número, buscar-lo als CSV del snapshot i resoldre a quina sèrie
+   pertany (àmbit, tipus, indicador, període).
+3. Marcar com a **error** el número que no aparegui a cap CSV i no estigui
+   declarat com a procedent de `<CONTEXT_MACRO>` o de premsa.
+4. Marcar com a **error d'atribució** el cas d'avui: un número que SÍ existeix al
+   CSV però associat en el text a un subjecte diferent del de la seva fila
+   (Balears → Catalunya). És el cas difícil i el que dona valor real a l'eina.
+5. Comprovar les afirmacions de superlatiu i de ratxa ("mínim de la sèrie", "sis
+   mesos consecutius", "primera caiguda des de"), que són verificables per
+   construcció sobre la sèrie i que avui ningú comprova automàticament.
+
+**El matís que cal resoldre al disseny, i per això no s'improvisa.** Definir què
+compta com a "número verificable" no és trivial: conviuen xifres del snapshot,
+xifres de `<CONTEXT_MACRO>` (verificades a mà per l'editor, absents dels CSV),
+xifres de premsa citades dins una notícia del Bloc 2, i xifres derivades
+legítimes (diferències, sumes, "un múltiple de"). Un verificador massa estricte
+bloquejaria cada edició per soroll i s'acabaria desactivant, que és el pitjor
+resultat possible. Cal decidir la taxonomia abans d'escriure codi.
+
+## Arxiu web incomplet: falten els Núm. 4, 5 i 14 a pulso.j3b3.com · Prioridad: media
+
+Confirmat 2026-08-08 contra el manifest viu: `docs/pulso/manifest.json` conté
+[1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 15]. El **Núm. 14** és el cas recent i el
+més il·lustratiu del forat estructural ja documentat més avall: es va corregir el
+mirall del dashboard el 2026-08-02 però ningú va tornar a executar
+`publish_web.py`, així que l'edició mai va arribar a la web estàtica.
+
+Es deixa per a una **sessió dedicada** (decidit 2026-08-08: no barrejar-ho amb el
+tancament d'una edició en curs). Procediment de recuperació ja documentat a la
+nota sobre `publish_web.py` d'aquest mateix fitxer: copiar el `.md` verificat del
+mirall d'`observatori-comerc/data/newsletter/` a un `output/semana-X/` temporal i
+cridar `publish_web.py --semana X --numero N --output-dir <temp>`. `update_manifest()`
+sobreescriu per `numero`, així que regenerar reescriu índex i sitemap sols.
+
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
 - **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · Prioridad: alta
