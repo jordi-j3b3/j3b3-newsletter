@@ -384,5 +384,31 @@
     "asunto": "El comercio cede empleo, no lo destruye — el turismo lo absorbe",
     "titular": "El comercio cede. El turismo recoge.",
     "created_at_utc": "2026-08-08T11:41:45.077297+00:00"
+  },
+  {
+    "numero": 16,
+    "semana": "2026-08-17",
+    "cifra": "29,8 puntos de brecha",
+    "dataset_bloc1": "Confianza del consumidor - brecha expectativas financieras personales vs económicas generales",
+    "periodo_bloc1": "2026-07",
+    "angulo_bloc1": "La disociación entre percepción personal y macroeconómica anuncia un punto de inflexión inminente en el consumo",
+    "tema_prediccion": "El crecimiento real del comercio minorista caerá por debajo del 1% interanual en el cuarto trimestre de 2026",
+    "noticias": [
+      "Shein aumenta sus ventas en España un 80% mientras su crecimiento global se frena",
+      "El gigante europeo Nepi Rockcastle compra el centro comercial Megapark por 254 millones",
+      "Ciutat Vella impulsa una iniciativa para fomentar la contratación y el comercio local"
+    ],
+    "periodo_eurostat": "2026-06",
+    "periodo_icm": "2026-06",
+    "periodo_icm_distribucio": "2026-06",
+    "indicador_bloc3": "cdmge_tasa_anual",
+    "mode_editorial": "P2",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "31",
+    "scheduled_at": "2026-08-17T08:30:00+02:00",
+    "asunto": "La confianza del consumidor manda una señal que el retail no puede ignorar",
+    "titular": "El consumidor aguanta. El país, no.",
+    "created_at_utc": "2026-08-16T16:48:11.681218+00:00"
   }
 ]
