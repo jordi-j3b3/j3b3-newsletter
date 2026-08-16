@@ -45,7 +45,9 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from macro import detectar_noticias_macro, construir_contexto_macro  # noqa: E402
+from macro import (  # noqa: E402
+    detectar_noticias_macro, construir_contexto_macro, seleccionar_fets_macro,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -171,11 +173,22 @@ def format_historial_para_prompt(entries: list, max_n: int = HISTORIAL_VENTANA) 
     ]
     for e in recent:
         noticias = "; ".join(e.get("noticias", [])) or "(sin registro)"
+        # La métrica y el umbral de la predicción se listan aparte del tema
+        # porque son lo que hay que respetar: dos ediciones seguidas pueden
+        # predecir legítimamente sobre lo mismo, pero no con umbrales
+        # incompatibles y sin decirlo.
+        metrica = e.get("metrica_prediccion", "")
+        umbral = e.get("umbral_prediccion", "")
+        pred_detalle = (
+            f" [métrica: {metrica} · umbral: {umbral or '(sin registro)'}]"
+            if metrica else ""
+        )
         lines.append(
             f"- Núm. {e.get('numero', '?')} ({e.get('semana', '?')}): "
             f"cifra {e.get('cifra', '?')}. "
             f"Ángulo: {e.get('angulo_bloc1', '(sin registro)')}. "
-            f"Predicción: {e.get('tema_prediccion', '(sin registro)')}. "
+            f"Predicción: {e.get('tema_prediccion', '(sin registro)')}"
+            f"{pred_detalle}. "
             f"Noticias citadas: {noticias}."
         )
     lines.extend([
@@ -190,6 +203,17 @@ def format_historial_para_prompt(entries: list, max_n: int = HISTORIAL_VENTANA) 
         "permitido revisitar un tema si hay novedad sustancial (revisión "
         "de Eurostat, dato confirmatorio, giro estructural), pero el "
         "ángulo principal y la cifra protagonista deben ser frescos.",
+        "",
+        "COHERENCIA DE LAS PREDICCIONES (regla dura). Si tu predicción del "
+        "Bloque 4 recae sobre la misma métrica y el mismo horizonte que "
+        "alguna de las ediciones listadas arriba, tienes dos opciones y solo "
+        "dos: (a) reafirmar el mismo umbral, diciendo explícitamente que se "
+        "mantiene la previsión de aquella edición y aportando el mecanismo "
+        "nuevo que la refuerza; o (b) revisarla, diciendo explícitamente que "
+        "se revisa, en qué dirección y qué evidencia nueva lo justifica. "
+        "Publicar un umbral distinto del anterior sin mencionarlo es el peor "
+        "resultado posible: el lector que sigue la serie lo lee como mover la "
+        "portería. Ante la duda, reafirma.",
     ])
     return "\n".join(lines)
 
@@ -224,6 +248,16 @@ def extract_historial_entry(
         'editorial del bloque 1>",\n'
         '  "tema_prediccion": "<una frase de 12-20 palabras sintetizando la '
         'predicción del bloque 4, incluyendo el plazo si lo tiene>",\n'
+        '  "metrica_prediccion": "<la métrica exacta sobre la que se predice y '
+        'su horizonte, normalizada, p.ej. \'ICM real interanual España · Q4 '
+        "2026', 'Ventas minoristas volumen YoY España · 2T 2026'. Solo la "
+        'métrica y el plazo, sin el valor>",\n'
+        '  "umbral_prediccion": "<el valor o umbral predicho, p.ej. '
+        "'negativo', '<1%', '-3,0% ±1,0'>\",\n"
+        '  "dataset_prediccion": "<el dataset o indicador en el que se ancla el '
+        "razonamiento de la predicción, p.ej. 'Confianza del consumidor - "
+        "brecha de expectativas', 'IPC COICOP alimentación'. Puede ser "
+        'distinto del dataset de la cifra protagonista>",\n'
         '  "noticias": [\n'
         '    "<titular exacto de la primera noticia del bloque 2>",\n'
         '    "<titular exacto de la segunda noticia>",\n'
@@ -249,6 +283,9 @@ def extract_historial_entry(
         "periodo_bloc1": str(data.get("periodo_bloc1", "")),
         "angulo_bloc1": str(data.get("angulo_bloc1", "")),
         "tema_prediccion": str(data.get("tema_prediccion", "")),
+        "metrica_prediccion": str(data.get("metrica_prediccion", "")),
+        "umbral_prediccion": str(data.get("umbral_prediccion", "")),
+        "dataset_prediccion": str(data.get("dataset_prediccion", "")),
         "noticias": list(data.get("noticias", [])),
     }
 
@@ -283,6 +320,69 @@ def es_dada_repetida(entry_actual: dict, historial: list, semana_actual: str) ->
     return False, ""
 
 
+def _tokens_metrica(text: str) -> set:
+    """Tokens significatius d'una mètrica de predicció, per comparar-les.
+
+    Minúscules, sense signes ni paraules buides, tokens de 3+ caràcters.
+    """
+    buides = {"de", "del", "la", "el", "los", "las", "en", "por", "para", "con",
+              "sobre", "que", "una", "uno", "interanual", "variacion", "variación"}
+    net = re.sub(r"[^\w\s%]", " ", (text or "").lower())
+    return {t for t in net.split() if len(t) >= 3 and t not in buides}
+
+
+def es_prediccion_repetida(
+    entry_actual: dict, historial: list, semana_actual: str, ventana: int = 2,
+) -> tuple[bool, str]:
+    """¿La predicción del Bloque 4 recae sobre la MISMA métrica y horizonte que
+    una de las últimas `ventana` ediciones?
+
+    Comprobación hermana de es_dada_repetida(), que solo mira la cifra
+    protagonista del Bloque 1 y por tanto es ciega a lo que ancla la
+    predicción. Caso real que la motivó (Núm. 15 → Núm. 16, agosto 2026): dos
+    ediciones seguidas predijeron sobre el ICM real de Q4 2026 —la primera
+    'negativo', la segunda '<1%'— sin que nada lo detectara, porque los
+    Bloques 1 eran datasets distintos (EPA y confianza del consumidor).
+
+    NO bloquea ni fuerza reintento: reafirmar una predicción viva es legítimo
+    y a veces deseable. Lo que devuelve es el aviso, para que quede visible en
+    el log y el editor compruebe que el umbral es coherente con el anterior o
+    que el texto reconoce explícitamente la revisión.
+
+    Devuelve (True, motivo) con el umbral de la edición previa en el motivo.
+    """
+    metrica_actual = _tokens_metrica(entry_actual.get("metrica_prediccion", ""))
+    if not metrica_actual:
+        return False, ""
+    previas = [e for e in historial if e.get("semana") != semana_actual][-ventana:]
+    for prev in reversed(previas):
+        metrica_prev = _tokens_metrica(prev.get("metrica_prediccion", ""))
+        if not metrica_prev:
+            continue
+        comuns = metrica_actual & metrica_prev
+        if len(comuns) / min(len(metrica_actual), len(metrica_prev)) < 0.7:
+            continue
+        umbral_prev = prev.get("umbral_prediccion", "") or "(sin registro)"
+        umbral_actual = entry_actual.get("umbral_prediccion", "") or "(sin registro)"
+        # Els umbrals s'escriuen amb glosses variables ('negativo' vs 'negativo
+        # (<0%)'): es comparen normalitzats i per contenció, per no cridar
+        # "difereixen" quan només canvia la manera d'escriure el mateix.
+        na = re.sub(r"[^\w%<>-]", "", umbral_actual.lower())
+        np_ = re.sub(r"[^\w%<>-]", "", umbral_prev.lower())
+        coincideix = bool(na) and bool(np_) and (na in np_ or np_ in na)
+        return True, (
+            f"la predicción recae sobre la misma métrica y horizonte que la "
+            f"Núm. {prev.get('numero', '?')} ({prev.get('semana', '?')}): "
+            f"'{prev.get('metrica_prediccion', '')}'. Umbral anterior: "
+            f"{umbral_prev} · umbral de esta edición: {umbral_actual}"
+            + ("" if coincideix else
+               ". Los umbrales DIFIEREN: el texto debe reafirmar el anterior o "
+               "reconocer explícitamente que lo revisa, nunca cambiarlo en "
+               "silencio")
+        )
+    return False, ""
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--semana", required=True, help="Fecha del lunes (YYYY-MM-DD)")
@@ -298,7 +398,8 @@ def parse_args() -> argparse.Namespace:
                         "automàticament a partir de les actualitzacions del snapshot.")
     p.add_argument("--bloc3", default="",
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
-                            "icm_ramas", "marges_branca", "icm_distribucio", "icm_ccaa"],
+                            "icm_ramas", "marges_branca", "icm_distribucio", "icm_ccaa",
+                            "ipc_coicop"],
                    help="Sobreescriu la selecció automàtica del bloc 3. "
                         "'marges_branca' només és vàlid si el dataset de marges "
                         "està verificat (verificat=True al snapshot). 'icm_ccaa' "
@@ -781,7 +882,8 @@ def construir_prompts(
     mode_editorial: 'P1' (dada fresca mana) o 'P2' (tesi mana, dada explica).
     titular: fixat en mode P2; buit en P1.
     bloc3_mode: 'europeu', 'cdmge_tasa_anual', 'editorial_contexto',
-        'icm_ramas', 'marges_branca' o 'icm_distribucio'.
+        'icm_ramas', 'marges_branca', 'icm_distribucio', 'icm_ccaa' o
+        'ipc_coicop'.
     marges_disponible: injecta <MARGES_BRANCA> al prompt només si és True (el
         dataset de marges existeix al snapshot I té verificat=True).
     hi_ha_noticies_editor: si és True, afegeix la regla 9bis que demana
@@ -913,6 +1015,35 @@ def construir_prompts(
             "lectura editorial sin gráfico. "
             "Lectura estructural por encima de la coyuntural: busca el patrón "
             "(concentración, polarización, márgenes, eficiencia), no el dato puntual."
+        )
+    elif bloc3_mode == "ipc_coicop":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (IPC POR GRUPOS COICOP):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** <subtítulo con el mes, p.ej. Precios al consumo por "
+            "grupo · julio 2026. SIN la palabra 'variación'>\n\n"
+            "   - Grupo 1: <valor>%\n"
+            "   - Grupo 2: <valor>%\n"
+            "   - ...\n\n"
+            "   <2-3 párrafos de interpretación>\n\n"
+            "   Usa EXCLUSIVAMENTE los valores de <IPC_GRUPS_COICOP>, variación "
+            "interanual del mes más reciente. Ordena de mayor a menor. compose.py "
+            "renderiza la lista como barras divergentes.\n"
+            "   AVISO DE COBERTURA (obligatorio respetarlo): el dataset SOLO tiene "
+            "cuatro grupos — índice general, alimentación y bebidas no alcohólicas, "
+            "vestido y calzado, y menaje del hogar. NO contiene el grupo de "
+            "vivienda, agua, electricidad y gas. Por tanto: si el índice general "
+            "va por encima de los grupos de la cesta comercial, puedes constatar la "
+            "divergencia, pero NO puedes atribuirla a la energía, a los "
+            "suministros ni a ninguna otra causa concreta — sería deducir por "
+            "residuo y presentarlo como evidencia. Déjalo como pregunta abierta o "
+            "no lo menciones. 'Menaje del hogar' es mobiliario y equipamiento "
+            "doméstico, NUNCA suministros: no lo llames energía ni luz ni gas.\n"
+            "   IDIOMA DE LAS ETIQUETAS: el CSV del Observatorio trae los nombres "
+            "de grupo en catalán. La newsletter es en castellano — tradúcelos "
+            "SIEMPRE: 'Índice general', 'Alimentación y bebidas no alcohólicas', "
+            "'Vestido y calzado', 'Menaje del hogar'. Nunca copies la etiqueta "
+            "catalana del dataset a la lista de barras."
         )
     else:  # "europeu"
         bloque3_instr = (
@@ -1446,9 +1577,15 @@ def main() -> int:
     contexts = []
     if noticias_macro:
         contexts.append(construir_contexto_macro(noticias_macro))
-        print(f"  Fets macro detectats a la premsa: {len(noticias_macro)} "
-              f"→ injectats al prompt")
-        for n in noticias_macro:
+        # El bloc <CONTEXT_MACRO> NO porta tots els fets detectats: passa per
+        # seleccionar_fets_macro(), que dedupa per (data, tema) i talla a 10.
+        # Es llisten els injectats de debò, no els detectats, perquè el log no
+        # faci creure que Sonnet ha vist els 40-50 titulars del recull.
+        injectats = seleccionar_fets_macro(noticias_macro)
+        print(f"  Fets macro a la premsa: {len(noticias_macro)} detectats "
+              f"→ {len(injectats)} injectats al prompt "
+              f"(dedup per tema i dia, màxim 10)")
+        for n in injectats:
             print(f"    · {n['data']} — {n['titol']}")
     else:
         print("  Fets macro detectats a la premsa: cap")
@@ -1547,6 +1684,16 @@ def main() -> int:
             "el dataset ni el periodo de la edición anterior."
         )
         context_efectiu = "\n\n".join(contexts)
+
+    # Comprovació germana de la cifra repetida: la predicció del Bloque 4 pot
+    # caure sobre la mateixa mètrica que una edició recent encara que el Bloc 1
+    # sigui un dataset diferent. No es reintenta (reafirmar és legítim), però
+    # ha de quedar visible perquè l'editor comprovi la coherència de l'umbral.
+    if entry_candidate is not None:
+        pred_repetida, pred_motivo = es_prediccion_repetida(
+            entry_candidate, historial, semana_str)
+        if pred_repetida:
+            print(f"  AVÍS predicció: {pred_motivo}", file=sys.stderr)
 
     out_md.write_text(borrador, encoding="utf-8")
 

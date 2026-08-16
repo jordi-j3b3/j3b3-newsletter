@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from brevo import _session  # noqa: E402
 from compose import extraer_meta, strip_trazabilidad  # noqa: E402
 from mirror import mirror_to_dashboard  # noqa: E402
-from macro import detectar_noticias_macro  # noqa: E402
+from macro import detectar_noticias_macro, seleccionar_fets_macro  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -398,16 +398,28 @@ def main() -> int:
     noticias_macro = detectar_noticias_macro(
         ROOT / "data" / f"semana-{semana}" / "recopilacion_prensa.md")
     if noticias_macro:
+        # Els detectats i els injectats NO són el mateix nombre: el bloc
+        # <CONTEXT_MACRO> passa per seleccionar_fets_macro(), que dedupa per
+        # (data, tema) i talla a 10. La llista marca quins han arribat de debò
+        # al prompt; la resta són duplicats del mateix fet o excedent del tall.
+        injectats = seleccionar_fets_macro(noticias_macro)
+        claus_injectades = {(n["data"], n["titol"]) for n in injectats}
         macro_items = "".join(
             f"<li><strong>{n['data']}</strong> — {n['titol']}"
-            f"<br><span style='color:#666;font-size:0.9em'>{n['font']}</span></li>"
+            + ("" if (n["data"], n["titol"]) in claus_injectades
+               else " <span style='color:#999'>(no injectat)</span>")
+            + f"<br><span style='color:#666;font-size:0.9em'>{n['font']}</span></li>"
             for n in noticias_macro
         )
         macro_html = (
-            f"<h3 style='font-family:sans-serif'>Fets macro detectats i injectats "
-            f"({len(noticias_macro)})</h3>"
-            f"<p style='color:#666;font-size:0.9em'>Injectats automàticament al prompt "
-            f"de generació; Sonnet els ha ponderat per a la cifra del Bloque 1 i la "
+            f"<h3 style='font-family:sans-serif'>Fets macro: "
+            f"{len(noticias_macro)} detectats → {len(injectats)} injectats "
+            f"al prompt</h3>"
+            f"<p style='color:#666;font-size:0.9em'>Al prompt de generació hi "
+            f"arriben els {len(injectats)} marcats, no tots els detectats: el "
+            f"context es dedupa per tema i dia i es talla a un màxim de 10, "
+            f"perquè cinc titulars del mateix fet no desplacin la resta. Sonnet "
+            f"ha ponderat els injectats per a la cifra del Bloque 1 i la "
             f"predicció.</p>"
             f"<ul style='font-family:sans-serif'>{macro_items}</ul>"
         )

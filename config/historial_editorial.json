@@ -331,7 +331,10 @@
     "scheduled_at": "2026-07-27T08:30:00+02:00",
     "asunto": "El choque energético no ha llegado al lineal — pero el margen ya no aguanta",
     "titular": "Márgenes bajo presión energética.",
-    "created_at_utc": "2026-07-26T18:33:12.619510+00:00"
+    "created_at_utc": "2026-07-26T18:33:12.619510+00:00",
+    "metrica_prediccion": "Traslado del sobrecoste energético al precio final por rama · Q4 2026",
+    "umbral_prediccion": "ramas con margen de explotación <6%",
+    "dataset_prediccion": "Margen de explotación por rama del comercio minorista (INE EEE)"
   },
   {
     "numero": 14,
@@ -357,7 +360,10 @@
     "scheduled_at": "2026-08-03T08:30:00+02:00",
     "asunto": "Las pequeñas cadenas pierden un 6,4% mientras el sector sube: la bifurcación se acelera",
     "titular": "El formato intermedio, sin salida.",
-    "created_at_utc": "2026-08-02T17:32:19.910818+00:00"
+    "created_at_utc": "2026-08-02T17:32:19.910818+00:00",
+    "metrica_prediccion": "Cierres o fusiones anunciados de pequeñas cadenas · Q1 2027",
+    "umbral_prediccion": "≥2",
+    "dataset_prediccion": "ICM real por modo de distribución - Pequeñas cadenas"
   },
   {
     "numero": 15,
@@ -383,7 +389,10 @@
     "scheduled_at": "2026-08-10T08:30:00+02:00",
     "asunto": "El comercio cede empleo, no lo destruye — el turismo lo absorbe",
     "titular": "El comercio cede. El turismo recoge.",
-    "created_at_utc": "2026-08-08T11:41:45.077297+00:00"
+    "created_at_utc": "2026-08-08T11:41:45.077297+00:00",
+    "metrica_prediccion": "ICM real interanual España · Q4 2026",
+    "umbral_prediccion": "negativo (<0%)",
+    "dataset_prediccion": "Confianza del consumidor - brecha de expectativas (Eurostat ei_bsco_m)"
   },
   {
     "numero": 16,
@@ -409,6 +418,37 @@
     "scheduled_at": "2026-08-17T08:30:00+02:00",
     "asunto": "La confianza del consumidor manda una señal que el retail no puede ignorar",
     "titular": "El consumidor aguanta. El país, no.",
-    "created_at_utc": "2026-08-16T16:48:11.681218+00:00"
+    "created_at_utc": "2026-08-16T16:48:11.681218+00:00",
+    "cancelled_at_utc": "2026-08-16T18:06:41.364155+00:00",
+    "estat": "CANCEL·LAT — borrador amb la bretxa d'expectatives de l'ICC repetida del Núm. 15 i predicció Q4 rebaixada en silenci a <1%; substituït per la regeneració amb angle de desinflació alimentària"
+  },
+  {
+    "numero": 16,
+    "semana": "2026-08-17",
+    "cifra": "+1,63%",
+    "dataset_bloc1": "IPC COICOP alimentación - Alimentació i begudes no alcohòliques",
+    "periodo_bloc1": "2026-07",
+    "angulo_bloc1": "La desinflación alimentaria retira el colchón nominal y expone el volumen real del retail.",
+    "tema_prediccion": "El ICM real interanual de España cerrará el cuarto trimestre de 2026 en negativo.",
+    "metrica_prediccion": "ICM real interanual España · Q4 2026",
+    "umbral_prediccion": "negativo",
+    "dataset_prediccion": "IPC COICOP alimentación - Alimentació i begudes no alcohòliques",
+    "noticias": [
+      "JD Sports acelera en España hasta rozar las 140 tiendas con 100 nuevos empleos",
+      "Mercadona acelera su expansión en Portugal con nuevas aperturas en septiembre",
+      "Ciutat Vella impulsa una iniciativa para fomentar la contratación y el comercio local"
+    ],
+    "periodo_eurostat": "2026-06",
+    "periodo_icm": "2026-06",
+    "periodo_icm_distribucio": "2026-06",
+    "indicador_bloc3": "ipc_coicop",
+    "mode_editorial": "P2",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "32",
+    "scheduled_at": "2026-08-17T08:30:00+02:00",
+    "asunto": "La desinflación alimentaria deja al descubierto el volumen real del retail",
+    "titular": "El colchón nominal se agota.",
+    "created_at_utc": "2026-08-16T18:42:03.902407+00:00"
   }
 ]
