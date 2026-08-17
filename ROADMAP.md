@@ -68,7 +68,24 @@ legítimes (diferències, sumes, "un múltiple de"). Un verificador massa estric
 bloquejaria cada edició per soroll i s'acabaria desactivant, que és el pitjor
 resultat possible. Cal decidir la taxonomia abans d'escriure codi.
 
-## Arxiu web incomplet: falten els Núm. 4, 5 i 14 a pulso.j3b3.com · Prioridad: media
+## Arxiu web: Núm. 14 RESOLT (2026-08-17); els Núm. 4 i 5 no són un forat · Prioridad: baixa
+
+**El Núm. 14 estava mal diagnosticat.** No faltava la pàgina: `docs/pulso/num-14.html`
+existia i era correcta des del commit `8eed024`. El que faltava era la seva
+entrada al `manifest.json`, o sigui que la pàgina era **òrfena**: viva a la URL
+però inabastable des de l'índex i absent del sitemap. Resolt amb
+`resync.py --semana 2026-08-03 --nomes web`, que reconstrueix manifest, índex i
+sitemap des del markdown. Manifest ara: [1,2,3,6,7,8,9,10,11,12,13,14,15,16].
+
+**Els Núm. 4 i 5 NO s'han de publicar.** Mai es van enviar a ningú: eren
+borradors cancel·lats (campanyes Brevo 9 i 10, suspeses el 2026-06-03) i el que
+va sortir aquella setmana va ser el Núm. 6. Publicar-los ara posaria a l'arxiu
+públic contingut que cap subscriptor ha rebut. L'única qüestió real és
+**presentacional**: el lector veu la numeració saltar del 3 al 6. Decisió
+pendent del Jordi, no incidència: o es deixa el salt, o es documenta a l'índex,
+o es renumera l'arxiu (que trencaria les URL ja indexades: no recomanat).
+
+### Nota original (2026-08-08), conservada
 
 Confirmat 2026-08-08 contra el manifest viu: `docs/pulso/manifest.json` conté
 [1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 15]. El **Núm. 14** és el cas recent i el
@@ -85,7 +102,7 @@ sobreescriu per `numero`, així que regenerar reescriu índex i sitemap sols.
 
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
-- **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · Prioridad: alta
+- **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · FET (2026-08-17): `scripts/resync.py`
   Avui una edició acaba en **tres llocs independents** generats cadascun amb la
   seva pròpia comanda a partir del mateix `output/semana-X/newsletter.md`: la
   campanya de Brevo (contingut pujat via `crea_campanya_programada()` a

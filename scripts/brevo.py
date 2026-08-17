@@ -78,6 +78,43 @@ def create_campaign(
     return str(campaign_id)
 
 
+def get_campaign(campaign_id: str, with_html: bool = False) -> dict:
+    """Llegeix una campanya. `with_html=True` inclou htmlContent.
+
+    Compte amb les estadístiques: per a campanyes dirigides a llista,
+    `statistics.globalStats` torna tot a zero i les dades reals són a
+    `statistics.campaignStats[0]` (verificat 2026-08-17). Mirar el camp
+    equivocat fa semblar que la campanya no s'ha enviat a ningú.
+    """
+    s = _session()
+    url = f"{BASE_URL}/emailCampaigns/{campaign_id}"
+    if with_html:
+        url += "?withHtml=true"
+    r = s.get(url, timeout=30)
+    _raise_for_status(r, f"llegir campanya {campaign_id}")
+    return r.json()
+
+
+def update_campaign(campaign_id: str, **camps) -> int:
+    """PUT /emailCampaigns/{id} amb els camps donats. Brevo respon 204.
+
+    Camps útils: htmlContent, subject, header (preheader), name, scheduledAt.
+    Funciona amb la campanya en estat `queued` sense desprogramar-la
+    (verificat 2026-06-14).
+
+    GOTCHA (verificat 2026-08-02): si algú obre la campanya a l'editor web de
+    Brevo DESPRÉS d'aquest PUT, l'htmlContent pot revertir a la versió del model
+    de blocs de l'editor, mentre subject i header (metadades) es mantenen. Per
+    això qui cridi aquesta funció ha de rellegir amb get_campaign(with_html=True)
+    per confirmar, i NO obrir la campanya a l'editor abans de l'enviament: per
+    veure-la, test send.
+    """
+    s = _session()
+    r = s.put(f"{BASE_URL}/emailCampaigns/{campaign_id}", json=camps, timeout=60)
+    _raise_for_status(r, f"actualitzar campanya {campaign_id}")
+    return r.status_code
+
+
 def send_campaign(campaign_id: str) -> dict:
     """Envía la campaña inmediatamente (POST sendNow). Brevo responde 204."""
     s = _session()
