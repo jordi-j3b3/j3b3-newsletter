@@ -1597,6 +1597,15 @@ def main() -> int:
         print("  Context addicional (--context-extra) afegit al prompt")
     context_efectiu = "\n\n".join(contexts)
 
+    # Còpia del context que ha rebut el model. La necessita verify.py per
+    # distingir una xifra ÒRFENA d'una que ve de la tesi de l'editor o dels fets
+    # macro de premsa (verificades fora dels CSV). Sense això, cada xifra de la
+    # tesi sortiria com a error al gate. S'escriu abans de generar perquè hi
+    # sigui encara que la crida al model falli.
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "context_efectiu.txt").write_text(
+        context_efectiu, encoding="utf-8")
+
     modelo = SETTINGS["modelo"]["modelo"]
     client = Anthropic()
 

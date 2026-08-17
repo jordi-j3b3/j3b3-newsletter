@@ -142,6 +142,21 @@ def main() -> int:
     if confirmar("¿Abrir el borrador para revisar/editar?", default_yes=True):
         abrir_editor(out_md)
 
+    # Paso 3bis: gate numérico (verify.py) antes de componer.
+    # En modo interactivo NO se aborta sin preguntar: el editor está delante y
+    # puede tener un motivo legítimo (una cifra de la tesis que el gate no sabe
+    # anclar). Pero el default es NO continuar, para que saltárselo sea un acto
+    # consciente y no la salida cómoda.
+    verify_cmd = [sys.executable, "scripts/verify.py", "--semana", semana,
+                  "--json", str(output_dir / "verify_report.json")]
+    print(f"\n$ {' '.join(verify_cmd)}\n")
+    if subprocess.run(verify_cmd, cwd=ROOT).returncode != 0:
+        print("\nEl borrador NO pasa el gate numérico (ver errores arriba).")
+        if not confirmar("¿Continuar igualmente hacia la composición?",
+                         default_yes=False):
+            raise SystemExit("Detenido en verify.py. Corrige el borrador y "
+                             "vuelve a ejecutar.")
+
     # Paso 4: composición HTML
     ejecutar(sys.executable, "scripts/compose.py", "--semana", semana,
              "--numero", str(numero))

@@ -271,11 +271,19 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
         & (df_raw["tipus"] == "real")
         & (df_raw["indicador"] == "var_anual")
     ]
+    # HISTÒRIC, no només el mes més recent (canvi 2026-08-17): amb un sol mes
+    # per comunitat era impossible verificar cap afirmació de ratxa territorial
+    # — que és exactament l'error del Núm. 15, on es va atribuir a Catalunya una
+    # ratxa de sis mesos en negatiu que era de Balears. verify.py necessita la
+    # sèrie sencera per comptar-la. Cost: ~19 CCAA × `meses` files.
     ccaa_ultimo_periodo = ""
     if not ccaa_full.empty:
         ult_data_ccaa = ccaa_full["data"].max()
-        ccaa = ccaa_full[ccaa_full["data"] == ult_data_ccaa]
         ccaa_ultimo_periodo = ult_data_ccaa.strftime("%Y-%m")
+        periodes_ccaa = sorted(ccaa_full["data"].dropna().unique())
+        tall = (periodes_ccaa[-meses] if len(periodes_ccaa) >= meses
+                else periodes_ccaa[0])
+        ccaa = ccaa_full[ccaa_full["data"] >= tall]
     else:
         ccaa = ccaa_full
 

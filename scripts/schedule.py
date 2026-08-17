@@ -108,6 +108,26 @@ def executa_pipeline(semana: str, numero: int, context_extra: str = "") -> None:
 
     # 3. Generate → 4. Compose → 5. Publica web.
     run(generate_cmd)
+
+    # 3bis. GATE NUMÈRIC, entre generate i compose. Si una xifra del cos no
+    #       s'ancora a cap CSV del snapshot, o una afirmació de ratxa o
+    #       superlatiu no quadra amb la sèrie, s'atura aquí: NO es compon, NO es
+    #       publica a la web i NO es crea la campanya. L'informe queda al log de
+    #       l'Action i a verify_report.json perquè la notificació el pugui
+    #       incloure. És deliberat que bloquegi: una edició amb un error factual
+    #       fa més mal que una setmana sense edició.
+    verify_cmd = [py, "scripts/verify.py", "--semana", semana,
+                  "--json", f"output/semana-{semana}/verify_report.json"]
+    print(f"\n$ {' '.join(verify_cmd)}")
+    rv = subprocess.run(verify_cmd, cwd=ROOT, env=child_env)
+    if rv.returncode != 0:
+        raise SystemExit(
+            "Pas fallit: verify.py ha trobat errors al borrador (o no ha pogut "
+            "executar-se). No es compon ni es programa res. Revisa l'informe, "
+            "corregeix el borrador i torna a llançar amb --replace "
+            "--skip-pipeline."
+        )
+
     run([py, "scripts/compose.py", "--semana", semana, "--numero", str(numero)])
     run([py, "scripts/publish_web.py", "--semana", semana, "--numero", str(numero)])
 

@@ -2,10 +2,31 @@
 
 Tareas pendientes ordenadas por momento de ejecución.
 
-## `scripts/verify.py` — verificació numèrica del borrador abans de compose · Prioridad: ALTA
+## `scripts/verify.py` — verificació numèrica del borrador abans de compose · FET (2026-08-17)
 
-Pendent de disseny conjunt amb el Jordi (acordat 2026-08-08: es dissenya en una
-sessió dedicada, amb calma).
+IMPLEMENTAT. Corre entre `generate.py` i `compose.py`, cablejat a
+`executa_pipeline()` de `schedule.py` (bloqueja: no compon, no publica web i no
+crea campanya) i a `run_newsletter.py` (pregunta, amb default NO).
+Regressió: `tests/casos_verify/executa.py --semana YYYY-MM-DD`, 3 casos.
+
+**Taxonomia decidida** (el dubte que bloquejava el disseny): cada número del cos
+es classifica com ANCORAT (cel·la d'un CSV del snapshot, amb tolerància segons
+els decimals impresos) · DERIVAT (diferència reproduïble entre dues cel·les) ·
+EXTERN (surt a `context_efectiu.txt`, o sigui la tesi de l'editor o els fets
+macro: verificat per l'editor, no per l'script) · PREMSA (dins un paràgraf del
+Bloc 2) · ORFE. Un ORFE és ERROR als blocs de dades pròpies (1 i 3) i AVÍS a la
+resta. Aquesta gradació és el que evita el mode de fallada que temíem: un gate
+que crida en fals s'acaba desactivant.
+
+**Les afirmacions de ratxa i superlatiu** s'extreuen amb una crida a Sonnet que
+NOMÉS fa de parser (retorna entitat, mètrica, periode, direcció, n, referència) i
+es verifiquen amb codi contra la sèrie. Si el parser s'inventa una afirmació, la
+comprovació falla; si se'n salta una, cau al gate de números orfes.
+
+**Dos canvis que va exigir:** `snapshot.py` ara desa l'HISTÒRIC per CCAA de
+l'ICM (abans només el mes més recent, o sigui que la ratxa territorial del
+Núm. 15 era inverificable per construcció), i `generate.py` desa
+`output/semana-X/context_efectiu.txt`.
 
 **Per què.** El Núm. 15 (2026-08-10) ha estat l'edició amb més marge d'error
 detectat fins ara, i per primera vegada amb un **error factual**, no d'estil: el
