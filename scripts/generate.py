@@ -76,6 +76,51 @@ def load_tesi_setmana() -> str:
     return TESI_SETMANA_PATH.read_text(encoding="utf-8").strip()
 
 
+BACKLOG_ANGLES_PATH = ROOT / "config" / "backlog_angles.md"
+
+
+def load_backlog_angles(historial: list) -> str:
+    """Backlog d'angles, per a les setmanes SENSE tesi de l'editor.
+
+    Sense això, quan no hi ha `tesi_setmana.md` el model cau a l'heurística de
+    "la dada més fresca manda" i les edicions surten intercanviables (és la
+    causa de fons del "totes les newsletters s'assemblen" del juny). Amb el
+    backlog ha de triar un angle d'una llista amb dades ja verificades i
+    mecanisme escrit.
+
+    Els identificadors ja gastats (camp `angle_backlog` de l'historial) es
+    llisten al final perquè no els repeteixi.
+    """
+    if not BACKLOG_ANGLES_PATH.exists():
+        return ""
+    text = BACKLOG_ANGLES_PATH.read_text(encoding="utf-8").strip()
+    usats = [str(e.get("angle_backlog")) for e in historial
+             if e.get("angle_backlog") and str(e.get("angle_backlog")).strip()]
+    avis_usats = (
+        f"\n\nJA GASTATS en edicions anteriors, NO els tornis a triar: "
+        f"{', '.join(sorted(set(usats)))}." if usats else ""
+    )
+    return (
+        "NO hi ha tesi de l'editor per a aquesta setmana. En lloc de triar la "
+        "cifra protagonista per frescor de la dada —que és el que fa que les "
+        "edicions s'assemblin—, TRIA UN ANGLE d'aquest backlog: el que millor "
+        "encaixi amb les dades del snapshot d'aquesta setmana i amb la premsa "
+        "recollida.\n\n"
+        "Obligacions si agafes un angle del backlog:\n"
+        "1. Torna a comprovar la xifra contra el CSV del snapshot. Les del "
+        "backlog es van verificar en una data concreta i un any nou les pot "
+        "haver mogut. Si no quadra, usa la del snapshot i digues-ho a "
+        "TRAZABILIDAD.\n"
+        "2. Respecta el mecanisme escrit a l'angle: és el que el converteix en "
+        "tesi i no en dada solta.\n"
+        "3. Digues a TRAZABILIDAD quin identificador has triat (A1…A10), en una "
+        "línia amb el format 'Angle del backlog: AN'.\n"
+        "4. Si cap angle encaixa amb les dades d'aquesta setmana, no en forcis "
+        "cap: fes-ho constar a TRAZABILIDAD i procedeix amb la teva tria.\n\n"
+        f"{text}{avis_usats}"
+    )
+
+
 def marcar_tesi_usada() -> None:
     """Renombra config/tesi_setmana.md a tesi_setmana.used.md perquè no
     s'apliqui per error a una edició futura."""
@@ -248,6 +293,9 @@ def extract_historial_entry(
         'editorial del bloque 1>",\n'
         '  "tema_prediccion": "<una frase de 12-20 palabras sintetizando la '
         'predicción del bloque 4, incluyendo el plazo si lo tiene>",\n'
+        '  "angle_backlog": "<si el borrador diu a TRAZABILIDAD que ha agafat '
+        'un angle del backlog (línia \'Angle del backlog: AN\'), el seu '
+        'identificador: A1…A10. Si no, cadena vacía>",\n'
         '  "metrica_prediccion": "<la métrica exacta sobre la que se predice y '
         'su horizonte, normalizada, p.ej. \'ICM real interanual España · Q4 '
         "2026', 'Ventas minoristas volumen YoY España · 2T 2026'. Solo la "
@@ -283,6 +331,7 @@ def extract_historial_entry(
         "periodo_bloc1": str(data.get("periodo_bloc1", "")),
         "angulo_bloc1": str(data.get("angulo_bloc1", "")),
         "tema_prediccion": str(data.get("tema_prediccion", "")),
+        "angle_backlog": str(data.get("angle_backlog", "")),
         "metrica_prediccion": str(data.get("metrica_prediccion", "")),
         "umbral_prediccion": str(data.get("umbral_prediccion", "")),
         "dataset_prediccion": str(data.get("dataset_prediccion", "")),
@@ -1592,6 +1641,21 @@ def main() -> int:
     if tesi_setmana:
         contexts.append(tesi_setmana)
         print("  Tesi setmanal (config/tesi_setmana.md) afegida al prompt")
+    else:
+        # Cap tesi aquesta setmana: en lloc de deixar que la frescor de la dada
+        # decideixi l'angle, s'injecta el backlog d'angles no cremats.
+        backlog = load_backlog_angles(historial)
+        if backlog:
+            contexts.append(backlog)
+            # Compta només capçaleres d'angle (## A1, ## A2…), no la secció
+            # "## Angles descartats" del final del fitxer.
+            n_angles = len(re.findall(r"(?m)^## A\d+ ", backlog))
+            print(f"  Sense tesi de l'editor → backlog d'angles injectat "
+                  f"({n_angles} angles a config/backlog_angles.md)")
+        else:
+            print("  AVÍS: sense tesi de l'editor i sense "
+                  "config/backlog_angles.md; l'angle queda a criteri del model",
+                  file=sys.stderr)
     if args.context_extra:
         contexts.append(args.context_extra)
         print("  Context addicional (--context-extra) afegit al prompt")

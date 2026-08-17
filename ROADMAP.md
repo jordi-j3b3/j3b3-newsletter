@@ -100,6 +100,25 @@ mirall d'`observatori-comerc/data/newsletter/` a un `output/semana-X/` temporal 
 cridar `publish_web.py --semana X --numero N --output-dir <temp>`. `update_manifest()`
 sobreescriu per `numero`, així que regenerar reescriu índex i sitemap sols.
 
+## `config/backlog_angles.md` — angles no cremats · FET (2026-08-17)
+
+Deu angles amb la xifra ja verificada contra el CSV, el mecanisme escrit i el
+suport de Bloc 3, cap d'ells usat a les 16 edicions enviades (revisió una per
+una dels miralls del dashboard, no de l'historial, que arrossega entrades
+cancel·lades).
+
+**Mecanisme, no només document:** quan una setmana NO hi ha
+`config/tesi_setmana.md`, `generate.py` injecta el backlog al prompt i el model
+ha de triar-ne un en lloc de caure a l'heurística de "la dada més fresca
+manda" — que és la causa de fons del "totes les newsletters s'assemblen" del
+juny. L'angle triat es registra al camp `angle_backlog` de l'historial i els ja
+gastats s'injecten com a prohibits a les setmanes següents.
+
+Pendent de reposar la llista quan baixi de 4-5 angles lliures. Datasets del
+dashboard encara sense explotar per si cal ampliar-la: `eaes.csv`,
+`estructura_comerc.csv`, `subsectors_dirce.csv`, `subsectors_epf.csv`,
+`europa_vab.csv` (28 països des del 1975).
+
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
 - **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · FET (2026-08-17): `scripts/resync.py`
