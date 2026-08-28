@@ -463,6 +463,35 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
                       if pd.notna(r.marge_vendes_pct)},
                      temes="margen margenes rentabilidad ventas rama ramas")
 
+    # -- Demografia empresarial per país (Eurostat BSD) ---------------------
+    f = semana_dir / "estructura_empreses.csv"
+    if f.exists():
+        df = pd.read_csv(f)
+        _BSD = {
+            "ENT_NR": ("número de empresas del comercio", "",
+                       "empresas censo parque tejido establecimientos comercios"),
+            "ENT_BRTHR_PC": ("tasa de natalidad empresarial, %", "%",
+                             "natalidad nacimiento aperturas altas creacion nuevas"),
+            "ENT_DTHR_PC": ("tasa de defunción empresarial, %", "%",
+                            "defuncion mortalidad cierres bajas desaparicion"),
+            "ENT_BRTHR_DTHR_PC": ("rotación empresarial (natalidad + defunción), %", "%",
+                                  "rotacion churn renovacion"),
+            "GRW_ENT_PC": ("variación neta del número de empresas, %", "%",
+                           "variacion neta crecimiento perdida saldo censo parque"),
+            "EMP_NR": ("personas ocupadas en el comercio", "",
+                       f"{_TEMES_OCUPACIO}"),
+            "SAL_NR": ("asalariados del comercio", "",
+                       "asalariados empleados contratados plantilla"),
+        }
+        for (pais, ind), g in df.groupby(["pais", "indic_sbs"]):
+            metrica, unitat, temes = _BSD.get(
+                str(ind), (str(ind), "", "empresas comercio"))
+            _afegeix(S, f"bsd|{pais}|{ind}", str(pais), metrica, unitat,
+                     {str(int(r.any_)): float(r.valor)
+                      for r in g.rename(columns={"any": "any_"}).itertuples()
+                      if pd.notna(r.valor)},
+                     temes=f"{temes} comercio minorista empresas eurostat")
+
     _afegeix_ocupacio_edat(S, semana_dir)
     return S
 

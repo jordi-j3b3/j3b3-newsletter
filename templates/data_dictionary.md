@@ -441,7 +441,56 @@ salvo que la tesis sea explícitamente de precios.
 
 ---
 
-## 12. Reglas editoriales de referencia a las fuentes
+## 12. Demografía empresarial europea — `estructura_empreses.csv`
+
+**Fuente**: Eurostat, *Business Demography* (BSD), sector NACE G47.
+
+**Ámbito**: **solo siete economías** (España, Alemania, Francia, Italia,
+Portugal, Países Bajos, Polonia) más la UE-27 como referencia. Lo fija el
+fetcher del Observatorio (`BSD_COUNTRIES`), no es una muestra abierta.
+
+**Frecuencia**: anual. Serie corta: 2021–2023.
+
+### Esquema
+
+| Columna | Tipus | Descripció |
+|---|---|---|
+| `pais` | string (català) | Nom del país o `UE-27` |
+| `pais_codi` | string | Codi Eurostat (`ES`, `EU27_2020`, etc.) |
+| `any` | int | Any |
+| `indic_sbs` | string | Indicador (veure sota) |
+| `valor` | float | Valor |
+
+| `indic_sbs` | Significado | Unidad |
+|---|---|---|
+| `ENT_NR` | Número de empresas activas | recuento |
+| `ENT_BRTHR_PC` | Tasa de natalidad empresarial | % |
+| `ENT_DTHR_PC` | Tasa de defunción empresarial | % |
+| `ENT_BRTHR_DTHR_PC` | Rotación (natalidad + defunción) | % |
+| `GRW_ENT_PC` | Variación neta del censo de empresas | % |
+| `EMP_NR` | Personas ocupadas | recuento |
+| `SAL_NR` | Asalariados | recuento |
+
+### Dos avisos que hay que respetar al escribir
+
+1. **No es "Europa".** Con siete países comparados, la formulación correcta es
+   "de las siete economías que compara el Observatorio", nunca "el peor de
+   Europa" ni "de la UE".
+2. **`GRW_ENT_PC` no es la resta de las otras dos tasas.** Es la variación del
+   censo de empresas entre dos años (p. ej. 426.519 en 2023 sobre 442.838 en
+   2022 = −3,69%). Natalidad y defunción se calculan sobre poblaciones de
+   referencia distintas, así que restarlas da otro número. Si el texto menciona
+   las tres cifras, tiene que decir que son cálculos de base distinta; nunca
+   presentar la resta como el mecanismo.
+
+### Norma d'ús
+
+Dada d'estructura, no de cicle curt: el retard és de dos anys i mig i això s'ha
+de poder llegir al text. Citar com "Eurostat, demografía empresarial".
+
+---
+
+## 13. Reglas editoriales de referencia a las fuentes
 
 Las referencias técnicas y metodológicas (códigos de serie, bases de índice,
 números de tabla) **no se citan en el cuerpo de los bloques editoriales**.

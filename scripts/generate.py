@@ -690,6 +690,47 @@ def slice_ipc_coicop(csv_path: Path, mesos: int = 15) -> str:
     return bloc1 + bloc2
 
 
+_ESTRUCTURA_NOMS = {
+    "ENT_NR": "empreses (nombre)",
+    "ENT_BRTHR_PC": "taxa de natalitat (%)",
+    "ENT_DTHR_PC": "taxa de defuncio (%)",
+    "ENT_BRTHR_DTHR_PC": "rotacio = natalitat + defuncio (%)",
+    "GRW_ENT_PC": "variacio neta del nombre d'empreses (%)",
+    "EMP_NR": "ocupats (nombre)",
+    "SAL_NR": "assalariats (nombre)",
+}
+
+
+def slice_estructura_empreses(csv_path: Path) -> str:
+    """Demografia empresarial del comerç (Eurostat BSD), pivotada per país.
+
+    Dues advertències van al propi bloc perquè arribin al model encara que no
+    llegeixi el diccionari: l'univers és de set economies més la UE-27 (no és
+    "Europa"), i la variació neta del nombre d'empreses NO és la resta de les
+    taxes de natalitat i defunció — són càlculs de base diferent d'Eurostat, i
+    presentar-ho com una resta és un error que un lector amb la taula al davant
+    desmunta.
+    """
+    df = pd.read_csv(csv_path)
+    ultim = int(df["any"].max())
+    paisos = sorted(p for p in df[df["any"] == ultim]["pais"].unique() if p != "UE-27")
+    parts = [f"Demografia empresarial del comerc al detall (CNAE 47) · Eurostat BSD\n"
+             f"UNIVERS: nomes {len(paisos)} economies ({', '.join(paisos)}) mes la "
+             f"UE-27 com a referencia. NO es pot dir 'el pitjor d'Europa': digues "
+             f"'de les {len(paisos)} economies que compara l'Observatori'.\n"
+             f"AVIS DE CALCUL: la variacio neta del nombre d'empreses (GRW_ENT_PC) "
+             f"es el canvi del cens d'empreses d'un any a l'altre, NO la resta "
+             f"natalitat menys defuncio (bases de calcul diferents). No presentis "
+             f"la resta com el mecanisme.\n"]
+    for ind, nom in _ESTRUCTURA_NOMS.items():
+        g = df[df["indic_sbs"] == ind]
+        if g.empty:
+            continue
+        piv = g.pivot_table(index="pais", columns="any", values="valor", aggfunc="first")
+        parts.append(f"\n{ind} — {nom}:\n" + piv.round(2).to_csv())
+    return "".join(parts)
+
+
 ICM_BRANCA_GENERAL = "Comercio al por menor, excepto de vehículos de motor y motocicletas"
 
 # Etiquetes curtes per a les branques de l'ICM (estalvia tokens al prompt).
@@ -1259,7 +1300,8 @@ def construir_prompts(
                 "8. La cifra protagonista del Bloque 1 debe proceder SIEMPRE de un dataset "
                 "propio del Observatorio: cualquiera de los bloques de datos <PULSO_...>, "
                 "<PRODUCTIVITAT_SECTOR>, <OCUPACIO_SECTOR>, <IPC_COMERC>, <EPA_COMERC>, "
-                "<CONFIANCA_CONSUMIDOR> o <IPC_GRUPS_COICOP> del mensaje. "
+                "<CONFIANCA_CONSUMIDOR>, <IPC_GRUPS_COICOP> o "
+                "<ESTRUCTURA_EMPRESES_UE> del mensaje. "
                 "NUNCA puede proceder de <RECOPILACION_PRENSA>: un dato de prensa no es "
                 "fuente primaria del Bloque 1, porque el lector debe poder verificar la "
                 "cifra directamente en el Observatorio. Ejemplo de violación de esta regla: "
@@ -1439,6 +1481,15 @@ def construir_prompts(
         ipc_coicop_data = slice_ipc_coicop(ipc_coicop_path, mesos=15)
         parts.extend([
             f"<IPC_GRUPS_COICOP periodo=ultims_15_mesos>\n{ipc_coicop_data}\n</IPC_GRUPS_COICOP>",
+            "",
+        ])
+
+    estructura_path = semana_dir / "estructura_empreses.csv"
+    if estructura_path.exists():
+        estructura_data = slice_estructura_empreses(estructura_path)
+        parts.extend([
+            f"<ESTRUCTURA_EMPRESES_UE font=Eurostat_BSD>\n{estructura_data}\n"
+            f"</ESTRUCTURA_EMPRESES_UE>",
             "",
         ])
 

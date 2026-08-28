@@ -122,6 +122,22 @@ def ocupacio_meta(csv_path: Path) -> dict:
     return {"ultimo_any": int(df["any"].max())}
 
 
+def estructura_meta(csv_path: Path) -> dict:
+    """Metadades de la demografia empresarial (Eurostat BSD).
+
+    L'univers és curt i fix —set economies més la UE-27, tal com el fixa
+    `BSD_COUNTRIES` al fetcher de l'Observatori— i això condiciona com se'n pot
+    parlar: no és "Europa", són set països. Es desa el recompte per si el text
+    ho ha de matisar.
+    """
+    df = pd.read_csv(csv_path)
+    ultimo_any = int(df["any"].max())
+    paisos = sorted(df[df["any"] == ultimo_any]["pais"].unique())
+    return {"ultimo_any": ultimo_any,
+            "n_paisos": len([p for p in paisos if p != "UE-27"]),
+            "paisos": paisos}
+
+
 def ipc_meta(csv_path: Path) -> dict:
     df = pd.read_csv(csv_path)
     ultimo_any = int(df["any"].max())
@@ -593,6 +609,7 @@ def main() -> int:
     epa_src = obs_path / SETTINGS["snapshot"]["epa_origen"]
     confianza_src = obs_path / SETTINGS["snapshot"]["confianza_origen"]
     ipc_coicop_src = obs_path / SETTINGS["snapshot"]["ipc_coicop_origen"]
+    estructura_src = obs_path / SETTINGS["snapshot"]["estructura_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
@@ -605,6 +622,7 @@ def main() -> int:
     epa_dst = semana_dir / "epa_retail.csv"
     confianza_dst = semana_dir / "confianza_consumidor.csv"
     ipc_coicop_dst = semana_dir / "ipc_coicop.csv"
+    estructura_dst = semana_dir / "estructura_empreses.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -695,6 +713,14 @@ def main() -> int:
               f"{ipc_coicop_info['n_grups']} grups · "
               f"últim periode {ipc_coicop_info['ultimo_periode']}")
 
+    estructura_info = copy_csv_optional(estructura_src, estructura_dst,
+                                        "Estructura empresarial UE")
+    if estructura_info:
+        estructura_info.update(estructura_meta(estructura_dst))
+        print(f"  estructura_empreses  · {estructura_info['filas']:>6} filas · "
+              f"{estructura_info['n_paisos']} països + UE-27 · "
+              f"últim any {estructura_info['ultimo_any']}")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -732,6 +758,7 @@ def main() -> int:
         "epa": epa_info,
         "confianza": confianza_info,
         "ipc_coicop": ipc_coicop_info,
+        "estructura_empreses": estructura_info,
         "prensa": prensa_info,
         "noticies_editor": noticies_editor_info,
         "noticies_editor_avisos": noticies_editor_avisos,

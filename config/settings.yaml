@@ -38,6 +38,7 @@ snapshot:
   epa_origen: "data/cache/epa_retail.csv"
   confianza_origen: "data/cache/confianza_consumidor.csv"
   ipc_coicop_origen: "data/cache/ipc_coicop.csv"
+  estructura_origen: "data/cache/estructura_retail.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.
