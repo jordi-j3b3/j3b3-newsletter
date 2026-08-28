@@ -450,5 +450,35 @@
     "asunto": "La desinflación alimentaria deja al descubierto el volumen real del retail",
     "titular": "El colchón nominal se agota.",
     "created_at_utc": "2026-08-16T18:42:03.902407+00:00"
+  },
+  {
+    "numero": 17,
+    "semana": "2026-08-31",
+    "cifra": "-3,69%",
+    "dataset_bloc1": "Eurostat BSD - demografía empresarial comercio minorista (estructura_empreses.csv)",
+    "periodo_bloc1": "2023",
+    "angulo_bloc1": "España no cierra más comercios que Europa: abre muchos menos, falla la natalidad empresarial.",
+    "tema_prediccion": "El censo DIRCE de minoristas caerá por debajo de 372.000 empresas a enero de 2026.",
+    "angle_backlog": "",
+    "metrica_prediccion": "DIRCE CNAE 47 · España · censo a 1-1-2026 · resolución diciembre 2026",
+    "umbral_prediccion": "<372.000 empresas",
+    "dataset_prediccion": "DIRCE INE (tabla 73019, serie Nacional. Total. Total. 47)",
+    "noticias": [
+      "El pequeño comercio se reinventa ante el reto digital: los casos del Forn de Cabrianes y Los Extremeños",
+      "Los centros comerciales aumentan un 6,4% sus ventas hasta junio",
+      "Barcelona Oberta alerta: el calendario de obras pone en jaque al comercio de los ejes urbanos"
+    ],
+    "periodo_eurostat": "2026-06",
+    "periodo_icm": "2026-06",
+    "periodo_icm_distribucio": "2026-06",
+    "indicador_bloc3": "cdmge_tasa_anual",
+    "mode_editorial": "P2",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "33",
+    "scheduled_at": "2026-08-31T08:30:00+02:00",
+    "asunto": "España no cierra más comercios que Europa — abre muchos menos",
+    "titular": "España: el problema es la natalidad empresarial.",
+    "created_at_utc": "2026-08-28T09:59:08.089451+00:00"
   }
 ]
