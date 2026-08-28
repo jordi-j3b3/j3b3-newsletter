@@ -195,6 +195,24 @@ igualment el seu `angle_backlog` i entra a la memòria editorial que s'injecta a
 prompt. Mentre no es corregeixi, l'entrada d'una edició bloquejada no s'hauria
 de pujar a origin sense decidir-ho expressament.
 
+## DIRCE al snapshot (perquè la predicció del Núm. 17 sigui verificable) · Prioridad: mitjana
+
+El Núm. 17 predica sobre el cens del DIRCE (`<372.000` empreses de CNAE 47 a
+1-1-2026, resolució desembre de 2026), però `subsectors_dirce.csv` no arriba al
+snapshot: les quatre xifres del Bloc 4 surten ORFES i el gate només les pot
+avisar. Al Bloc 4 això és el comportament correcte —una predicció no és al CSV—
+però la BASE de la predicció (377.471 el 2025, i les variacions de −8.513 i
+−7.303) sí que hauria de poder ancorar-se.
+
+Fix: afegir `dirce_origen: "data/cache/subsectors_dirce.csv"` a `settings.yaml`,
+copiar-lo a `snapshot.py`, injectar-lo a `generate.py` i carregar-lo a
+`verify.py`. Mateix patró que `estructura_empreses.csv` (commit del 2026-08-28).
+**Avís obligatori quan es faci**: el cens del DIRCE i el d'Eurostat BSD NO són
+la mateixa magnitud (377.471 contra 426.519) i no es poden comparar entre si; i
+el salt 2022→2023 del DIRCE és de −35.318 empreses, vuit vegades el dels anys
+següents, cosa que fa pensar en un canvi metodològic **no verificat**. Cap text
+s'hi ha de recolzar sense comprovar-ho.
+
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
 - **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · FET (2026-08-17): `scripts/resync.py`
