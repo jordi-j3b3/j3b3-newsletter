@@ -554,15 +554,30 @@ def slice_productivitat(csv_path: Path) -> str:
     return df[available].sort_values("any").to_csv(index=False)
 
 
-def slice_ocupacio_spain(csv_path: Path) -> str:
-    """Ocupació del comerç minorista a Espanya (total, últims 8 anys)."""
+def slice_ocupacio_edat(csv_path: Path) -> str:
+    """Ocupació del comerç minorista per tram d'edat, Espanya I UE-27.
+
+    Abans només passava Espanya (`pais_codi == "ES"`). El CSV porta les dues
+    entitats amb el mateix desglossament, i el Núm. 17 (2026-08-24) volia
+    justament la comparació: el model va acabar citant el 14,2% europeu tret del
+    backlog editorial i la traçabilitat va afirmar que el CSV no el contenia.
+    Amb la UE-27 dins, la xifra surt de la dada i el gate la pot ancorar.
+
+    El pes de cada tram sobre el total del país es calcula aquí, com a `slice_epa`:
+    la cifra protagonista d'aquesta família sempre és un pes, i el model no ha de
+    fer aritmètica amb les dades.
+    """
     df = pd.read_csv(csv_path)
-    esp = df[(df["pais_codi"] == "ES") & (df["sex"] == "T")].copy()
-    anys = sorted(esp["any"].unique())[-8:]
-    result = (
-        esp[esp["any"].isin(anys)][["any", "edat", "ocupats_milers"]]
-        .sort_values(["any", "edat"])
-    )
+    d = df[df["sex"] == "T"].copy()
+    anys = sorted(d["any"].unique())[-8:]
+    d = d[d["any"].isin(anys)]
+    totals = d.groupby(["pais", "any"])["ocupats_milers"].transform("sum")
+    d["pes_pct"] = (100 * d["ocupats_milers"] / totals).round(1)
+    # El CSV d'origen arrossega soroll de coma flotant (549.0999999999999): al
+    # prompt hi va la xifra tal com es publica, amb un decimal.
+    d["ocupats_milers"] = d["ocupats_milers"].round(1)
+    result = (d[["pais", "any", "edat", "ocupats_milers", "pes_pct"]]
+              .sort_values(["pais", "any", "edat"]))
     return result.to_csv(index=False)
 
 
@@ -1387,9 +1402,10 @@ def construir_prompts(
 
     ocupacio_path = semana_dir / "ocupacio_comerc.csv"
     if ocupacio_path.exists():
-        ocup_data = slice_ocupacio_spain(ocupacio_path)
+        ocup_data = slice_ocupacio_edat(ocupacio_path)
         parts.extend([
-            f"<OCUPACIO_SECTOR periodo=ultims_8_anys>\n{ocup_data}\n</OCUPACIO_SECTOR>",
+            f"<OCUPACIO_SECTOR periodo=ultims_8_anys entitats=ES,UE-27>\n"
+            f"{ocup_data}\n</OCUPACIO_SECTOR>",
             "",
         ])
 

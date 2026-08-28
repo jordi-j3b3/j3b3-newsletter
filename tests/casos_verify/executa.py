@@ -2,12 +2,17 @@
 Regressió de scripts/verify.py sobre els incidents reals documentats al ROADMAP.
 
 Cada cas és un borrador mínim que reprodueix un error que va arribar (o gairebé)
-a publicar-se. El gate ha de suspendre'ls tots i ha de deixar passar el borrador
-real del Núm. 16, que és correcte. Si algun dia un cas passa el gate, la
-protecció s'ha trencat.
+a publicar-se, o —des del Núm. 17— un fals positiu que va bloquejar una edició
+correcta. El gate ha de suspendre els primers i deixar passar els segons: si un
+cas de bloqueig passa, la protecció s'ha trencat; si un cas correcte es bloqueja,
+el gate torna a ser el problema.
 
 Ús (des de la còpia amb .venv i config/.env):
-    .venv/bin/python tests/casos_verify/executa.py --semana 2026-08-17
+    .venv/bin/python tests/casos_verify/executa.py --semana 2026-08-24
+
+Cada execució fa una crida a l'LLM que fa de parser, o sigui que el resultat pot
+variar lleugerament. Les comprovacions deterministes de la resolució de sèrie
+són a `unitaris.py`, al costat.
 """
 from __future__ import annotations
 
@@ -26,8 +31,13 @@ CASOS = [
     ("cas2_ratxa_ipc_set_mesos.md", 2,
      "declara set mesos de desacceleració de l'IPC d'alimentació quan en són "
      "cinc: el gener puja al febrer (tesi del Núm. 16, detectat abans de publicar)"),
+    ("cas3_falsos_positius.md", 0,
+     "els cinc falsos positius que van tombar el Núm. 17 (2026-08-24): dues "
+     "tendències qualitatives ('quince años de recorrido'), una bretxa "
+     "d'ocupació jove resolta contra les vendes, un fet de premsa del Bloc 2 i "
+     "les xifres d'ocupació per edat, que el gate no carregava"),
     (None, 0,
-     "el borrador real del Núm. 16, que ha de passar el gate sense errors"),
+     "el borrador real de la setmana, que ha de passar el gate sense errors"),
 ]
 
 

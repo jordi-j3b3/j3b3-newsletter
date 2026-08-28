@@ -2,6 +2,59 @@
 
 Tareas pendientes ordenadas por momento de ejecución.
 
+## Gate: falsos positius que van costar el Núm. 17 · FET (2026-08-28)
+
+El diumenge 2026-08-23 el cron va generar el Núm. 17 i `verify.py` el va
+suspendre amb 5 errors. Tots falsos. Com que el gate bloqueja la cadena, no es va
+compondre ni programar cap campanya: **el dilluns 24 d'agost no va sortir cap
+edició** i no es va detectar fins l'11è dia. Última enviada: Núm. 16 (Brevo 32).
+(El primer intent d'aquell diumenge havia fallat abans, per l'SDK d'Anthropic
+saltant a 1.x —`temperature` ja no és un kwarg vàlid—, arreglat amb el pin
+`anthropic<1.0` de `d751e01`.)
+
+Arrel comuna dels cinc: `resol_serie()` només exigia coincidència d'**entitat**,
+sense cap llindar de mètrica. N'hi havia prou que la frase i la sèrie
+compartissin "España" per resoldre "la brecha de empleo joven entre España y la
+UE-27" contra "ventas minoristas de España" i comptar-hi una ratxa sense sentit.
+
+Quatre canvis (tots a `scripts/verify.py`):
+
+1. **Llindar de mètrica.** `Serie.temes` posa el vocabulari de cada família en la
+   llengua del producte (les etiquetes dels CSV són tècniques i en català) i la
+   resolució exigeix entitat **i** mètrica. Sense mètrica no hi ha resolució:
+   AVÍS de "no s'ha pogut resoldre", no ERROR.
+2. **Confiança alta/baixa.** Amb resolució incerta un desquadrament és AVÍS i no
+   bloqueja. Un gate que crida en fals s'acaba desactivant; un que bloqueja en
+   fals és pitjor encara, perquè el resultat és el silenci.
+3. **El Bloc 2 no bloqueja mai.** Allà el subjecte és una notícia i la font és el
+   mitjà ("Cataluña lidera las aperturas de Charter").
+4. **Dues guardes de sentit:** una ratxa "en negatiu" sobre una sèrie sense cap
+   valor negatiu no és comprovable (era el cas de "lleva quince años sin atraer
+   jóvenes" contra els milers d'ocupats), i una ratxa real més llarga que la
+   declarada no és un error, és un text que es queda curt.
+
+**Forat de cobertura tancat de camí:** `ocupacio_comerc.csv` (ocupats per tram
+d'edat, Eurostat LFS) arribava al snapshot des del 2026-06-22 però `verify.py` no
+el carregava mai — o sigui que tota xifra d'estructura d'edat era ORFE, i al
+Bloc 1 això és ERROR. Ara es carrega amb els agregats que el butlletí anomena
+("los menores de 25", "los mayores de 50"), amb el pes sobre el total i amb la
+bretxa Espanya−UE-27, i `ancora()` accepta que el text escrigui persones
+(172.200) contra una sèrie en milers (172,2).
+
+**I un defecte del prompt, no del gate:** `slice_ocupacio_spain()` de
+`generate.py` filtrava `pais_codi == "ES"`, així que la UE-27 no arribava mai al
+model tot i ser al CSV. El Núm. 17 va treure el 14,2% europeu del backlog
+editorial i la traçabilitat va afirmar que el CSV no el contenia. Renombrada a
+`slice_ocupacio_edat()`: passa ES i UE-27, amb el pes de cada tram ja calculat.
+
+Regressió: `tests/casos_verify/executa.py --semana 2026-08-24` (4 casos, el nou
+és `cas3_falsos_positius.md`, que ha de PASSAR) i `tests/casos_verify/unitaris.py`
+(comprovacions deterministes de la resolució, sense crida a l'LLM).
+
+Pendent, si es vol tancar el mode de fallada del tot: que un gate suspès avisi
+per correu com ho fa la notificació de diumenge, en lloc de deixar-ho només al
+correu de fallada de GitHub Actions, que és el que va passar desapercebut.
+
 ## `scripts/verify.py` — verificació numèrica del borrador abans de compose · FET (2026-08-17)
 
 IMPLEMENTAT. Corre entre `generate.py` i `compose.py`, cablejat a

@@ -51,6 +51,33 @@ construcció sobre la sèrie:
   SUPERLATIU   "mínimo desde junio de 2021", "el más bajo de la serie"
   PRIMERA_VEZ  "primera caída desde el 3T 2022"
 
+Severitat de les afirmacions (revisat 2026-08-28, després del Núm. 17)
+---------------------------------------------------------------------
+El primer disseny bloquejava sempre que la sèrie desmentia l'afirmació. El
+resultat va ser el pitjor possible: el diumenge 2026-08-23 el gate va suspendre
+un borrador correcte amb cinc "errors" —tots falsos— i, com que bloqueja la
+cadena, no hi va haver campanya ni ningú se'n va adonar fins onze dies després.
+Cap lector va rebre res el dilluns 24.
+
+Els cinc falsos positius venien tots de la mateixa arrel: la resolució de sèrie
+només exigia que coincidís l'ENTITAT, així que "la brecha de empleo joven entre
+España y la UE-27" es resolia contra "ventas minoristas de España" i s'hi
+comptava una ratxa que no hi tenia cap sentit. D'aquí quatre regles:
+
+  1. Cal coincidència d'ENTITAT **i** de MÈTRICA (Serie.temes fa el pont entre
+     l'etiqueta tècnica del CSV i la llengua del butlletí). Sense mètrica no hi
+     ha resolució: AVÍS de "no s'ha pogut resoldre", no ERROR.
+  2. La resolució té confiança "alta" o "baixa". Amb confiança baixa, un
+     desquadrament és AVÍS. Bloquejar per una resolució dubtosa costa edicions;
+     deixar passar un error de tant en tant no.
+  3. Les afirmacions del Bloc 2 no bloquegen mai: allà el subjecte és una
+     notícia i la font és el mitjà, no les nostres sèries.
+  4. Una ratxa "en negatiu" sobre una sèrie que no té cap valor negatiu (nivells,
+     índexs, milers d'ocupats) no és comprovable: la frase parlava d'una
+     tendència qualitativa ("lleva quince años sin atraer jóvenes"). AVÍS.
+     I si la ratxa real és més llarga que la declarada, el text es queda curt:
+     tampoc és una afirmació falsa.
+
 Codis de sortida
 ----------------
   0  cap error (pot haver-hi avisos)
@@ -182,12 +209,21 @@ class Serie:
     `entitat` és el que permet detectar l'error d'atribució: si el text diu
     'Cataluña' i el valor només existeix a la sèrie de 'Illes Balears', la
     resolució per entitat falla i es pot dir exactament de qui era la dada.
+
+    `temes` és el vocabulari de la sèrie EN LA LLENGUA DEL PRODUCTE: les
+    etiquetes dels CSV són tècniques i en català ('ICM real var_anual',
+    'ocupats_milers') mentre el butlletí parla de 'ventas reales interanuales' i
+    de 'ocupados'. Sense aquest pont, exigir coincidència de mètrica a la
+    resolució de sèrie deixaria fora els encerts (i el gate només mirava
+    l'entitat, que és com una afirmació sobre ocupació jove acabava resolta
+    contra la sèrie de vendes minoristes pel fet de compartir 'España').
     """
     clau: str
     entitat: str
     metrica: str
     unitat: str
     punts: dict = field(default_factory=dict)
+    temes: set[str] = field(default_factory=set)
 
     @property
     def etiqueta(self) -> str:
@@ -196,12 +232,22 @@ class Serie:
     def periodes(self) -> list[str]:
         return _ordena_periodes(self.punts)
 
+    @property
+    def vocabulari(self) -> set[str]:
+        """Tokens amb què es pot referir el text a aquesta mètrica."""
+        return _tokens(self.metrica) | self.temes
+
+    @property
+    def te_negatius(self) -> bool:
+        return any(v < 0 for v in self.punts.values())
+
 
 def _afegeix(series: dict, clau: str, entitat: str, metrica: str, unitat: str,
-             punts: dict) -> None:
+             punts: dict, temes: str = "") -> None:
     punts = {p: v for p, v in punts.items() if v is not None and pd.notna(v)}
     if punts:
-        series[clau] = Serie(clau, entitat, metrica, unitat, punts)
+        series[clau] = Serie(clau, entitat, metrica, unitat, punts,
+                             temes=_tokens(temes))
 
 
 def _yoy(punts: dict, mesos: int = 12) -> dict:
@@ -215,6 +261,21 @@ def _yoy(punts: dict, mesos: int = 12) -> dict:
         if anterior in punts and punts[anterior]:
             out[p] = (v / punts[anterior] - 1) * 100
     return out
+
+
+# Vocabulari de producte per família de dades (veure Serie.temes). En castellà,
+# perquè és la llengua del butlletí; sense accents ni tokens de menys de 3
+# lletres, que _tokens() descarta.
+_TEMES_VENDES = ("ventas ventes comercio minorista detallista facturacion "
+                 "negocio negocios indice volumen consumo")
+_TEMES_VARIACIO = "variacion interanual anual tasa crecimiento ritmo caida"
+_TEMES_OCUPACIO = ("ocupacion empleo ocupados trabajadores plantilla personal "
+                   "puestos afiliados")
+_TEMES_PREUS = "precios inflacion ipc encarecimiento cesta coste"
+_TEMES_CONFIANCA = "confianza expectativas consumidor sentimiento clima animo"
+_TEMES_EDAT = ("edad edades tramo tramos franja generacion generacional relevo "
+               "jovenes joven mayores envejecimiento estructura")
+_TEMES_PES = "peso cuota porcentaje proporcion participacion distribucion share"
 
 
 def carrega_series(semana_dir: Path) -> dict[str, Serie]:
@@ -234,10 +295,14 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
                 ["ambit", "tipus", "branca", "indicador"]):
             punts = {f"{int(r.any_):04d}-{int(r.mes):02d}": float(r.valor)
                      for r in g.rename(columns={"any": "any_"}).itertuples()}
+            es_ocupacio = "ocupa" in str(tipus)
+            temes = (_TEMES_OCUPACIO if es_ocupacio else _TEMES_VENDES) + " " + (
+                _TEMES_VARIACIO if "var" in str(ind) else "") + " " + str(branca)
             _afegeix(S, f"icm|{ambit}|{tipus}|{branca}|{ind}",
                      entitat=str(ambit) if ambit != "nacional" else "España",
                      metrica=f"ICM {tipus} {ind} · {branca}",
-                     unitat="%" if "var" in str(ind) else "index", punts=punts)
+                     unitat="%" if "var" in str(ind) else "index", punts=punts,
+                     temes=temes)
 
     # -- ICM per modo de distribució ----------------------------------------
     f = semana_dir / "pulso_icm_distribucio.csv"
@@ -246,9 +311,14 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
         for (tipus, modo, ind), g in df.groupby(["tipus", "modo", "indicador"]):
             punts = {f"{int(r.any_):04d}-{int(r.mes):02d}": float(r.valor)
                      for r in g.rename(columns={"any": "any_"}).itertuples()}
+            es_ocupacio = "ocupa" in str(tipus)
+            temes = ((_TEMES_OCUPACIO if es_ocupacio else _TEMES_VENDES) + " " +
+                     (_TEMES_VARIACIO if "var" in str(ind) else "") +
+                     " formato formatos modo cadenas superficies unilocalizadas")
             _afegeix(S, f"icmdist|{tipus}|{modo}|{ind}", entitat=str(modo),
                      metrica=f"ICM {tipus} {ind} por modo de distribución",
-                     unitat="%" if "var" in str(ind) else "index", punts=punts)
+                     unitat="%" if "var" in str(ind) else "index", punts=punts,
+                     temes=temes)
 
     # -- IPC per grups COICOP: nivells + interanual i mensual derivats ------
     # Les etiquetes del CSV vénen en CATALÀ i el butlletí és en castellà: es
@@ -266,15 +336,18 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
         df["grup"] = df["grup"].map(lambda g: _GRUP_ES.get(g, g))
         for grup, g in df.groupby("grup"):
             nivells = {str(r.periode): float(r.ipc) for r in g.itertuples()}
-            _afegeix(S, f"ipc|{grup}|index", str(grup), "IPC índice", "index", nivells)
+            _afegeix(S, f"ipc|{grup}|index", str(grup), "IPC índice", "index",
+                     nivells, temes=_TEMES_PREUS)
             _afegeix(S, f"ipc|{grup}|yoy", str(grup), "IPC variación interanual",
-                     "%", _yoy(nivells))
+                     "%", _yoy(nivells),
+                     temes=f"{_TEMES_PREUS} {_TEMES_VARIACIO}")
             mom = {}
             per = _ordena_periodes(nivells)
             for a, b in zip(per, per[1:]):
                 if nivells[a]:
                     mom[b] = (nivells[b] / nivells[a] - 1) * 100
-            _afegeix(S, f"ipc|{grup}|mom", str(grup), "IPC variación mensual", "%", mom)
+            _afegeix(S, f"ipc|{grup}|mom", str(grup), "IPC variación mensual", "%",
+                     mom, temes=f"{_TEMES_PREUS} mensual mes")
 
     # -- Confiança del consumidor: columnes + bretxa derivada --------------
     f = semana_dir / "confianza_consumidor.csv"
@@ -290,12 +363,14 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
             if col in df.columns:
                 _afegeix(S, f"icc|{col}", "consumidor español", nom, "punts",
                          {str(r.periode): float(getattr(r, col))
-                          for r in df.itertuples() if pd.notna(getattr(r, col))})
+                          for r in df.itertuples() if pd.notna(getattr(r, col))},
+                         temes=_TEMES_CONFIANCA)
         if {"expectatives_financera", "expectatives_economica"} <= set(df.columns):
             _afegeix(S, "icc|bretxa", "consumidor español",
                      "brecha de expectativas (personal menos general)", "punts",
                      {str(r.periode): float(r.expectatives_financera)
-                      - float(r.expectatives_economica) for r in df.itertuples()})
+                      - float(r.expectatives_economica) for r in df.itertuples()},
+                     temes=f"{_TEMES_CONFIANCA} brecha diferencia")
 
     # -- EPA del comerç (total, sense desglossar per sexe) ------------------
     f = semana_dir / "epa_retail.csv"
@@ -304,15 +379,19 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
         tot = df[df["sexe"].astype(str).str.lower().isin(["total", "ambos sexos"])]
         if tot.empty:
             tot = df
-        for col, nom in [
-            ("ocupats_cnae47_milers", "ocupados en el comercio al por menor (CNAE 47), miles"),
-            ("aturats_seccio_g_milers", "parados del comercio (sección G), miles"),
-            ("hores_setmana_seccio_g", "horas semanales efectivas (sección G)"),
+        for col, nom, tema_col in [
+            ("ocupats_cnae47_milers", "ocupados en el comercio al por menor (CNAE 47), miles",
+             _TEMES_OCUPACIO),
+            ("aturats_seccio_g_milers", "parados del comercio (sección G), miles",
+             "parados paro desempleo desempleados"),
+            ("hores_setmana_seccio_g", "horas semanales efectivas (sección G)",
+             "horas jornada trabajadas semanales"),
         ]:
             if col in tot.columns:
                 punts = {str(r.periode): float(getattr(r, col))
                          for r in tot.itertuples() if pd.notna(getattr(r, col))}
-                _afegeix(S, f"epa|{col}", "comercio al por menor", nom, "milers", punts)
+                _afegeix(S, f"epa|{col}", "comercio al por menor", nom, "milers",
+                         punts, temes=f"{tema_col} epa")
                 # Interanual trimestral derivat (T2 contra T2 de l'any anterior).
                 yo = {}
                 for p, v in punts.items():
@@ -325,7 +404,8 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
                     if base:
                         yo[p] = (v / base - 1) * 100
                 _afegeix(S, f"epa|{col}|yoy", "comercio al por menor",
-                         f"{nom} · variación interanual", "%", yo)
+                         f"{nom} · variación interanual", "%", yo,
+                         temes=f"{tema_col} epa {_TEMES_VARIACIO}")
 
     # -- Eurostat retail per país ------------------------------------------
     f = semana_dir / "pulso_europeo.csv"
@@ -335,11 +415,13 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
             _afegeix(S, f"eu|{pais}|yoy", str(pais),
                      "ventas minoristas (volumen) interanual", "%",
                      {str(r.periode): float(r.yoy) for r in g.itertuples()
-                      if pd.notna(r.yoy)})
+                      if pd.notna(r.yoy)},
+                     temes=f"{_TEMES_VENDES} {_TEMES_VARIACIO} eurostat")
             _afegeix(S, f"eu|{pais}|index", str(pais),
                      "ventas minoristas (volumen) índice", "index",
                      {str(r.periode): float(r.index_volum) for r in g.itertuples()
-                      if pd.notna(r.index_volum)})
+                      if pd.notna(r.index_volum)},
+                     temes=f"{_TEMES_VENDES} eurostat")
 
     # -- CDMGE diari --------------------------------------------------------
     f = semana_dir / "pulso_diario.csv"
@@ -348,7 +430,9 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
         for ind, g in df.groupby("indicador"):
             _afegeix(S, f"cdmge|{ind}", "grandes cadenas (CDMGE)", str(ind), "%",
                      {str(r.data): float(r.valor) for r in g.itertuples()
-                      if pd.notna(r.valor)})
+                      if pd.notna(r.valor)},
+                     temes=f"{_TEMES_VENDES} {_TEMES_VARIACIO} cdmge diario "
+                           f"grandes cadenas")
 
     # -- Productivitat i marges (anuals) -----------------------------------
     f = semana_dir / "productivitat.csv"
@@ -365,7 +449,9 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
             if col in ("quota_salarial", "marge_brut"):
                 punts = {p: v * 100 for p, v in punts.items()}
             _afegeix(S, f"prod|{col}", "comercio al por menor",
-                     col.replace("_", " "), "%", punts)
+                     col.replace("_", " "), "%", punts,
+                     temes="productividad coste laboral salarios salarial margen "
+                           "margenes excedente cuota horas personal")
 
     f = semana_dir / "marges_branca.csv"
     if f.exists():
@@ -374,9 +460,86 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
             _afegeix(S, f"marge|{branca}", str(branca), "margen sobre ventas", "%",
                      {str(int(r.any_)): float(r.marge_vendes_pct)
                       for r in g.rename(columns={"any": "any_"}).itertuples()
-                      if pd.notna(r.marge_vendes_pct)})
+                      if pd.notna(r.marge_vendes_pct)},
+                     temes="margen margenes rentabilidad ventas rama ramas")
 
+    _afegeix_ocupacio_edat(S, semana_dir)
     return S
+
+
+# Trams del CSV agrupats com els anomena el butlletí ('los menores de 25', 'los
+# mayores de 50'). Sense aquests agregats, una frase corrent com «en 2018 los
+# mayores de 50 sumaban 444.100 ocupados» surt òrfena tot i ser dues cel·les del
+# snapshot sumades: era el forat que va bloquejar el Núm. 17.
+_AGREGATS_EDAT = {
+    "menores de 25 años": ["15-24"],
+    "de 25 a 49 años": ["25-39", "40-49"],
+    "de 50 a 64 años": ["50-59", "60-64"],
+    "mayores de 50 años": ["50-59", "60-64", "65+"],
+    "todas las edades": ["15-24", "25-39", "40-49", "50-59", "60-64", "65+"],
+}
+
+
+def _afegeix_ocupacio_edat(S: dict, semana_dir: Path) -> None:
+    """Ocupats al comerç per tram d'edat (Eurostat LFS), amb els agregats i els
+    pesos que el butlletí publica.
+
+    El dataset arribava al snapshot i al prompt des del 2026-06-22, però mai a
+    aquest índex: qualsevol xifra d'estructura d'edat quedava ORFE i, al Bloc 1,
+    això és ERROR. Es carreguen tres nivells: el tram, l'agregat i el pes sobre
+    el total — perquè la cifra protagonista d'aquesta família sempre és un pes
+    ('8,5% de ocupados menores de 25') i la bretxa amb la UE-27 també.
+    """
+    f = semana_dir / "ocupacio_comerc.csv"
+    if not f.exists():
+        return
+    df = pd.read_csv(f)
+    if "sex" in df.columns:
+        df = df[df["sex"].astype(str).str.upper() == "T"]
+    _PAIS_ES = {"Espanya": "España", "UE-27": "UE-27"}
+    base = f"{_TEMES_OCUPACIO} {_TEMES_EDAT} comercio minorista lfs eurostat"
+
+    pesos: dict[str, dict[str, dict[str, float]]] = {}
+    for pais, gp in df.groupby("pais"):
+        nom_pais = _PAIS_ES.get(str(pais), str(pais))
+        per_tram = {str(edat): {str(int(r.any)): float(r.ocupats_milers)
+                                for r in g.itertuples() if pd.notna(r.ocupats_milers)}
+                    for edat, g in gp.groupby("edat")}
+        anys = sorted({a for p in per_tram.values() for a in p})
+        totals = {a: sum(p.get(a, 0.0) for p in per_tram.values()) for a in anys}
+
+        for edat, punts in per_tram.items():
+            _afegeix(S, f"ocupedat|{pais}|{edat}", f"{nom_pais}, tramo {edat} años",
+                     "ocupados en el comercio al por menor por tramo de edad, miles",
+                     "milers", punts, temes=base)
+
+        pesos[nom_pais] = {}
+        for nom, trams in _AGREGATS_EDAT.items():
+            agregat = {a: sum(per_tram[t][a] for t in trams if a in per_tram.get(t, {}))
+                       for a in anys}
+            agregat = {a: v for a, v in agregat.items() if v}
+            if not agregat:
+                continue
+            if nom != "todas las edades":
+                _afegeix(S, f"ocupedat|{pais}|{nom}", f"{nom_pais}, {nom}",
+                         "ocupados en el comercio al por menor, miles", "milers",
+                         agregat, temes=base)
+            quota = {a: 100 * v / totals[a] for a, v in agregat.items() if totals.get(a)}
+            _afegeix(S, f"ocupedatpes|{pais}|{nom}", f"{nom_pais}, {nom}",
+                     "peso sobre el total de ocupados del comercio, %", "%",
+                     quota, temes=f"{base} {_TEMES_PES}")
+            pesos[nom_pais][nom] = quota
+
+    # Bretxa de pes entre Espanya i la UE-27: és la xifra que encapçala aquesta
+    # família d'edicions ('5,7 puntos menos de jóvenes que la media europea').
+    if {"España", "UE-27"} <= set(pesos):
+        for nom in _AGREGATS_EDAT:
+            es, ue = pesos["España"].get(nom, {}), pesos["UE-27"].get(nom, {})
+            bretxa = {a: ue[a] - es[a] for a in es if a in ue}
+            _afegeix(S, f"ocupedatbretxa|{nom}", f"España frente a la UE-27, {nom}",
+                     "brecha de peso sobre el empleo del comercio, puntos",
+                     "punts", bretxa,
+                     temes=f"{base} {_TEMES_PES} brecha diferencia europa")
 
 
 # --------------------------------------------------- extracció de números
@@ -417,6 +580,30 @@ def parteix_blocs(cos: str) -> list[tuple[str, str]]:
     return trossos
 
 
+def bloc_de_la_frase(frase: str, blocs: list[tuple[str, str]]) -> str:
+    """Diu a quin bloc del borrador viu una frase extreta per l'LLM.
+
+    Cal per no bloquejar mai per una afirmació del Bloc 2: allà el subjecte és
+    una notícia ('Cataluña lidera las aperturas de Charter'), la font és el
+    mitjà i no hi ha cap sèrie nostra que pugui confirmar-la ni desmentir-la.
+    """
+    def pla(s: str) -> str:
+        return re.sub(r"\s+", " ", _norm(s)).strip()
+
+    f = pla(frase)
+    if not f:
+        return ""
+    plans = [(nom, pla(text)) for nom, text in blocs]
+    paraules = f.split()
+    for clau in (f, " ".join(paraules[:8]), " ".join(paraules[:5])):
+        if len(clau) < 12:
+            continue
+        for nom, text in plans:
+            if clau in text:
+                return nom
+    return ""
+
+
 def _neteja_enllacos(text: str) -> str:
     """Treu URLs i destins de markdown. Els identificadors d'article d'un enllaç
     ('.../noticias/14007576/08/26/...') són números que no afirmen res i
@@ -447,12 +634,21 @@ def extreu_numeros(cos: str) -> list[NumTrobat]:
 
 
 def ancora(num: NumTrobat, series: dict[str, Serie]) -> list[tuple[Serie, str]]:
-    """Sèries i periodes on aquest número apareix com a cel·la."""
+    """Sèries i periodes on aquest número apareix com a cel·la.
+
+    Les sèries d'ocupació vénen en MILERS i el butlletí escriu les persones
+    senceres ('172.200 ocupados' = 172,2 del CSV). Es prova també el valor
+    dividit per mil, amb la tolerància dividida igual: si el text imprimeix
+    unitats, ±0,5 persones són ±0,0005 milers, o sigui que no s'afluixa el gate.
+    """
     tol = _TOL_PER_DECIMALS.get(num.decimals, 0.005)
     hits = []
     for s in series.values():
+        escales = [(num.valor, tol)]
+        if s.unitat == "milers" and abs(num.valor) >= 1000:
+            escales.append((num.valor / 1000, tol / 1000))
         for p, v in s.punts.items():
-            if abs(v - num.valor) <= tol:
+            if any(abs(v - objectiu) <= t for objectiu, t in escales):
                 hits.append((s, p))
     return hits
 
@@ -513,33 +709,51 @@ def extreu_afirmacions(cos: str, modelo: str) -> list[dict]:
 
 # ------------------------------------------------------ resolució de sèrie
 
+_LLINDAR_ENTITAT = 0.5
+# Per sota d'aquest solapament de mètrica la sèrie no es considera candidata: la
+# coincidència d'entitat sola no és resolució (és el que resolia 'bretxa
+# d'ocupació jove a Espanya' contra 'ventas minoristas de España').
+_LLINDAR_METRICA_MINIM = 0.25
+# A partir d'aquí la resolució es dona per SEGURA i un desquadrament bloqueja.
+_LLINDAR_METRICA_ALTA = 0.5
+
+
 def resol_serie(entitat: str, metrica: str, valor: float | None,
                 periode: str | None, series: dict[str, Serie],
-                ) -> tuple[Serie | None, list[Serie]]:
+                ) -> tuple[Serie | None, list[Serie], str]:
     """Troba la sèrie de l'entitat i mètrica citades.
 
-    Retorna (millor_candidata, altres_sèries_on_el_valor_encaixa). La segona
-    llista és el diagnòstic d'atribució: si el valor no és a la sèrie de
+    Retorna (millor_candidata, altres_sèries_on_el_valor_encaixa, confiança). La
+    segona llista és el diagnòstic d'atribució: si el valor no és a la sèrie de
     l'entitat citada però sí a la d'una altra, es pot dir de qui era.
+
+    La confiança és "alta" o "baixa" i decideix la severitat, no el resultat:
+    amb resolució incerta un desquadrament és AVÍS. Bloquejar per una resolució
+    dubtosa va costar l'edició del Núm. 17 sencera (cinc "errors", tots falsos),
+    i un gate que crida en fals s'acaba desactivant — que és pitjor que deixar
+    passar un error de tant en tant.
     """
     te, tm = _tokens(entitat), _tokens(metrica)
-    millor, millor_punts = None, 0.0
+    millor, millor_punts, millor_confianca = None, 0.0, ""
     for s in series.values():
-        se, sm = _tokens(s.entitat), _tokens(s.metrica)
+        se = _tokens(s.entitat)
         if not se or not te:
             continue
         coincidencia_ent = _solapament(te, se)
-        if coincidencia_ent < 0.5:
+        if coincidencia_ent < _LLINDAR_ENTITAT:
             continue
-        coincidencia_met = _solapament(tm, sm)
-        punts = coincidencia_ent + coincidencia_met
-        # Bonus fort si el valor citat hi apareix al periode citat: és la
-        # confirmació que hem resolt la sèrie correcta i no una germana.
-        if valor is not None and periode and periode in s.punts:
-            if abs(s.punts[periode] - valor) <= 0.05:
-                punts += 2
+        coincidencia_met = _solapament(tm, s.vocabulari)
+        # El valor citat al periode citat confirma la sèrie per si sol: és
+        # evidència més forta que qualsevol coincidència d'etiquetes.
+        confirmat = (valor is not None and periode and periode in s.punts
+                     and abs(s.punts[periode] - valor) <= 0.05)
+        if not confirmat and coincidencia_met < _LLINDAR_METRICA_MINIM:
+            continue
+        punts = coincidencia_ent + coincidencia_met + (2 if confirmat else 0)
+        confianca = ("alta" if confirmat or coincidencia_met >= _LLINDAR_METRICA_ALTA
+                     else "baixa")
         if punts > millor_punts:
-            millor, millor_punts = s, punts
+            millor, millor_punts, millor_confianca = s, punts, confianca
 
     altres = []
     if valor is not None:
@@ -550,7 +764,7 @@ def resol_serie(entitat: str, metrica: str, valor: float | None,
                 if abs(v - valor) <= 0.05 and (not periode or p == periode):
                     altres.append(s)
                     break
-    return millor, altres
+    return millor, altres, millor_confianca
 
 
 # ----------------------------------------------------------- verificadors
@@ -567,14 +781,25 @@ def _compleix(v: float, direccio: str) -> bool:
 def verifica_racha(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
     """Compta la ratxa real a la sèrie i la compara amb la declarada."""
     valor = _num_es(str(af.get("valor"))) if af.get("valor") not in (None, "null") else None
-    serie, altres = resol_serie(af.get("entidad", ""), af.get("metrica", ""),
-                                valor, af.get("periodo_final"), series)
+    serie, altres, confianca = resol_serie(
+        af.get("entidad", ""), af.get("metrica", ""), valor,
+        af.get("periodo_final"), series)
     if serie is None:
         return "AVIS", (f"no s'ha pogut resoldre cap sèrie per a "
                         f"'{af.get('entidad')}' / '{af.get('metrica')}'")
     n_declarada = af.get("n")
     if not isinstance(n_declarada, int):
         return "AVIS", f"ratxa sense nombre de periodes; sèrie resolta: {serie.etiqueta}"
+
+    direccio_declarada = (af.get("direccion") or "").lower()
+    if direccio_declarada in ("negativo", "negativa") and not serie.te_negatius:
+        # Una sèrie de nivells (índexs, milers d'ocupats) no pot tenir cap ratxa
+        # 'en negatiu'. Si hi hem arribat, la frase parlava d'una altra cosa
+        # —sovint una tendència qualitativa, 'lleva quince años sin atraer
+        # jóvenes'— i comptar-hi signes no verifica res.
+        return "AVIS", (f"{serie.etiqueta}: la sèrie no té cap valor negatiu, o "
+                        f"sigui que la ratxa 'en negatiu' no és comprovable aquí; "
+                        f"afirmació qualitativa o sèrie mal resolta")
 
     per = serie.periodes()
     fi = af.get("periodo_final")
@@ -611,14 +836,22 @@ def verifica_racha(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
     if altres:
         msg += (f" · ATRIBUCIÓ: el valor citat encaixa amb "
                 f"{', '.join(s.etiqueta for s in altres[:3])}")
+    if real > n_declarada:
+        # El text es queda curt ('lleva más de una década' quan en són divuit).
+        # No és una afirmació falsa: es reporta per si l'editor vol afinar-la.
+        return "AVIS", msg + " · el text es queda curt, la ratxa real és més llarga"
+    if confianca != "alta":
+        return "AVIS", msg + (" · RESOLUCIÓ INCERTA (la mètrica citada no casa "
+                              "clarament amb la sèrie): comprovació no bloquejant")
     return "ERROR", msg
 
 
 def verifica_superlatiu(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
     """'mínimo desde X' / 'primera vez desde X' / 'mínimo de la serie'."""
     valor = _num_es(str(af.get("valor"))) if af.get("valor") not in (None, "null") else None
-    serie, altres = resol_serie(af.get("entidad", ""), af.get("metrica", ""),
-                                valor, af.get("periodo_final"), series)
+    serie, altres, confianca = resol_serie(
+        af.get("entidad", ""), af.get("metrica", ""), valor,
+        af.get("periodo_final"), series)
     if serie is None:
         return "AVIS", (f"no s'ha pogut resoldre cap sèrie per a "
                         f"'{af.get('entidad')}' / '{af.get('metrica')}'")
@@ -661,6 +894,9 @@ def verifica_superlatiu(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
     if altres:
         msg += (f" · ATRIBUCIÓ: el valor citat encaixa amb "
                 f"{', '.join(s.etiqueta for s in altres[:3])}")
+    if confianca != "alta":
+        return "AVIS", msg + (" · RESOLUCIÓ INCERTA (la mètrica citada no casa "
+                              "clarament amb la sèrie): comprovació no bloquejant")
     return "ERROR", msg
 
 
@@ -795,13 +1031,21 @@ def main() -> int:
             avisos.append(f"no s'ha pogut extreure afirmacions ({e}); només "
                           f"s'ha aplicat el gate de números")
         print(f"  afirmacions de ratxa/superlatiu detectades: {len(afirmacions)}")
+        blocs = parteix_blocs(cos)
         for af in afirmacions:
             tipus = (af.get("tipo") or "").lower()
             if tipus == "racha":
                 nivell, detall = verifica_racha(af, series)
             else:
                 nivell, detall = verifica_superlatiu(af, series)
-            linia = f"[{tipus}] «{(af.get('frase') or '')[:110]}» → {detall}"
+            bloc = bloc_de_la_frase(af.get("frase") or "", blocs)
+            if nivell == "ERROR" and bloc == "bloc2":
+                nivell = "AVIS"
+                detall += (" · Bloc 2 (notícies): la font és el mitjà i no les "
+                           "nostres sèries — no bloqueja")
+            etiqueta_bloc = f" [{bloc}]" if bloc else ""
+            linia = (f"[{tipus}]{etiqueta_bloc} «{(af.get('frase') or '')[:110]}» "
+                     f"→ {detall}")
             if nivell == "ERROR":
                 errors.append(linia)
             elif nivell == "AVIS":
