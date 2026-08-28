@@ -172,6 +172,29 @@ dashboard encara sense explotar per si cal ampliar-la: `eaes.csv`,
 `estructura_comerc.csv`, `subsectors_dirce.csv`, `subsectors_epf.csv`,
 `europa_vab.csv` (28 països des del 1975).
 
+## Bug: `--force` crema `angle_backlog` d'edicions que mai han passat verify.py · Prioridad: mitjana
+
+Detectat 2026-08-23 regenerant el Núm. 17. `generate.py` marca l'angle triat al
+camp `angle_backlog` de l'historial des del primer intent, encara que aquest
+intent quedi bloquejat per `verify.py` i mai arribi a `compose.py` ni a Brevo.
+La funció que calcula els angles "ja gastats" (`generate.py:96-97`) llegeix
+**tot** l'historial sense excloure l'entrada `(numero, semana)` de l'edició que
+s'està regenerant, de manera que un `--force` sobre una edició bloquejada crema
+el seu propi angle abans d'hora i força el model a triar-ne un altre de
+diferent — amb xifra protagonista i notícies noves, no una correcció de la
+mateixa edició.
+
+**Fix correcte:** excloure `(numero, semana)` de l'edició actual de la llista
+`usats` a `generate.py:96-97` en comptar angles gastats. No urgent — no
+bloqueja el pipeline, només fa que un `--force` post-bloqueig no conservi
+l'angle triat inicialment. Queda per a una sessió de calma.
+
+Relacionat, i amb el mateix efecte però pel costat de l'historial: una entrada
+d'una edició que **no s'ha publicat** (com el Núm. 17 del 2026-08-24) crema
+igualment el seu `angle_backlog` i entra a la memòria editorial que s'injecta al
+prompt. Mentre no es corregeixi, l'entrada d'una edició bloquejada no s'hauria
+de pujar a origin sense decidir-ho expressament.
+
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
 - **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · FET (2026-08-17): `scripts/resync.py`
