@@ -41,12 +41,34 @@ però rigorosa: conversa intel·ligent, no paper acadèmic.
 - "sinergies", "ecosistema", "palanca", "fulla de ruta"
 - Llistat de punts sense necessitat narrativa real
 
+## Sobre el contingut del post
+
+El post NO és un resum del newsletter. És la reflexió experta
+de Jordi sobre la tesi d'aquella setmana, sense notícies.
+
+- ZERO notícies d'actualitat. Cap empresa, cap obra, cap fet
+  de la setmana. Això és del newsletter. El post és sobre
+  la tesi i les seves implicacions.
+- Anar més enllà del titular. No descriure la situació:
+  interpretar-la. Quin és el segon nivell? Quines polítiques
+  caldrien? Quines implicacions pràctiques té per a qui
+  gestiona un negoci o dissenya política comercial?
+- Les dades apareixen com a argument, no com a decoració.
+  Si la taxa de natalitat és del 7,65%, la pregunta és:
+  per què? I què s'hauria de fer?
+- L'Observatori apareix quan és natural, com a font que
+  permet veure el que altres no veuen. No és obligatori
+  mencionar-lo si la veu ja és prou experta.
+- Longitud: fins a 350 paraules si la reflexió ho requereix.
+  Millor un post substanciós que un de curt sense ànima.
+
 ## Format
 
 - Sense capçaleres (#, ##)
 - Blocs de text de 2-4 línies, separats per salt de línia
 - Llista de punts: només si Jordi l'usaria per especulació explícita
-- Longitud: 180-250 paraules (sense el CTA)
+- Longitud: 250-350 paraules (sense el CTA), segons la secció
+  "Sobre el contingut del post"
 - Llengua: català
 
 ## L'Observatori com a font
