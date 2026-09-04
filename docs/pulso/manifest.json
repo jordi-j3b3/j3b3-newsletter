@@ -133,5 +133,14 @@
     "description": "El problema del retail español no es la mortalidad empresarial: es la natalidad. Datos, lectura y predicción.",
     "published_iso": "2026-08-31T08:30:00+02:00",
     "url": "https://pulso.j3b3.com/pulso/num-17.html"
+  },
+  {
+    "numero": 18,
+    "semana": "2026-09-07",
+    "titular": "Digitalización a medias: venta sí, nube no.",
+    "subject": "Vende en línea mejor que Europa, pero la nube no escala.",
+    "description": "La brecha digital del comercio español no es uniforme — y eso cambia el diagnóstico.",
+    "published_iso": "2026-09-07T08:30:00+02:00",
+    "url": "https://pulso.j3b3.com/pulso/num-18.html"
   }
 ]

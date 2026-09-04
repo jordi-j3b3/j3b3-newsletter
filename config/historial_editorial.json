@@ -480,5 +480,37 @@
     "asunto": "España no cierra más comercios que Europa — abre muchos menos",
     "titular": "España: el problema es la natalidad empresarial.",
     "created_at_utc": "2026-08-28T09:59:08.089451+00:00"
+  },
+  {
+    "numero": 18,
+    "semana": "2026-09-07",
+    "cifra": "-9,8 pp",
+    "dataset_bloc1": "Adopción de computación en la nube - comercio minorista empresas 10+ ocupados España vs UE-27",
+    "periodo_bloc1": "2025",
+    "angulo_bloc1": "España vende más en línea que Europa pero su infraestructura de nube lleva años rezagada",
+    "tema_prediccion": "La brecha ES-UE-27 de adopción de nube en el comercio minorista (empresas de 10+ ocupados) seguirá por debajo de -7 puntos en la próxima lectura de la encuesta TIC de Eurostat",
+    "angle_backlog": "",
+    "metrica_prediccion": "Brecha ES-UE-27 de adopción de nube · comercio al por menor CNAE 47 · empresas de 10 o más ocupados · Eurostat encuesta TIC · lectura prevista 2027",
+    "umbral_prediccion": "brecha < -7,0 pp (base 2025: -9,81 pp)",
+    "dataset_prediccion": "Adopción de computación en la nube - comercio minorista empresas 10+ ocupados España vs UE-27",
+    "noticias": [
+      "La economía de proximidad gana terreno entre los consumidores",
+      "El consumidor español aumenta sus visitas a las tiendas y reduce el tamaño de sus compras",
+      "Tarragona plantea limitar las nuevas tiendas orientadas al turismo en la Part Alta"
+    ],
+    "periodo_eurostat": "2026-07",
+    "periodo_icm": "2026-07",
+    "periodo_icm_distribucio": "2026-07",
+    "indicador_bloc3": "digitalitzacio",
+    "mode_editorial": "P2",
+    "titular_fixat": "Digitalización a medias: venta sí, nube no.",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "34",
+    "scheduled_at": "2026-09-07T08:30:00+02:00",
+    "asunto": "Vende en línea mejor que Europa, pero la nube no escala.",
+    "titular": "Digitalización a medias: venta sí, nube no.",
+    "created_at_utc": "2026-09-04T16:25:34.120709+00:00",
+    "nota_correccio": "2026-09-04: predicció reformulada a mà després de generate. El borrador la fixava sobre el tram de 10-49 ocupats, que NO existeix al pipeline (el fetcher demana size_emp=GE10 agregat) i contradeia el mecanisme del Bloc 1, que parla del tram per sota de 10. Reformulada sobre la bretxa GE10, que sí que mesurem, amb llindar resoluble."
   }
 ]
