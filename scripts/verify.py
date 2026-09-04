@@ -492,6 +492,69 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
                       if pd.notna(r.valor)},
                      temes=f"{temes} comercio minorista empresas eurostat")
 
+    # -- Adopcio digital ES vs UE-27 (Eurostat, enquesta TIC) ---------------
+    # Cal carregar la BRETXA com a serie propia i no confiar que _es_derivat la
+    # reconstrueixi: la xifra editorial d'aquestes edicions es la distancia
+    # (-9,8 pp), no els dos nivells, i sense serie propia el numero cau orfe o
+    # —pitjor— s'ancora per casualitat a qualsevol altra serie amb el mateix
+    # valor. Es el mateix motiu dels agregats d'edat de mes avall.
+    f = semana_dir / "digitalitzacio_comerc.csv"
+    if f.exists():
+        df = pd.read_csv(f)
+        _TEMES_DIG = ("digitalizacion digital tecnologia adopcion tic encuesta "
+                      "eurostat empresas comercio minorista")
+        _DIG_TEMES = {
+            "Nube (cloud)": "nube cloud computacion infraestructura servidores",
+            "Venta electrónica": "venta electronica online linea ecommerce comercio digital",
+            "Inteligencia artificial": "inteligencia artificial ia algoritmos automatizacion",
+        }
+        for tech, g in df.groupby("tech_es"):
+            temes = f"{_DIG_TEMES.get(str(tech), '')} {_TEMES_DIG}"
+            piv = g.pivot_table(index="any", columns="pais_codi", values="pct",
+                                aggfunc="first")
+            for codi, etiqueta in (("ES", "España"), ("EU27_2020", "la UE-27")):
+                if codi not in piv.columns:
+                    continue
+                _afegeix(S, f"dig|{codi}|{tech}", etiqueta,
+                         f"adopción de {tech} en el comercio, % de empresas de 10 o más ocupados",
+                         "%",
+                         {str(int(a)): float(v) for a, v in piv[codi].items()
+                          if pd.notna(v)},
+                         temes=temes)
+            if "ES" in piv.columns and "EU27_2020" in piv.columns:
+                bretxa = (piv["ES"] - piv["EU27_2020"]).dropna()
+                _afegeix(S, f"dig|bretxa|{tech}", "España frente a la UE-27",
+                         f"brecha de adopción de {tech}, puntos", "pp",
+                         {str(int(a)): round(float(v), 2) for a, v in bretxa.items()},
+                         temes=f"brecha distancia diferencia retraso ventaja {temes}")
+
+    # -- Pes de les empreses de 10+ ocupats (Eurostat BSD, classes de mida) --
+    # Les quotes son quocients, no cel·les: sense construir-les aqui, frases com
+    # «el 3,0% del total de establecimientos» surten orfes tot i ser dues sumes
+    # del snapshot.
+    f = semana_dir / "mida_empresa.csv"
+    if f.exists():
+        df = pd.read_csv(f)
+        _MIDA = {
+            "ENT_NR": ("% de empresas del comercio con 10 o más ocupados",
+                       "empresas censo establecimientos comercios tamaño cobertura muestra"),
+            "EMP_NR": ("% del empleo del comercio en empresas de 10 o más ocupados",
+                       f"empleo ocupados plantilla trabajadores tamaño cobertura {_TEMES_OCUPACIO}"),
+        }
+        for (codi, etiqueta) in (("ES", "España"), ("EU27_2020", "la UE-27")):
+            sub = df[df["pais_codi"] == codi]
+            for ind, (metrica, temes) in _MIDA.items():
+                g_ind = sub[sub["indic_sbs"] == ind]
+                punts = {}
+                for any_, g in g_ind.groupby("any"):
+                    total = g["valor"].sum()
+                    if not total:
+                        continue
+                    ge10 = g[g["sizeclas"] == "GE10"]["valor"].sum()
+                    punts[str(int(any_))] = round(ge10 / total * 100, 2)
+                _afegeix(S, f"mida|{codi}|{ind}", etiqueta, metrica, "%", punts,
+                         temes=f"{temes} eurostat comercio minorista mediana pequeña micro")
+
     _afegeix_ocupacio_edat(S, semana_dir)
     return S
 

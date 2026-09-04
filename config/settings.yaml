@@ -11,7 +11,7 @@ newsletter:
 modelo:
   proveedor: "anthropic"
   modelo: "claude-sonnet-4-6"
-  max_tokens: 6000
+  max_tokens: 8000
   temperatura: 0.6
 
 # Palabras objetivo por bloque (referencia editorial, no límite estricto).
@@ -39,6 +39,8 @@ snapshot:
   confianza_origen: "data/cache/confianza_consumidor.csv"
   ipc_coicop_origen: "data/cache/ipc_coicop.csv"
   estructura_origen: "data/cache/estructura_retail.csv"
+  digitalitzacio_origen: "data/cache/digitalitzacio_comerc.csv"
+  mida_empresa_origen: "data/cache/estructura_retail_mida.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.

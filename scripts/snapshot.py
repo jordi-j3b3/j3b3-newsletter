@@ -138,6 +138,69 @@ def estructura_meta(csv_path: Path) -> dict:
             "paisos": paisos}
 
 
+def digitalitzacio_meta(csv_path: Path) -> dict:
+    """Metadades de l'enquesta TIC d'Eurostat (adopció digital al comerç G47).
+
+    Dues coses condicionen com se'n pot parlar i per això van al meta:
+    l'univers és NOMÉS ES i UE-27 (el fetcher de l'Observatori no demana més
+    geos), o sigui que no s'hi pot fer cap rànquing de països; i cada
+    tecnologia té el seu propi darrer any, perquè Eurostat no publica els tres
+    mòduls amb la mateixa cadència. Es desa la bretxa ES−UE-27 per tecnologia
+    perquè és la xifra editorial, no els dos nivells per separat.
+    """
+    df = pd.read_csv(csv_path)
+    ultimo_any = int(df["any"].max())
+    bretxes, ultims = {}, {}
+    for tech, g in df.groupby("tech"):
+        anys_tots = sorted(set(g[g["pais_codi"] == "ES"]["any"])
+                           & set(g[g["pais_codi"] == "EU27_2020"]["any"]))
+        if not anys_tots:
+            continue
+        a = int(anys_tots[-1])
+        es = float(g[(g["pais_codi"] == "ES") & (g["any"] == a)]["pct"].iloc[0])
+        ue = float(g[(g["pais_codi"] == "EU27_2020") & (g["any"] == a)]["pct"].iloc[0])
+        bretxes[str(tech)] = round(es - ue, 2)
+        ultims[str(tech)] = a
+    return {"ultimo_any": ultimo_any,
+            "ultim_any_comparable_per_tech": ultims,
+            "bretxa_es_ue27_pp": bretxes,
+            "universo": "ES i UE-27 (cap altre país al CSV)",
+            "cobertura": "empreses de 10 o més ocupats"}
+
+
+def mida_empresa_meta(csv_path: Path) -> dict:
+    """Metadades de la distribució per mida (Eurostat BSD, classes de mida).
+
+    Serveix per a una cosa concreta: quantificar el biaix de cobertura de
+    l'enquesta TIC, que només mesura empreses de 10+ ocupats. Es desa quin pes
+    tenen aquestes empreses sobre el cens i sobre l'ocupació, que és el que
+    converteix la bretxa digital en un argument d'estructura.
+
+    Avís de comparabilitat: la UE-27 s'atura un any abans que Espanya, o sigui
+    que l'últim any d'ES NO és comparable. Es desa l'últim any amb tots dos.
+    """
+    df = pd.read_csv(csv_path)
+    ultimo_any = int(df["any"].max())
+    anys_es = set(df[df["pais_codi"] == "ES"]["any"])
+    anys_ue = set(df[df["pais_codi"] == "EU27_2020"]["any"])
+    comparables = sorted(anys_es & anys_ue)
+    any_comp = int(comparables[-1]) if comparables else ultimo_any
+
+    def _share(pais: str, any_: int, ind: str) -> float | None:
+        g = df[(df["pais_codi"] == pais) & (df["any"] == any_) & (df["indic_sbs"] == ind)]
+        if g.empty or g["valor"].sum() == 0:
+            return None
+        return round(g[g["sizeclas"] == "GE10"]["valor"].sum() / g["valor"].sum() * 100, 2)
+
+    return {"ultimo_any": ultimo_any,
+            "ultim_any_comparable": any_comp,
+            "pct_empreses_ge10": {"ES": _share("ES", any_comp, "ENT_NR"),
+                                  "UE-27": _share("EU27_2020", any_comp, "ENT_NR")},
+            "pct_ocupacio_ge10": {"ES": _share("ES", any_comp, "EMP_NR"),
+                                  "UE-27": _share("EU27_2020", any_comp, "EMP_NR")},
+            "pct_empreses_ge10_es_ultim_any": _share("ES", ultimo_any, "ENT_NR")}
+
+
 def ipc_meta(csv_path: Path) -> dict:
     df = pd.read_csv(csv_path)
     ultimo_any = int(df["any"].max())
@@ -610,6 +673,8 @@ def main() -> int:
     confianza_src = obs_path / SETTINGS["snapshot"]["confianza_origen"]
     ipc_coicop_src = obs_path / SETTINGS["snapshot"]["ipc_coicop_origen"]
     estructura_src = obs_path / SETTINGS["snapshot"]["estructura_origen"]
+    digitalitzacio_src = obs_path / SETTINGS["snapshot"]["digitalitzacio_origen"]
+    mida_empresa_src = obs_path / SETTINGS["snapshot"]["mida_empresa_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
@@ -623,6 +688,8 @@ def main() -> int:
     confianza_dst = semana_dir / "confianza_consumidor.csv"
     ipc_coicop_dst = semana_dir / "ipc_coicop.csv"
     estructura_dst = semana_dir / "estructura_empreses.csv"
+    digitalitzacio_dst = semana_dir / "digitalitzacio_comerc.csv"
+    mida_empresa_dst = semana_dir / "mida_empresa.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -721,6 +788,27 @@ def main() -> int:
               f"{estructura_info['n_paisos']} països + UE-27 · "
               f"últim any {estructura_info['ultimo_any']}")
 
+    digitalitzacio_info = copy_csv_optional(digitalitzacio_src, digitalitzacio_dst,
+                                            "Digitalitzacio comerc")
+    if digitalitzacio_info:
+        digitalitzacio_info.update(digitalitzacio_meta(digitalitzacio_dst))
+        bretxes_str = " · ".join(
+            f"{t}: {v:+.1f} pp" for t, v in digitalitzacio_info["bretxa_es_ue27_pp"].items()
+        )
+        print(f"  digitalitzacio_comerc· {digitalitzacio_info['filas']:>6} filas · "
+              f"últim any {digitalitzacio_info['ultimo_any']} · ES vs UE-27 → {bretxes_str}")
+
+    mida_empresa_info = copy_csv_optional(mida_empresa_src, mida_empresa_dst,
+                                          "Mida d'empresa UE")
+    if mida_empresa_info:
+        mida_empresa_info.update(mida_empresa_meta(mida_empresa_dst))
+        print(f"  mida_empresa.csv     · {mida_empresa_info['filas']:>6} filas · "
+              f"últim any comparable {mida_empresa_info['ultim_any_comparable']} · "
+              f"empreses 10+ ES {mida_empresa_info['pct_empreses_ge10']['ES']}% "
+              f"(UE-27 {mida_empresa_info['pct_empreses_ge10']['UE-27']}%) · "
+              f"ocupació 10+ ES {mida_empresa_info['pct_ocupacio_ge10']['ES']}% "
+              f"(UE-27 {mida_empresa_info['pct_ocupacio_ge10']['UE-27']}%)")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -759,6 +847,8 @@ def main() -> int:
         "confianza": confianza_info,
         "ipc_coicop": ipc_coicop_info,
         "estructura_empreses": estructura_info,
+        "digitalitzacio": digitalitzacio_info,
+        "mida_empresa": mida_empresa_info,
         "prensa": prensa_info,
         "noticies_editor": noticies_editor_info,
         "noticies_editor_avisos": noticies_editor_avisos,

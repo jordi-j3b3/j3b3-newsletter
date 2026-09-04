@@ -448,7 +448,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--bloc3", default="",
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
                             "icm_ramas", "marges_branca", "icm_distribucio", "icm_ccaa",
-                            "ipc_coicop"],
+                            "ipc_coicop", "digitalitzacio"],
                    help="Sobreescriu la selecció automàtica del bloc 3. "
                         "'marges_branca' només és vàlid si el dataset de marges "
                         "està verificat (verificat=True al snapshot). 'icm_ccaa' "
@@ -729,6 +729,92 @@ def slice_estructura_empreses(csv_path: Path) -> str:
         piv = g.pivot_table(index="pais", columns="any", values="valor", aggfunc="first")
         parts.append(f"\n{ind} — {nom}:\n" + piv.round(2).to_csv())
     return "".join(parts)
+
+
+def slice_digitalitzacio(csv_path: Path) -> str:
+    """Adopcio digital del comerc (Eurostat, enquesta TIC), ES vs UE-27.
+
+    Es dona la bretxa ja calculada per any i tecnologia perque es la xifra
+    editorial: el lector no compara dos nivells, llegeix una distancia. Tres
+    advertencies van al bloc mateix perque arribin al model encara que no
+    llegeixi el diccionari: la cobertura (nomes empreses de 10+ ocupats, que es
+    el que fa que la bretxa sigui un sostre i no una mitjana), l'univers (nomes
+    ES i UE-27, o sigui cap ranking de paisos possible) i el fet que cada
+    tecnologia te el seu propi darrer any.
+    """
+    df = pd.read_csv(csv_path)
+    parts = ["Adopcio de tecnologia al comerc al detall (CNAE 47) · Eurostat, enquesta TIC\n"
+             "COBERTURA: nomes empreses de 10 o mes ocupats. Aixo NO es una mitjana del "
+             "sector: es la seva part mes gran i mes ben dotada. Si la bretxa hi es, al "
+             "tram de sota es raonable esperar-la igual o pitjor, pero NO ho pots afirmar "
+             "amb aquesta font — digues que la xifra oficial infravalora la bretxa real.\n"
+             "UNIVERS: nomes Espanya i UE-27. NO hi ha cap altre pais al dataset: no facis "
+             "cap ranking ni cap comparacio bilateral amb Alemanya, Italia ni ningu.\n"
+             "AVIS DE CADENCIA: Eurostat no publica els tres moduls cada any. Mira el "
+             "darrer any de cada tecnologia per separat; no barregis anys diferents en "
+             "una mateixa frase sense dir-ho.\n"]
+    for tech, g in df.groupby("tech_es"):
+        piv = g.pivot_table(index="any", columns="pais_codi", values="pct", aggfunc="first")
+        if "ES" not in piv.columns or "EU27_2020" not in piv.columns:
+            continue
+        piv = piv.rename(columns={"EU27_2020": "UE27"})
+        piv["bretxa_ES_menys_UE27_pp"] = (piv["ES"] - piv["UE27"]).round(2)
+        parts.append(f"\n{tech} (% d'empreses de 10+ ocupats):\n"
+                     + piv.round(2).to_csv())
+    return "".join(parts)
+
+
+def slice_mida_empresa(csv_path: Path) -> str:
+    """Pes de les empreses de 10+ ocupats al comerc (Eurostat BSD, classes de mida).
+
+    Existeix per una sola cosa: quantificar el biaix de cobertura de l'enquesta
+    TIC. Per aixo no es dona la taula sencera de classes de mida sino les dues
+    quotes que importen —quant pesen les empreses de 10+ sobre el cens i sobre
+    l'ocupacio— i el ranking d'Espanya entre els estats de la UE.
+
+    L'ultim any d'Espanya NO es comparable amb la UE-27 (Eurostat publica
+    l'agregat un any mes tard); l'any comparable es marca explicitament.
+    """
+    df = pd.read_csv(csv_path)
+    agregats = {"EU27_2020", "EA20"}
+    anys_es = set(df[df["pais_codi"] == "ES"]["any"])
+    anys_ue = set(df[df["pais_codi"] == "EU27_2020"]["any"])
+    any_comp = int(sorted(anys_es & anys_ue)[-1])
+    any_es = int(max(anys_es))
+
+    def _share(pais: str, any_: int, ind: str):
+        g = df[(df["pais_codi"] == pais) & (df["any"] == any_) & (df["indic_sbs"] == ind)]
+        if g.empty or g["valor"].sum() == 0:
+            return None
+        return round(g[g["sizeclas"] == "GE10"]["valor"].sum() / g["valor"].sum() * 100, 2)
+
+    # Ranking d'ES per quota d'empreses de 10+ (de menys a mes) entre estats.
+    rank_rows, g_any = [], df[(df["any"] == any_comp) & (df["indic_sbs"] == "ENT_NR")]
+    for pais_codi, g in g_any.groupby("pais_codi"):
+        if pais_codi in agregats or g["valor"].sum() == 0:
+            continue
+        rank_rows.append((str(pais_codi),
+                          g[g["sizeclas"] == "GE10"]["valor"].sum() / g["valor"].sum() * 100))
+    rank_rows.sort(key=lambda r: r[1])
+    pos = next((i + 1 for i, r in enumerate(rank_rows) if r[0] == "ES"), None)
+
+    linies = [
+        "Pes de les empreses de 10+ ocupats al comerc al detall (CNAE 47) · Eurostat BSD",
+        f"ANY COMPARABLE ES vs UE-27: {any_comp}. Espanya te dades fins al {any_es}, "
+        f"pero la UE-27 no: NO barregis l'any {any_es} d'Espanya amb l'any {any_comp} "
+        f"de la UE-27 en una mateixa comparacio.",
+        "",
+        f"{any_comp} · % d'EMPRESES amb 10+ ocupats:  "
+        f"ES {_share('ES', any_comp, 'ENT_NR')}%  ·  UE-27 {_share('EU27_2020', any_comp, 'ENT_NR')}%",
+        f"{any_comp} · % de l'OCUPACIO en empreses de 10+:  "
+        f"ES {_share('ES', any_comp, 'EMP_NR')}%  ·  UE-27 {_share('EU27_2020', any_comp, 'EMP_NR')}%",
+        f"{any_es} · % d'EMPRESES amb 10+ ocupats a Espanya (sense equivalent UE-27): "
+        f"{_share('ES', any_es, 'ENT_NR')}%",
+    ]
+    if pos:
+        linies.append(f"Posicio d'Espanya el {any_comp} per quota d'empreses de 10+: "
+                      f"{pos}a mes baixa de {len(rank_rows)} estats de la UE.")
+    return "\n".join(linies) + "\n"
 
 
 ICM_BRANCA_GENERAL = "Comercio al por menor, excepto de vehículos de motor y motocicletas"
@@ -1121,6 +1207,33 @@ def construir_prompts(
             "Lectura estructural por encima de la coyuntural: busca el patrón "
             "(concentración, polarización, márgenes, eficiencia), no el dato puntual."
         )
+    elif bloc3_mode == "digitalitzacio":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (ADOPCIÓN DIGITAL ES vs UE-27 — "
+            "la comparación es por TECNOLOGÍA, no por país):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** Adopción de tecnología en el comercio minorista · "
+            "España frente a UE-27 · <año>\n\n"
+            "   - Venta electrónica: <valor>%\n"
+            "   - Nube: <valor>%\n"
+            "   - Inteligencia artificial: <valor>%\n\n"
+            "   <2-3 párrafos de interpretación>\n\n"
+            "   Los valores de la lista son la BRECHA España menos UE-27 en puntos "
+            "(columna `bretxa_ES_menys_UE27_pp` de <DIGITALITZACIO_COMERC>), NO los "
+            "niveles: así compose.py renderiza barras divergentes y se ve de un "
+            "vistazo dónde España gana y dónde pierde. Cita el nivel de las dos "
+            "partes en la prosa, no en la lista. Ordena de mayor a menor.\n"
+            "   NO ORDENES NI CLASIFIQUES PAÍSES: el dataset solo tiene España y la "
+            "UE-27. Cualquier frase que sitúe a España respecto de un país concreto "
+            "en nube o en IA es una invención.\n"
+            "   NO presentes las tres brechas como el mismo problema. La de nube es "
+            "estructural y lleva años abierta; la de IA es pequeña y se está "
+            "cerrando; en venta electrónica España va por delante. El párrafo tiene "
+            "que dejar claro que el retrato NO es uniforme.\n"
+            "   COBERTURA: recuerda que la encuesta solo mide empresas de 10 o más "
+            "ocupados. No digas 'el comercio español' a secas cuando el dato es de "
+            "ese tramo."
+        )
     elif bloc3_mode == "ipc_coicop":
         bloque3_instr = (
             "D. Bloque 3, estructura literal (IPC POR GRUPOS COICOP):\n\n"
@@ -1493,6 +1606,23 @@ def construir_prompts(
             "",
         ])
 
+    digitalitzacio_path = semana_dir / "digitalitzacio_comerc.csv"
+    if digitalitzacio_path.exists():
+        digitalitzacio_data = slice_digitalitzacio(digitalitzacio_path)
+        parts.extend([
+            f"<DIGITALITZACIO_COMERC font=Eurostat_TIC cobertura=empreses_10mes>\n"
+            f"{digitalitzacio_data}\n</DIGITALITZACIO_COMERC>",
+            "",
+        ])
+
+    mida_empresa_path = semana_dir / "mida_empresa.csv"
+    if mida_empresa_path.exists():
+        mida_empresa_data = slice_mida_empresa(mida_empresa_path)
+        parts.extend([
+            f"<MIDA_EMPRESA_UE font=Eurostat_BSD>\n{mida_empresa_data}\n</MIDA_EMPRESA_UE>",
+            "",
+        ])
+
     icm_path = semana_dir / "pulso_icm.csv"
     if icm_path.exists():
         icm_data = slice_icm(icm_path, mesos=15)
@@ -1660,6 +1790,10 @@ def main() -> int:
         elif bloc3_mode == "icm_ccaa" and not icm_ccaa_ok:
             print("  Bloc 3: 'icm_ccaa' sol·licitat però pulso_icm.csv no té "
                   "desglossament per CCAA; recau a context editorial", file=sys.stderr)
+            bloc3_mode = "editorial_contexto"
+        elif bloc3_mode == "digitalitzacio" and not (semana_dir / "digitalitzacio_comerc.csv").exists():
+            print("  Bloc 3: 'digitalitzacio' sol·licitat però digitalitzacio_comerc.csv "
+                  "no és al snapshot; recau a context editorial", file=sys.stderr)
             bloc3_mode = "editorial_contexto"
         else:
             print(f"  Bloc 3: {bloc3_mode} (sobreescrit per --bloc3)")
