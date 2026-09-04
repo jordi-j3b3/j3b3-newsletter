@@ -22,8 +22,17 @@ import argparse
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
+
+# mirror.py llegeix OBSERVATORI_PATH de l'entorn per trobar el repo del
+# dashboard. Cridat des de run_newsletter.py o schedule.py ja hi és, perquè
+# aquells fan load_dotenv; executat sol, no. I com que mirror.py no aborta
+# quan no troba el destí —només avisa i retorna—, el mirall es saltava en
+# silenci i el dashboard es quedava enrere sense que res fallés.
+load_dotenv(ROOT / "config" / ".env")
 
 from mirror import mirror_to_dashboard  # noqa: E402
 
