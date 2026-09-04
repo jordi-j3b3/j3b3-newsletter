@@ -213,6 +213,118 @@ el salt 2022→2023 del DIRCE és de −35.318 empreses, vuit vegades el dels an
 següents, cosa que fa pensar en un canvi metodològic **no verificat**. Cap text
 s'hi ha de recolzar sense comprovar-ho.
 
+## El mirall falla en silenci quan no troba el repo del dashboard · Prioridad: mitjana
+
+Detectat el 2026-09-04 programant el Núm. 18. `mirror_only.py` no feia
+`load_dotenv`, o sigui que `OBSERVATORI_PATH` no arribava mai i `mirror.py`
+queia al valor per defecte `ROOT.parent / "observatori-comerc"`, que no
+existeix. El `.env` ja està arreglat (`aab412f`), **però la part important
+segueix oberta**: el que va fer que això passés desapercebut no va ser la ruta
+sinó el silenci.
+
+`mirror_to_dashboard()` (`scripts/mirror.py:32-37`) té dues guardes que
+imprimeixen i fan `return`:
+
+```python
+if not obs_root.is_dir():
+    print(f"\n[mirror] Repo destí no trobat a {obs_root}. Salto espejado.")
+    return
+if not src.is_file():
+    print(f"\n[mirror] Origen no trobat: {src}. Salto espejado.")
+    return
+```
+
+Retorna `None` tant si ha publicat com si no ha fet res. Els quatre cridants
+—`send.py:143`, `schedule.py:515`, `mirror_only.py:84` i `resync.py:181`— no
+poden distingir els dos casos i continuen com si hagués anat bé.
+
+**El forat és que el resync tampoc ho veu**, que és precisament l'script que
+existeix per adonar-se'n. `sincronitza_mirall()` (`resync.py:173-183`) retorna
+la cadena fixa `"mirall publicat (commit + push a observatori-comerc)"` sense
+mirar què ha passat, i el titular el llegeix del fitxer destí; si el destí no
+existeix, `titular_desti` queda buit i la comprovació final
+(`resync.py:331-333`) fa:
+
+```python
+if not titular_desti:
+    print(f"  {d:<10} (no s'ha pogut llegir el titular per comparar)")
+    continue
+```
+
+`continue` sense afegir res a `problemes`. Resultat: resync imprimeix "Els
+llocs sincronitzats diuen el mateix" i surt amb codi 0 havent-se saltat el
+mirall del tot. És el mateix patró dels incidents dels Núm. 10, 12 i 14 que
+van motivar l'script.
+
+Fix proposat, en tres trossos petits:
+
+1. `mirror_to_dashboard()` retorna un `bool` (o llança) en lloc de `None`, i
+   distingeix "no hi ha res a fer perquè ja estava publicat" (èxit idempotent)
+   de "no he pogut publicar" (fallada).
+2. `sincronitza_mirall()` propaga aquest resultat en lloc de la cadena fixa.
+3. A la comprovació final del resync, un titular buit en un destí que s'ha
+   intentat sincronitzar és un **problema**, no una línia informativa. El cas
+   legítim de "no comparable" és el `--dry-run`, que ja es tracta a part.
+
+Val la pena revisar de camí si `OBSERVATORI_PATH` hauria de ser obligatori i
+fallar d'entrada quan no hi és, en lloc de tenir un valor per defecte relatiu
+que només és correcte en una disposició de carpetes que ja no fem servir.
+
+## Els camps estructurats de l'historial no reflecteixen les correccions manuals · Prioridad: mitjana
+
+Detectat el 2026-09-04 al Núm. 18. La predicció generada per Sonnet es fixava
+sobre "el tramo de 10 a 49 ocupados", un desglossament que **no existeix al
+pipeline** (el fetcher de digitalització demana `size_emp=GE10` agregat) i que
+a més contradeia el mecanisme del Bloc 1, que parla del tram per sota de 10.
+Es va reescriure a mà sobre la bretxa GE10 amb llindar `< −7,0 pp`.
+
+El text enviat és el corregit. **Els camps de l'historial, no.** Van quedar
+amb la primera versió:
+
+```
+metrica_prediccion: "... tramo 10-49 ocupados ... encuesta TIC Eurostat 2027"
+umbral_prediccion:  "se mantiene o amplía respecto a -9,8 pp"
+```
+
+La causa és l'ordre del pipeline: `generate.py` extreu els camps estructurats
+amb una segona crida al model **sobre el borrador que acaba d'escriure**, i
+els desa a `config/historial_editorial.json` abans que ningú hagi llegit el
+text. Tot el que es corregeixi després —a mà, o iterant contra `verify.py`—
+queda fora. Aquesta setmana es va agafar per casualitat; en una setmana normal
+passa de llarg.
+
+Per què importa més del que sembla: aquests camps no són documentació, són
+**entrada d'altres sistemes**. El registre de prediccions
+(`observatori-prediccions`) llegeix `metrica_prediccion` i `umbral_prediccion`
+per autopuntuar, o sigui que hauria avaluat una predicció que no s'ha publicat
+mai, contra una sèrie que no tenim. I `format_historial_para_prompt()` injecta
+`angulo_bloc1` de les últimes sis edicions al prompt: un angle mal registrat
+contamina l'anti-repetició durant un mes i mig.
+
+Mecanisme proposat — **re-extreure els camps del text final, no del primer**:
+
+- Moure l'extracció fora de `generate.py` a un pas propi
+  (`scripts/extract_historial.py`) que llegeixi
+  `output/semana-X/newsletter.md` tal com és **en aquell moment** i reescrigui
+  l'entrada de l'historial d'aquella setmana.
+- Cridar-lo des de `schedule.py` just abans de crear la campanya, que és
+  l'últim punt en què el text encara pot canviar. Així el que es registra és
+  sempre el que s'envia, sense dependre de si hi ha hagut correccions.
+- `generate.py` continua fent la primera extracció (fa falta per a
+  l'anti-repetició si l'edició no s'arriba a enviar), però deixa de ser
+  l'autoritat.
+
+Alternativa més barata si no es vol tocar l'ordre del pipeline: que
+`verify.py` compari els camps de l'historial amb el text que acaba de
+verificar i avisi quan no es corresponen. No ho arregla, però ho fa visible al
+mateix lloc on ja mirem si l'edició està bé. Té l'inconvenient de barrejar
+responsabilitats: el gate és numèric i això no ho és.
+
+Sigui quina sigui l'opció, convé deixar constància al propi historial quan un
+camp s'ha corregit a mà. Al Núm. 18 s'hi ha posat un camp `nota_correccio`
+amb el motiu; si es formalitza, millor un nom fix i documentat al
+`data_dictionary.md`.
+
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
 - **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · FET (2026-08-17): `scripts/resync.py`
