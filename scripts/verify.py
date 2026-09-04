@@ -423,6 +423,23 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
                       if pd.notna(r.index_volum)},
                      temes=f"{_TEMES_VENDES} eurostat")
 
+        # Diferencial ES − UE-27. Una frase tan corrent com «cuarto mes
+        # consecutivo por debajo de la media de la UE-27» no és comprovable
+        # contra cap de les dues sèries per separat: el gate la llegia com una
+        # ratxa 'en negatiu' de les vendes espanyoles i la desmentia en fals
+        # (Espanya pot créixer i estar per sota de la mitjana alhora). Amb el
+        # diferencial com a sèrie pròpia, la ratxa es compta on toca.
+        piv = df.pivot_table(index="periode", columns="pais_codi", values="yoy",
+                             aggfunc="first")
+        if "ES" in piv.columns and "EU27_2020" in piv.columns:
+            spread = (piv["ES"] - piv["EU27_2020"]).dropna()
+            _afegeix(S, "eu|spread|ES_UE27", "España frente a la UE-27",
+                     "diferencial de ventas minoristas frente a la media de la UE-27, puntos",
+                     "pp",
+                     {str(p): round(float(v), 2) for p, v in spread.items()},
+                     temes=(f"diferencial brecha distancia por debajo por encima media "
+                            f"union europea {_TEMES_VENDES} {_TEMES_VARIACIO} eurostat"))
+
     # -- CDMGE diari --------------------------------------------------------
     f = semana_dir / "pulso_diario.csv"
     if f.exists():
