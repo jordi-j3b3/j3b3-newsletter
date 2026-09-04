@@ -306,6 +306,12 @@ def render_bars(data: dict) -> str:
     _sub = subtitle.lower()
     if any(k in _sub for k in ("margen", "marge", "absorci")):
         legend = "Margen de explotación (EBE/ventas) · a mayor margen, mayor capacidad de absorción"
+    elif any(k in _sub for k in ("adopción", "adopcion", "tecnología", "tecnologia")):
+        # El Bloc 3 de digitalització no dibuixa variacions sinó DISTÀNCIES: cada
+        # barra és la bretxa ES−UE-27 en punts d'un mateix any. Amb la llegenda
+        # per defecte el lector llegia una evolució que no hi és.
+        legend = ("Brecha España − UE-27, en puntos · azul, España por encima; "
+                  "rojo, España por debajo")
     else:
         legend = "↑ variación interanual"
 
