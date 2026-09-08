@@ -183,33 +183,41 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
    que una frase neutra. Es la frase que el lector debería poder repetir.
 3. **Ninguna cifra sin su mecanismo, ni mecanismo sin cifra.** "Cae un X%.
    La causa es Y" — las dos partes siempre juntas, nunca una sin la otra.
-4. **Máximo 1-2 metáforas o dichos por edición, y solo si condensan un
+4. **Ninguna afirmación de mecanismo causal sin el paso intermedio que la
+   sostiene.** Frases del tipo "X es un coste de Y", "Z se convierte en W", "A
+   agrava B" no valen por sí solas — nombran la relación pero no la muestran.
+   Antes de la conclusión, una frase debe explicar el paso que conecta la causa
+   con el efecto (qué se deja de ganar, por qué ese margen se erosiona, por qué
+   ese umbral es el que rompe el sistema). Test: si un lector experto podría
+   preguntar "¿por qué?" tras leer la frase, falta ese paso. No es cuestión de
+   alargar el texto — es no saltárselo. Ver catálogo de ejemplos en §4.
+5. **Máximo 1-2 metáforas o dichos por edición, y solo si condensan un
    argumento real** (no una imagen nueva decorativa cada semana). Si no hay
    una que encaje de forma natural, mejor no forzarla.
-5. **Señaliza la estructura cuando el argumento tenga más de una parte**: "en
+6. **Señaliza la estructura cuando el argumento tenga más de una parte**: "en
    primer lugar / en segundo lugar", "por un lado / por otro". No lo dejes
    implícito si el lector puede perderse.
-6. **Recorre de lo micro a lo macro**: la cifra o el caso concreto del bloque
+7. **Recorre de lo micro a lo macro**: la cifra o el caso concreto del bloque
    debe desembocar en una lectura de sector o de tendencia, no quedarse en el
    dato aislado.
-7. **Mezcla vocabulario técnico con un coloquialismo puntual y culto**, nunca
+8. **Mezcla vocabulario técnico con un coloquialismo puntual y culto**, nunca
    jerga vacía ni chiste explícito. La ironía es seca, no un chiste señalado.
-8. **Si citas una fuente o a un colega, dale nombre completo y afiliación**, no
+9. **Si citas una fuente o a un colega, dale nombre completo y afiliación**, no
    solo "según un estudio".
-9. **Un único toque de primera persona explícita por edición como máximo**
-   ("a nuestro juicio", "creemos que"), y solo en el punto de máximo juicio
-   personal — no como muletilla en cada párrafo.
-10. **Si el argumento tiene una objeción previsible, reconócela en la misma
+10. **Un único toque de primera persona explícita por edición como máximo**
+    ("a nuestro juicio", "creemos que"), y solo en el punto de máximo juicio
+    personal — no como muletilla en cada párrafo.
+11. **Si el argumento tiene una objeción previsible, reconócela en la misma
     frase antes de sostener la posición** ("esto puede discutirse, pero...")
     en vez de ignorarla o de dedicarle un párrafo aparte.
-11. **La predicción se ancla en el presente, nunca es especulación suelta.**
+12. **La predicción se ancla en el presente, nunca es especulación suelta.**
     Antes de proyectar, di qué tendencia ya en marcha la sostiene — nunca un
     pronóstico que no cite qué está pasando ahora mismo.
-12. **Nada de relleno ni intensificadores vacíos, cero emojis** (regla de la
+13. **Nada de relleno ni intensificadores vacíos, cero emojis** (regla de la
     casa, `PROJECTES/CLAUDE.md`).
-13. **Riqueza léxica**: no repitas la misma palabra clave dentro del mismo
+14. **Riqueza léxica**: no repitas la misma palabra clave dentro del mismo
     bloque — busca un sinónimo antes de reutilizarla.
-14. **Evita la simetría de redacción "IA"**: nada de "no solo... sino también"
+15. **Evita la simetría de redacción "IA"**: nada de "no solo... sino también"
     como muletilla, nada de estructuras idénticas edición tras edición, nada
     de autocalificarse ("un análisis honesto muestra que...").
 
@@ -258,3 +266,36 @@ divulgació que avisa el lector que ve una explicació. Jordi no avisa — expli
 directament. El lector ja entendrà que la contradicció es resol.
 
 Alternativa: entrar directament a l'explicació sense el meta-comentari previ.
+
+**Patró "conclusió sense pas intermedi" (salt lògic causal)**
+Estructura: una frase nomena una relació de causa-efecte ("X es un coste de
+Y", "Z se convierte en W", "A agrava B") però no mostra el mecanisme que la
+sosté. Sona bé, però un lector expert es queda amb un "per què?" sense resposta.
+
+Exemples del Núm. 18 a evitar, amb el forat concret:
+- *"El mecanismo que agrava el diagnóstico es estructural."* — Frase d'obertura
+  massa abstracta: anuncia una conclusió abans d'haver explicat cap mecanisme.
+  Ha d'anar DESPRÉS de l'explicació, no abans, o reformular-se perquè no soni a
+  eslògan buit.
+- *"Cuando el volumen de ventas acompañaba, esta debilidad de infraestructura
+  era un coste de oportunidad."* — "Cost d'oportunitat" es dona per entès. Falta
+  el pas intermedi: què es deixa de guanyar concretament, i per què.
+- *"Con las ventas minoristas españolas cayendo un 0,4% interanual en julio
+  según Eurostat, frente al +1,2% de la UE-27, se convierte en un coste de
+  margen."* — Salt lògic: per què una caiguda de vendes converteix un problema
+  d'infraestructura en un "cost de marge"? Falta el mecanisme (p. ex.: sense
+  eines digitals per optimitzar estoc/logística, els costos fixos es reparteixen
+  entre menys vendes i el marge s'erosiona).
+- *"La nube no es una tecnología emergente: es la infraestructura sobre la que
+  se construyen la logística, la personalización y la eficiencia operativa.
+  Vender bien en línea sobre una infraestructura de nube débil es como tener un
+  escaparate excelente y un almacén sin sistema. Funciona hasta que el volumen
+  aprieta."* — La metàfora és bona, però "funciona hasta que el volumen aprieta"
+  no s'explica: per què el volum és el que ho trenca? Falta la connexió causal.
+
+Per què no funciona: el text llegeix elegant però el raonament no hi és — el
+lector especialitzat no arriba a entendre per què es dedueix A a partir de B.
+Detectat per feedback real de subscriptors nous (2026-09-08).
+
+Alternativa: veure regla 4 de §3. Abans de cada frase de mecanisme causal,
+afegir el pas intermedi explícit — no allargar el text, no saltar-se'l.
