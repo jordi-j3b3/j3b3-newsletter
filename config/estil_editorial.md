@@ -191,6 +191,13 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
    ese umbral es el que rompe el sistema). Test: si un lector experto podría
    preguntar "¿por qué?" tras leer la frase, falta ese paso. No es cuestión de
    alargar el texto — es no saltárselo. Ver catálogo de ejemplos en §4.
+   **Refuerzo (2026-09-13):** esto aplica también a las predicciones
+   condicionadas a un factor externo (tipos de interés, demanda, política).
+   No basta con nombrar el factor — hay que explicitar el canal de
+   transmisión concreto: por qué ese factor afecta precisamente a esta
+   variable y no a otra. Enumerar factores sin decir por qué cada uno actúa
+   es el mismo salto lógico que nombrar una relación causa-efecto sin
+   mostrarla. Ver catálogo de ejemplos en §4.
 5. **Máximo 1-2 metáforas o dichos por edición, y solo si condensan un
    argumento real** (no una imagen nueva decorativa cada semana). Si no hay
    una que encaje de forma natural, mejor no forzarla.
@@ -220,6 +227,26 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
 15. **Evita la simetría de redacción "IA"**: nada de "no solo... sino también"
     como muletilla, nada de estructuras idénticas edición tras edición, nada
     de autocalificarse ("un análisis honesto muestra que...").
+16. **No confundas brecha relativa con mejora absoluta.** Si una distancia con
+    un comparable (UE-27, otro sector) se estrecha porque el comparable
+    empeora o sube más rápido que nosotros, eso NO se puede presentar como
+    "mejora", "rejuvenece" o equivalente en nivel absoluto. Antes de escribir
+    el titular o el primer párrafo, verifica explícitamente: ¿la afirmación es
+    sobre el NIVEL (esta cifra frente a sí misma en el pasado) o sobre la
+    DISTANCIA (esta cifra frente a otra que también se mueve)? Nunca mezcles
+    las dos en la misma frase de apertura. Ver catálogo de ejemplos en §4.
+17. **Una idea numérica por frase.** No encadenes más de dos cifras o años en
+    una sola frase. Si hay que narrar una evolución con varios puntos de
+    inflexión, trocéala en frases cortas, una cifra o comparación por frase.
+    Ver catálogo de ejemplos en §4.
+18. **Escepticismo cuantitativo con políticas públicas de escala pequeña.**
+    Cuando una noticia del Bloque 2 sea sobre una medida institucional
+    (subvención, ayuda, plan), no cierres el comentario validándola sin
+    cuestionar su escala. Compara siempre la magnitud de la medida con la
+    magnitud del problema que dice resolver. Si la medida es pequeña frente a
+    un problema estructural, dilo explícitamente y apunta qué tipo de medida
+    tendría escala real, en vez de cerrar con un elogio genérico. Ver catálogo
+    de ejemplos en §4.
 
 ---
 
@@ -266,6 +293,89 @@ divulgació que avisa el lector que ve una explicació. Jordi no avisa — expli
 directament. El lector ja entendrà que la contradicció es resol.
 
 Alternativa: entrar directament a l'explicació sense el meta-comentari previ.
+
+**Patró "bretxa relativa confosa amb millora absoluta"**
+Estructura: una distància amb un comparable s'estreny i el text ho presenta
+com a millora en termes absoluts, sense comprovar si el comparable també s'ha
+mogut.
+
+Exemple real del Núm. 19 a evitar (versió descartada abans d'enviar):
+- Assumpte: *"El comercio español envejece por arriba — y rejuvenece por
+  abajo"*. Titular: *"El retail español recupera juventud"*.
+
+Per què no funciona: el pes de joves a la plantilla espanyola (8,5% el 2025)
+és MÉS BAIX que el 2011 (9,9%) i que el 2008 (14,4%) — no ha "rejovenit" en
+cap sentit absolut. El que s'estrenyia era la DISTÀNCIA amb la UE-27, i
+s'estrenyia perquè el pes jove espanyol pujava MÉS RÀPID que l'europeu
+(+1,34p contra +0,34p entre 2022 i 2025) — però el europeu també pujava. Dir
+"rejuvenece" quan la sèrie pròpia segueix per sota del seu propi passat és
+prendre la distància relativa per un fet absolut.
+
+Alternativa aplicada a l'edició final: titular sobre el fet absolut que
+aguanta sense dependre de la base de comparació ("El comercio ha envejecido
+su plantilla", ancorat en la sèrie pròpia 2008→2025), amb la distància amb la
+UE-27 relegada a matís al tercer paràgraf, mai al titular.
+
+**Patró "acumulació de xifres en una sola frase"**
+Estructura: diverses dades o anys encadenats en una frase llarga, sense
+respirar entre fets.
+
+Exemple real del Núm. 19 a evitar:
+- *"El tramo de 50 o más años se ha dado la vuelta: por debajo de la media
+  europea de 2008 a 2021, por encima desde 2022, salvo en 2023. En 2025,
+  32,8% frente al 31,8% de la UE-27."*
+
+Per què no funciona: quatre fets numèrics diferents (dos períodes, una
+excepció, una comparació final) en dues frases fa que el lector hagi de
+desempaquetar-ho abans d'entendre la idea. Sona a taula convertida en prosa,
+no a algú explicant-ho.
+
+Alternativa aplicada: trossejar en frases curtes, una idea per frase — el
+període, després l'excepció, després la xifra final, cadascuna amb el seu
+propi punt.
+
+**Patró "elogi genèric a una política pública sense escala"**
+Estructura: comentar una mesura institucional petita i tancar validant-la
+sense qüestionar si la seva magnitud és proporcional al problema.
+
+Exemple real del Núm. 19 a evitar:
+- *"La ayuda de hasta 2.300 euros es modesta en cifras absolutas, pero el
+  mecanismo que activa [...] es exactamente el que los datos [...] señalan
+  como el cuello de botella del retail español. [...] Alcoy lo ha
+  entendido."*
+
+Per què no funciona: reconeix que la mesura és modesta i tot seguit la valida
+sense reserves ("Alcoy lo ha entendido"), com si la mida no importés. Una
+subvenció de fons perdut per a autoocupació no és el mateix ordre de magnitud
+que un problema estructural de relleu generacional.
+
+Alternativa aplicada: dir explícitament què resol la mesura (la barrera
+d'entrada més petita) i què NO resol (lloguer, escala de la competència,
+rendibilitat), i apuntar quin tipus de política tindria escala real
+(urbanisme comercial, dinamització d'eixos, captació activa d'empreses),
+sense elogi de tancament.
+
+**Patró "condició externa sense canal de transmissió"**
+Estructura: una predicció es condiciona a un factor extern (tipus d'interès,
+demanda, política) enumerat pel seu nom, sense explicar per què aquest factor
+afectaria precisament la variable en qüestió.
+
+Exemple real del Núm. 19 a evitar (versió descartada abans d'enviar):
+- *"Con una condición: que no llegue un correctivo por el lado del empleo
+  juvenil —el BCE endureciendo (tipos al 2,5% esta semana) o una caída de
+  demanda que golpee primero a los contratos precarios."*
+
+Per què no funciona: nomena el BCE i la demanda com a factors de risc però no
+diu per què afectarien l'ocupació JOVE específicament i no la plantilla en
+general — falta el pas intermedi (mateix defecte que la regla 4/§3.4, aplicat
+a una predicció en lloc d'una afirmació de mecanisme).
+
+Alternativa aplicada: explicitar el canal — els contractes juvenils al
+comerç són majoritàriament temporals o a temps parcial, i són els primers que
+es tallen quan puja el cost del crèdit o cau la demanda; per això un
+enduriment del BCE o una caiguda de consum revertirien la millora per
+aquesta via concreta, no per un canvi en la composició estructural de la
+plantilla.
 
 **Patró "conclusió sense pas intermedi" (salt lògic causal)**
 Estructura: una frase nomena una relació de causa-efecte ("X es un coste de

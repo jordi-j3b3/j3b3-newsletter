@@ -95,7 +95,7 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Mecanisme**: el comerç espanyol no és una porta d'entrada al mercat laboral com a la resta d'Europa; és un sector de plantilla madura. Això explica el problema de relleu generacional que surt cada mes a la premsa municipal, i el converteix en estructural en lloc d'anecdòtic: no és que els joves no vulguin agafar la botiga del pare, és que fa quinze anys que no entren al sector.
 - **Bloc 3**: barres de distribució per edat, ES vs UE-27.
 - **Per què no està cremat**: el Núm. 15 va usar l'EPA (nivell d'ocupació i el seu traspàs al turisme). L'estructura d'EDAT no s'ha tocat mai, i el dataset té sèrie des del 2008.
-- **Estat**: LLIURE
+- **Estat**: **USAT (Núm. 19, 2026-09-14)**. Correcció de xifra respecte del que deia aquesta fitxa: la bretxa 2025 és de **5,8 punts**, no 5,7 — 5,7 surt de restar els percentatges ja arrodonits (14,2−8,5), i el càlcul correcte és 14,236−8,478=5,758. L'edició va explotar la sèrie longitudinal (màxim de 6,8p el 2022, tres anys consecutius d'estretiment fins a 5,8p) i el creuament del tram 50+ (ES per sota de la UE-27 de 2008 a 2021, per sobre des del 2022 excepte el 2023).
 
 ## A9 · Els béns han perdut cinc punts del consum de les llars en vint anys
 
@@ -114,6 +114,23 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Bloc 3**: evolució del pes al VAB, o comparativa europea amb `europa_vab.csv` (28 països, sèrie des del 1975).
 - **Per què no està cremat**: cap edició ha usat el VAB com a xifra protagonista.
 - **Estat**: LLIURE — però **no la setmana següent al Núm. 16**: mateix mecanisme (nominal contra real), calen algunes edicions de separació.
+
+## A11 · La bretxa juvenil del comerç és tres vegades la del conjunt de l'economia
+
+- **Dataset**: `ocupacio_comerc.csv` (Eurostat `lfsa_egan22d`) **ampliat amb l'agregat `nace_r2=TOTAL`** — avui el fetcher només demana G47. Requereix tocar `fetch_ocupacio_comerc()` per demanar també TOTAL i desar-lo al CSV, i afegir la sèrie a `verify.py` (`_afegeix_ocupacio_edat`). **Sense aquesta integració l'angle no es pot publicar**: qualsevol xifra seria ORFE al gate.
+- **Xifra** (verificada amb crida real a l'API el 2026-09-13, pendent de repassar el dia que s'integri): pes dels 15-24 anys, bretxa UE-27 menys Espanya. **2025: comerç 5,8 punts vs conjunt de l'economia 1,7 punts → 3,3 vegades.** El 2008 era 1,4 vs 0,6 (2,4x); el 2016, 5,4 vs 3,1 (1,7x). El rati puja de forma sostinguda des del 2016.
+- **Mecanisme**: desmunta l'objecció més òbvia a l'angle A8 ("això no és el comerç, és el mercat laboral espanyol"). Sí que hi ha una bretxa juvenil general a Espanya, però la del comerç és el triple i s'ha anat separant de la general. La bretxa del conjunt de l'economia s'ha anat tancant des del 2013 (3,3 → 1,7 punts); la del comerç, no al mateix ritme.
+- **CAUTELA CRÍTICA — les dues lectures són certes i diuen coses oposades**: des del 2022, en punts absoluts el comerç ha tancat MÉS (−1,0p contra −0,7p del conjunt); en termes relatius el conjunt ha tancat més ràpid (−29% contra −15%), i per això el rati s'eixampla. No es pot escriure ni "el comerç millora més" ni "el comerç es queda enrere" sense dir quina mètrica es fa servir. Aquesta és la trampa de l'angle.
+- **Bloc 3**: dues sèries de bretxa (comerç vs total economia) per anys clau, o el rati per any.
+- **Estat**: LLIURE — però **no abans de la integració del fetcher**. És angle d'edició sencera, no nota al peu.
+
+## A12 · El comerç paga un 14% menys que la mitjana de l'economia, i no s'ha mogut en deu anys
+
+- **Dataset**: `eaes.csv` (INE, Enquesta Anual d'Estructura Salarial) — **ja és a `observatori-comerc/data/cache/` però NO es copia a l'snapshot ni el coneix `verify.py`**. Cal afegir-lo a `snapshot.py` i a `carrega_series()` abans de poder-lo publicar.
+- **Xifra** (verificada contra el CSV el 2026-09-13): salari mitjà del comerç **24.137,40 €** el 2023 contra **28.049,94 €** del conjunt d'indústria, construcció i serveis: **−13,9%** (−3.913 €). La forquilla dels deu anys de sèrie (2014-2023) va de −12,5% a −15,0%: mai es tanca, mai s'eixampla gaire. Per sota només hi ha activitats artístiques, administratives, altres serveis i hostaleria (16.985,78 €).
+- **CAVEAT DE COBERTURA OBLIGATORI**: l'EAES agrupa "Comercio" com a **secció G** (majorista + minorista + reparació de vehicles), no CNAE 47 pur. És el mateix problema de cobertura que la regla 14 de la casa amb l'EPA. Qualsevol ús exigeix la frase d'advertiment en el cos.
+- **Mecanisme**: acompanya A8/A11 com a **hipòtesi etiquetada**, mai com a diagnòstic. El dataset diu què es paga; no diu res sobre per què els joves trien un sector o un altre. Formulació admissible: "una hipótesis posible, no verificable solo con estos datos, es que…".
+- **Estat**: LLIURE com a suport d'A8/A11; no aguanta una edició sola.
 
 ---
 

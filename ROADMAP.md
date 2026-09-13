@@ -455,3 +455,93 @@ que algú s'oblidarà de passar:
    pipeline supervisat un cop per setmana és indistingible d'un èxit.
 3. Fer que `schedule.py` inclogui a la notificació de diumenge si l'edició
    s'ha generat amb tesi o sense.
+
+## [PRIORITAT ALTA] Bug de verify.py: el gate error/avís no és determinista (2026-09-13, Núm. 19)
+
+Detectat preparant el Núm. 19 (estructura d'edat de la plantilla). Fallots a la
+capa de parseig, observats al llarg de **cinc execucions**. La capa d'ancoratge
+numèric va donar sempre el mateix (ORFE 0); la resolució de sèries va canviar a
+cada passada amb el mateix text o amb variacions mínimes:
+
+1. **Direcció del superlatiu invertida.** Una afirmació de MÀXIM es comprova com
+   si fos de MÍNIM. El missatge diu "el text diu més baix de tota la sèrie" i
+   llista com a contraexemples valors *inferiors* (2008 +1.37, 2009 +3.27…), que
+   només contradirien una afirmació de mínim. Persisteix escrivint literalment
+   "su valor más alto", o sigui que no és ambigüitat de redacció.
+
+2. **Resolució de sèrie no determinista.** Una afirmació sobre el tram **50+**
+   es va resoldre contra quatre sèries diferents en cinc execucions: "menores de
+   25 años" (dos cops), "% del empleo del comercio en empresas de 10 o más
+   ocupados", "ocupados CNAE 47, miles" i "UE-27, de 25 a 49 años". Una ratxa
+   explícitament espanyola es va comprovar contra la sèrie de la **UE-27** fins i
+   tot després d'escriure "en España" a la frase. I una afirmació sobre la bretxa
+   d'edat es va resoldre contra "diferencial de ventas minoristas" (ICM), que no
+   hi té cap relació. La sèrie correcta (`mayores de 50 años`) existeix a
+   `_AGREGATS_EDAT` i es carrega bé — el problema és el matching, no les dades.
+
+3. **El desempat per atribució no és fiable.** El gate sap detectar quan la xifra
+   citada encaixa amb una altra sèrie: imprimeix "ATRIBUCIÓ: el valor citat
+   encaixa amb España, mayores de 50 años". En una execució això va degradar
+   l'error a avís no bloquejant; en una altra, amb la mateixa detecció impresa,
+   va bloquejar igualment. El camí de degradació depèn de l'atzar del parseig.
+
+Impacte: el gate bloqueja edicions correctes. És exactament el patró del
+2026-08-23 documentat a la capçalera del propi `verify.py` (cinc errors falsos,
+cap campanya, onze dies sense que ningú se n'adonés). La capa d'ancoratge
+numèric, en canvi, va funcionar perfectament (ANCORAT 51, ORFE 0).
+
+**Per què és prioritat alta, i no un altre fals positiu ocasional:** el mateix
+text, amb la mateixa detecció d'atribució impresa ("ATRIBUCIÓ: el valor citat
+encaixa amb España, mayores de 50 años"), **a vegades bloqueja i a vegades
+degrada a avís**. Això no és una regla determinista amb un bug de matching —
+és una font d'aleatorietat al mecanisme que decideix error vs. avís, molt
+probablement perquè aquesta part del pipeline crida l'LLM com a parser (veure
+la capçalera del fitxer: "l'LLM NOMÉS fa de parser") i la seva sortida no és
+reproduïble entre crides. Mentre això sigui així, el gate no es pot confiar
+cegament ni tampoc ignorar sistemàticament: cal fer-lo determinista, o com a
+mínim, **conservador per defecte** (qualsevol cas de resolució incerta o
+d'atribució detectada hauria de degradar a avís, mai bloquejar).
+
+**Casos de regressió d'avui (Núm. 19, 2026-09-13), per a `tests/casos_verify/`.**
+Totes les xifres sota estan contraverificades a mà contra
+`data/semana-2026-09-14/ocupacio_comerc.csv` amb l'agregació de
+`_AGREGATS_EDAT` i són CORRECTES; el gate les hauria de deixar passar sempre:
+
+1. *"El tramo de 50 años o más pesaba un 18,2% en 2008. En 2025 pesa un 32,8%."*
+   Resolt contra 4 sèries diferents en 5 execucions: "menores de 25 años" (×2),
+   "% del empleo del comercio en empresas de 10 o más ocupados", "ocupados
+   CNAE 47, miles", "UE-27, de 25 a 49 años". Sèrie correcta: `España, mayores
+   de 50 años`. 18,17%→32,83% = ×1,81, verificat.
+2. *"La brecha con la UE-27 llegó a 6,8 puntos en 2022, el valor más alto de la
+   serie"* → direcció de superlatiu invertida: el gate llegeix "más alto" com
+   si fos "más bajo" i llista contraexemples inferiors (2008 +1,37). Màxim
+   real: 2022, 6,758p, verificat.
+3. *"el tramo de 50 o más años nunca había pesado tanto como en 2025"* →
+   resolt contra "UE-27, de 25 a 49 años" en comptes de `España, mayores de 50
+   años`. 2025 és el màxim de la sèrie correcta, verificat.
+4. *"Desde entonces, el peso de los menores de 25 en España ha subido todos
+   los años"* → resolt contra la sèrie de la **UE-27** malgrat dir "en España"
+   explícitament a la frase. Puja cada any 2021-2025 (6,84→7,00→7,14→7,95→
+   7,98→8,48) a la sèrie espanyola, verificat.
+5. *"el tramo de 50 o más años se ha dado la vuelta: por debajo de la media
+   europea de 2008 a 2021, por encima desde 2022, salvo en 2023"* → resolt
+   contra "España · % del empleo del comercio en empresas de 10 o más
+   ocupados", sense relació. Creuament correcte verificat any a any.
+
+Per arreglar: (a) comprovar el signe/direcció a `verifica_superlatiu()` contra
+el text original abans de comparar, sense passar per cap crida no determinista;
+(b) donar pes al tram d'edat citat a la frase dins `resol_serie()`, que ara
+sembla guiar-se només per solapament de tokens genèrics; (c) quan el propi gate
+imprimeixi una detecció d'ATRIBUCIÓ (sap quina és la sèrie correcta), que
+sempre degradi a avís i mai bloquegi — ara el camí de degradació és arbitrari;
+(d) incorporar els 5 casos d'amunt a `tests/casos_verify/` com a test de
+regressió abans de tocar cap altra cosa.
+
+**Reincidència 2026-09-14 (mateixa sessió, mateix text de fons):** el mateix
+gràfic 50+ (ara com a sèrie absoluta enlloc de diferencial) va tornar a fallar
+amb les MATEIXES tres afirmacions, ara resoltes contra "España, de 25 a 49
+años" en comptes de "mayores de 50 años" — de nou amb la línia d'ATRIBUCIÓ
+correcta impresa i ignorada pel gate. En total, comptant les dues sessions
+d'avui: ~8 execucions, el mateix contingut factual, almenys 6 sèries
+diferents encertades erròniament. Això reforça que el problema no és a les
+dades ni al text — és 100% a la capa de resolució/decisió del parser.
