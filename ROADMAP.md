@@ -456,7 +456,7 @@ que algú s'oblidarà de passar:
 3. Fer que `schedule.py` inclogui a la notificació de diumenge si l'edició
    s'ha generat amb tesi o sense.
 
-## [PRIORITAT ALTA] Bug de verify.py: el gate error/avís no és determinista (2026-09-13, Núm. 19)
+## Bug de verify.py: el gate error/avís no era determinista · FET (2026-09-14, Núm. 19)
 
 Detectat preparant el Núm. 19 (estructura d'edat de la plantilla). Fallots a la
 capa de parseig, observats al llarg de **cinc execucions**. La capa d'ancoratge
@@ -528,14 +528,10 @@ Totes les xifres sota estan contraverificades a mà contra
    contra "España · % del empleo del comercio en empresas de 10 o más
    ocupados", sense relació. Creuament correcte verificat any a any.
 
-Per arreglar: (a) comprovar el signe/direcció a `verifica_superlatiu()` contra
-el text original abans de comparar, sense passar per cap crida no determinista;
-(b) donar pes al tram d'edat citat a la frase dins `resol_serie()`, que ara
-sembla guiar-se només per solapament de tokens genèrics; (c) quan el propi gate
-imprimeixi una detecció d'ATRIBUCIÓ (sap quina és la sèrie correcta), que
-sempre degradi a avís i mai bloquegi — ara el camí de degradació és arbitrari;
-(d) incorporar els 5 casos d'amunt a `tests/casos_verify/` com a test de
-regressió abans de tocar cap altra cosa.
+Pla original (a-d): comprovar signe/direcció, donar pes al tram d'edat dins
+`resol_serie()`, degradar sempre a avís quan hi ha detecció d'ATRIBUCIÓ, i
+incorporar els casos com a regressió. Substituit per la solució aplicada (b i
+c del pla original; a i d es van descartar, veure sota).
 
 **Reincidència 2026-09-14 (mateixa sessió, mateix text de fons):** el mateix
 gràfic 50+ (ara com a sèrie absoluta enlloc de diferencial) va tornar a fallar
@@ -545,3 +541,42 @@ correcta impresa i ignorada pel gate. En total, comptant les dues sessions
 d'avui: ~8 execucions, el mateix contingut factual, almenys 6 sèries
 diferents encertades erròniament. Això reforça que el problema no és a les
 dades ni al text — és 100% a la capa de resolució/decisió del parser.
+
+**Solució aplicada (2026-09-14), a `resol_serie()`:** l'arrel real no era la
+direcció del superlatiu ni el pes del tram d'edat — era que `confianca` es
+calculava mirant NOMÉS el millor candidat, sense comprovar si la tria era
+neta. S'ha afegit `_MARGE_AMBIGUITAT` (0.3): ara `resol_serie()` també fa un
+seguiment del segon millor candidat, i degrada `confianca` a "baixa" (que
+`verifica_racha`/`verifica_superlatiu` ja convertien en AVÍS, no ERROR) en
+qualsevol d'aquests dos casos:
+
+1. El segon candidat queda a menys de `_MARGE_AMBIGUITAT` punts del millor
+   (tria no neta — dues sèries gairebé igual de plausibles).
+2. La llista `altres` (la mateixa detecció d'ATRIBUCIÓ que el gate ja
+   imprimia) no és buida — el valor citat encaixa també amb una altra sèrie
+   diferent de la triada.
+
+Aquest segon punt és exactament el patró (c) del pla original, i cobreix
+directament els 5+3 casos documentats amunt: en tots ells `altres` ja
+identificava la sèrie correcta (impresa com "ATRIBUCIÓ: el valor citat
+encaixa amb..."), simplement no s'usava per decidir la severitat.
+
+**Diagnosi arrel, per si cal revisar-ho més endavant:** `s.vocabulari` (el
+`temes` de cada sèrie a `_afegeix_ocupacio_edat`) és IDÈNTIC entre trams
+d'edat — `base = f"{_TEMES_OCUPACIO} {_TEMES_EDAT} comercio minorista lfs
+eurostat"` no conté cap paraula específica de tram ("25", "50", "mayores",
+"menores"). Això vol dir que `coincidencia_met` mai diferencia un tram
+d'edat d'un altre: tota la diferenciació depèn de `coincidencia_ent` (el
+solapament amb l'`entitat` que l'LLM ha escrit), que pot ser un marge molt
+prim si la frase no repeteix el tram literalment. No s'ha tocat `temes` en
+aquest fix perquè el marge d'ambigüitat ja cobreix el símptoma real (bloqueig
+per atzar); afegir paraules de tram a `temes` seria un reforç complementari,
+no substitutiu.
+
+**Test de regressió**: `tests/casos_verify/cas4_ocupacio_edat_ambigua.md`
+(cas end-to-end, crida real a l'LLM) + `AMBIGUS_TRAM_EDAT` a
+`tests/casos_verify/unitaris.py` (determinista, sense LLM, reprodueix
+exactament els dos mecanismes de fallada amb `entidad` genèric). Verificat:
+5/5 execucions de `unitaris.py` idèntiques (determinista per construcció) i
+4/4 execucions de `executa.py --semana 2026-09-14` amb `cas4` en verd
+(crida real a l'LLM, confirma estabilitat de punta a punta).

@@ -36,6 +36,11 @@ CASOS = [
      "tendències qualitatives ('quince años de recorrido'), una bretxa "
      "d'ocupació jove resolta contra les vendes, un fet de premsa del Bloc 2 i "
      "les xifres d'ocupació per edat, que el gate no carregava"),
+    ("cas4_ocupacio_edat_ambigua.md", 0,
+     "bug del Núm. 19 (2026-09-13/14): la mateixa afirmació correcta sobre el "
+     "tram 50+ (×1,81, màxim de la sèrie, ratxa de 5 anys del tram jove) es "
+     "resolia contra una sèrie diferent a cada execució (menores de 25, de 25 "
+     "a 49, ocupados CNAE 47) i bloquejava de forma no determinista"),
     (None, 0,
      "el borrador real de la setmana, que ha de passar el gate sense errors"),
 ]

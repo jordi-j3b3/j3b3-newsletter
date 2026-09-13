@@ -59,6 +59,32 @@ VERTADER_POSITIU = _claim(
     entidad="Cataluña", metrica="ventas reales interanuales",
     periodo_final="2026-06", n=6)
 
+# Bug del Núm. 19 (2026-09-13/14): la mateixa afirmació sobre el tram 50+ es
+# resolia contra una sèrie diferent a cada execució ("de 25 a 49 años",
+# "UE-27, de 25 a 49 años", "ocupados CNAE 47, miles"...) i bloquejava de
+# forma no determinista, tot i que el gate mateix imprimia la detecció
+# d'ATRIBUCIÓ correcta ("encaixa amb España, mayores de 50 años"). Els dos
+# casos següents reprodueixen exactament aquesta ambigüitat: quan l'entidad
+# citada no ancora prou l'edat concreta, `resol_serie()` pot triar la sèrie
+# equivocada — la comprovació és que això degradi a AVÍS, mai a ERROR.
+AMBIGUS_TRAM_EDAT = [
+    (_claim(tipo="superlativo",
+            frase="el tramo de 50 años o más nunca había pesado tanto como en 2025",
+            entidad="el tramo de 50 años o más", metrica="peso sobre el total de "
+            "ocupados del comercio, %", periodo_final="2025", valor=32.83,
+            direccion="positivo", referencia="toda la serie"),
+     "entidad sense el gentilici 'España' explícit: pot resoldre's contra "
+     "un altre tram d'edat"),
+    (_claim(tipo="superlativo",
+            frase="el comercio minorista español nunca había tenido una plantilla "
+                  "tan envejecida como en 2025",
+            entidad="comercio minorista español", metrica="peso del tramo de 50 "
+            "años o más sobre ocupados totales", periodo_final="2025", valor=32.83,
+            direccion="positivo", referencia="toda la serie"),
+     "entidad genèrica sense cap tram d'edat: pot resoldre's contra una sèrie "
+     "d'un altre tipus de mètrica (ocupats en milers, no pes en %)"),
+]
+
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
@@ -97,6 +123,13 @@ def main() -> int:
     nivell, detall = verify.verifica_racha(VERTADER_POSITIU, series)
     comprova(nivell == "ERROR", "segueix bloquejant l'atribució falsa a Catalunya",
              f"{nivell} · {detall[:150]}")
+
+    # 4bis. El bug del Núm. 19: ambigüitat de resolució del tram d'edat mai
+    #       no bloqueja, encara que la sèrie triada sigui la incorrecta.
+    for af, descripcio in AMBIGUS_TRAM_EDAT:
+        nivell, detall = verify.verifica_superlatiu(af, series)
+        comprova(nivell != "ERROR", f"no bloqueja per ambigüitat: {descripcio}",
+                 f"{nivell} · {detall[:200]}")
 
     # 5. Forat de cobertura de l'ocupació per edat (Núm. 17): els números del
     #    cos han de tenir ancoratge, en milers i en persones.

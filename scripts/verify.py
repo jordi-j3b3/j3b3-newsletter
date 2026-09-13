@@ -827,6 +827,16 @@ _LLINDAR_METRICA_MINIM = 0.25
 _LLINDAR_METRICA_ALTA = 0.5
 
 
+_MARGE_AMBIGUITAT = 0.3
+# Si el segon candidat queda a menys d'aquest marge del millor, la tria no és
+# neta: dues sèries són gairebé igual de plausibles i la severitat baixa a AVÍS
+# encara que la coincidència de mètrica del millor fos alta per si sola. Veure
+# ROADMAP.md "gate error/avís no determinista" (2026-09-13/14): la confiança
+# calculada NOMÉS a partir del millor candidat va deixar passar com a "alta"
+# casos on una segona sèrie (sovint la correcta) encaixava gairebé igual de bé,
+# i el gate bloquejava contingut correcte de forma no reproduïble.
+
+
 def resol_serie(entitat: str, metrica: str, valor: float | None,
                 periode: str | None, series: dict[str, Serie],
                 ) -> tuple[Serie | None, list[Serie], str]:
@@ -840,10 +850,16 @@ def resol_serie(entitat: str, metrica: str, valor: float | None,
     amb resolució incerta un desquadrament és AVÍS. Bloquejar per una resolució
     dubtosa va costar l'edició del Núm. 17 sencera (cinc "errors", tots falsos),
     i un gate que crida en fals s'acaba desactivant — que és pitjor que deixar
-    passar un error de tant en tant.
+    passar un error de tant en tant. La confiança es rebaixa a "baixa" sempre
+    que hi hagi AMBIGÜITAT DE RESOLUCIÓ, en qualsevol de les dues formes
+    següents, encara que el millor candidat per si sol semblés "alta":
+    (a) un segon candidat gairebé tan bo com el millor (marge < _MARGE_AMBIGUITAT), o
+    (b) el valor citat encaixa també amb una altra sèrie diferent de la triada
+        (la llista `altres`, que és exactament la detecció d'ATRIBUCIÓ).
     """
     te, tm = _tokens(entitat), _tokens(metrica)
     millor, millor_punts, millor_confianca = None, 0.0, ""
+    segon_punts = 0.0
     for s in series.values():
         se = _tokens(s.entitat)
         if not se or not te:
@@ -862,7 +878,10 @@ def resol_serie(entitat: str, metrica: str, valor: float | None,
         confianca = ("alta" if confirmat or coincidencia_met >= _LLINDAR_METRICA_ALTA
                      else "baixa")
         if punts > millor_punts:
+            segon_punts = millor_punts
             millor, millor_punts, millor_confianca = s, punts, confianca
+        elif punts > segon_punts:
+            segon_punts = punts
 
     altres = []
     if valor is not None:
@@ -873,6 +892,13 @@ def resol_serie(entitat: str, metrica: str, valor: float | None,
                 if abs(v - valor) <= 0.05 and (not periode or p == periode):
                     altres.append(s)
                     break
+
+    if millor is not None:
+        ambigu_per_marge = (millor_punts - segon_punts) < _MARGE_AMBIGUITAT
+        ambigu_per_atribucio = bool(altres)
+        if ambigu_per_marge or ambigu_per_atribucio:
+            millor_confianca = "baixa"
+
     return millor, altres, millor_confianca
 
 
