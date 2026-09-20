@@ -64,9 +64,21 @@ VERTADER_POSITIU = _claim(
 # "UE-27, de 25 a 49 años", "ocupados CNAE 47, miles"...) i bloquejava de
 # forma no determinista, tot i que el gate mateix imprimia la detecció
 # d'ATRIBUCIÓ correcta ("encaixa amb España, mayores de 50 años"). Els dos
-# casos següents reprodueixen exactament aquesta ambigüitat: quan l'entidad
-# citada no ancora prou l'edat concreta, `resol_serie()` pot triar la sèrie
-# equivocada — la comprovació és que això degradi a AVÍS, mai a ERROR.
+# casos següents reprodueixen DUES extraccions concretes d'aquesta ambigüitat
+# —les que es van veure aquell dia— i confirmen que, per a AQUESTES DUES, la
+# resolució degrada a AVÍS.
+#
+# ADVERTIMENT (2026-09-20, verificat sobre el borrador real del Núm. 19): NO
+# és cert que aquest bug degradi sempre a AVÍS. Una tercera extracció, no
+# codificada aquí, resol amb CONFIANÇA ALTA i sense cap ambigüitat detectable
+# contra "España, menores de 25 años", i el gate la bloqueja amb ERROR — false
+# positive real, reproduïble. Com que aquests dos tests no criden l'LLM, no
+# poden detectar-ho: només proven que LES DUES EXTRACCIONS D'AQUÍ es comporten
+# bé, no que el bug estigui tancat. Veure ROADMAP, punt 0, "Troballa nova,
+# independent del fix d'avui", per a la reproducció completa i per què el fix
+# de les candidates ambigües (mateix punt 0) tampoc el cobreix: aquí no hi ha
+# empat de resolució, el que falla és que l'extracció llegeix malament una
+# frase de dues clàusules.
 AMBIGUS_TRAM_EDAT = [
     (_claim(tipo="superlativo",
             frase="el tramo de 50 años o más nunca había pesado tanto como en 2025",
@@ -124,8 +136,9 @@ def main() -> int:
     comprova(nivell == "ERROR", "segueix bloquejant l'atribució falsa a Catalunya",
              f"{nivell} · {detall[:150]}")
 
-    # 4bis. El bug del Núm. 19: ambigüitat de resolució del tram d'edat mai
-    #       no bloqueja, encara que la sèrie triada sigui la incorrecta.
+    # 4bis. El bug del Núm. 19, per a AQUESTES DUES extraccions concretes: no
+    #       bloqueja, encara que la sèrie triada sigui la incorrecta. NO cobreix
+    #       el cas general (veure advertiment més amunt i ROADMAP punt 0).
     for af, descripcio in AMBIGUS_TRAM_EDAT:
         nivell, detall = verify.verifica_superlatiu(af, series)
         comprova(nivell != "ERROR", f"no bloqueja per ambigüitat: {descripcio}",

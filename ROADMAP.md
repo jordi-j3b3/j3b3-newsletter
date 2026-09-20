@@ -153,6 +153,78 @@ Cost de la mesura: ~25 execucions completes de `verify.py` (10 banc sencer +
 10 cas3 + 10 cas4 + proves prèvies), tot Sonnet, sense tocar context de
 sessió.
 
+### Fix de fons implementat (2026-09-20) — abast real, més estret del previst
+
+`resol_serie()` ara torna també les **candidates gairebé empatades** amb la
+millor per entitat+mètrica (`_MARGE_AMBIGUITAT`), a part de `altres` (les que
+coincideixen només per valor, que es deixen fora d'aquest mecanisme a posta:
+incloure-les hi tornaria a portar el soroll de Bulgària del punt anterior).
+`verifica_racha()` i `verifica_superlatiu()` ara comproven la reclamació
+contra totes les candidates del conjunt (`millor` + empatades): si qualsevol
+la confirma, OK; si cap la confirma i almenys una la **contradiu amb xifres
+concretes** (no només "no aplicable" perquè el tipus de sèrie no encaixa),
+escala a ERROR encara que la confiança fos baixa. Detall tècnic i codi a
+`scripts/verify.py`, funcions `_verifica_racha_contra` /
+`_verifica_superlatiu_contra` i els docstrings de `resol_serie`.
+
+**Validat**: 8 execucions del banc sencer + proves unitàries deterministes
+d'`unitaris.py` sense regressió d'aquest mecanisme (veure troballa nova més
+avall, que és independent). 15 execucions directes del cas4: el mecanisme
+d'empat **mai s'activa** per a aquell cas (`ambigues` sempre buit).
+
+**Per què l'abast és més estret del que buscàvem**: el cas4 (i el "El que NO
+queda resolt" d'aquesta mateixa secció) no és ambigüitat de resolució DINS
+d'una crida a `resol_serie()` — és variabilitat d'EXTRACCIÓ entre passades:
+cada passada parseja l'entitat/mètrica de la frase de manera diferent, i cada
+text diferent troba (o no troba) una sèrie diferent, cadascuna verificada tota
+sola, sense mai competir entre elles. El fix d'avui corregeix un forat real
+(quan SÍ hi ha empat dins una mateixa crida) però no ataca el fenomen que
+va motivar la línia de base. Arreglar-ho de debò voldria agrupar afirmacions
+de passades diferents que es refereixen al mateix fet del text —un problema
+de clustering semàntic de frases, no de rànquing de sèries— i no s'ha fet.
+
+### Troballa nova, independent del fix d'avui: fals positiu de confiança ALTA
+
+Les 8 execucions de regressió del banc sencer en van donar 2 amb el "borrador
+real" bloquejat (6/8 net). Comprovat **contra el codi previ al fix d'avui**
+(`git show <commit anterior>:scripts/verify.py`): dona el mateix ERROR. **No
+l'ha causat el fix d'avui**; ja hi era.
+
+Reproducció exacta:
+```
+frase: "España está en el extremo de la distribución europea, más cerca de
+        un sector de plantilla madura que de un sector dinámico con entrada
+        y salida de generaciones"
+af parsejat: entidad="España", metrica="ocupados menores de 25 años en
+        retail", valor=8,5, direccion="negativo", referencia="la serie"
+resolució: "España, menores de 25 años · peso..." — CONFIANÇA ALTA, sense
+        cap candidata ambigua ni cap 'altres' per valor.
+resultat: ERROR — hi ha 13 anys amb el tram jove per sota del 8,5%.
+```
+
+La frase parla de l'estructura d'edat en conjunt (probablement del tram
+50+, de qui tractava l'edició real); l'extractor l'ha simplificat a una
+afirmació sobre el tram jove i ha resolt, **net i amb confiança alta**, contra
+la sèrie equivocada. És el mateix bug de fons que `AMBIGUS_TRAM_EDAT` a
+`tests/casos_verify/unitaris.py` documenta pel Núm. 19, però amb una extracció
+diferent de les dues que hi ha codificades a mà — i aquesta no degrada a AVÍS
+perquè no hi ha cap senyal d'ambigüitat detectable: la resolució és neta, el
+que és incorrecte és el contingut de l'extracció.
+
+**Conseqüència que cal llegir bé**: la nota d'`unitaris.py` que diu que aquest
+bug "degrada a AVÍS, mai a ERROR" és **falsa**. Corregida la nota (commit
+d'avui). Els dos tests sintètics que hi ha allà validen NOMÉS les dues
+extraccions concretes que es van veure el 2026-09-13/14; no proven que
+qualsevol altra extracció de la mateixa ambigüitat es comporti igual, perquè
+no criden l'LLM.
+
+**No s'ha intentat arreglar avui.** És un tercer problema, diferent tant del
+punt 0 (extracció variable entre passades) com de l'ambigüitat de resolució
+que el fix d'avui cobreix (empat dins una mateixa crida): aquí l'extracció és
+estable i confiada, i el que falla és que ha llegit malament una frase de dues
+clàusules. Mateix tractament que el punt anterior: mesura i disseny amb calma,
+no el dia d'una edició.
+
 ## Gate: falsos positius que van costar el Núm. 17 · FET (2026-08-28)
 
 El diumenge 2026-08-23 el cron va generar el Núm. 17 i `verify.py` el va

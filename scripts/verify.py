@@ -1002,12 +1002,17 @@ _MARGE_AMBIGUITAT = 0.3
 
 def resol_serie(entitat: str, metrica: str, valor: float | None,
                 periode: str | None, series: dict[str, Serie],
-                ) -> tuple[Serie | None, list[Serie], str]:
+                ) -> tuple[Serie | None, list[Serie], str, list[Serie]]:
     """Troba la sèrie de l'entitat i mètrica citades.
 
-    Retorna (millor_candidata, altres_sèries_on_el_valor_encaixa, confiança). La
-    segona llista és el diagnòstic d'atribució: si el valor no és a la sèrie de
-    l'entitat citada però sí a la d'una altra, es pot dir de qui era.
+    Retorna (millor_candidata, altres_sèries_on_el_valor_encaixa, confiança,
+    candidates_ambigües). La segona llista és el diagnòstic d'atribució: si el
+    valor no és a la sèrie de l'entitat citada però sí a la d'una altra, es pot
+    dir de qui era. La quarta és nova (2026-09-20): les sèries que empaten
+    gairebé amb la millor per ENTITAT I MÈTRICA — no per valor, que és soroll
+    (veure ROADMAP "ANCORAT no vol dir correcte": el 49,1% del Núm. 20 casava
+    amb l'índex de vendes de Bulgària del 2006, i incloure aquest tipus de
+    coincidència al conjunt a comprovar reintroduiria exactament aquell soroll).
 
     La confiança és "alta" o "baixa" i decideix la severitat, no el resultat:
     amb resolució incerta un desquadrament és AVÍS. Bloquejar per una resolució
@@ -1019,10 +1024,15 @@ def resol_serie(entitat: str, metrica: str, valor: float | None,
     (a) un segon candidat gairebé tan bo com el millor (marge < _MARGE_AMBIGUITAT), o
     (b) el valor citat encaixa també amb una altra sèrie diferent de la triada
         (la llista `altres`, que és exactament la detecció d'ATRIBUCIÓ).
+
+    Els cridants (`verifica_racha`, `verifica_superlatiu`) usen les candidates
+    ambigües per decidir si escalar un AVÍS a ERROR: si la reclamació falla
+    contra TOTES (millor + candidates ambigües) i cap ho deixa "no aplicable"
+    com a única raó, no hi ha cap lectura sota la qual sigui certa. Veure
+    ROADMAP, punt 0, "Proposta per al fix de fons".
     """
     te, tm = _tokens(entitat), _tokens(metrica)
-    millor, millor_punts, millor_confianca = None, 0.0, ""
-    segon_punts = 0.0
+    puntuades: list[tuple[float, str, Serie]] = []
     for s in series.values():
         se = _tokens(s.entitat)
         if not se or not te:
@@ -1040,11 +1050,13 @@ def resol_serie(entitat: str, metrica: str, valor: float | None,
         punts = coincidencia_ent + coincidencia_met + (2 if confirmat else 0)
         confianca = ("alta" if confirmat or coincidencia_met >= _LLINDAR_METRICA_ALTA
                      else "baixa")
-        if punts > millor_punts:
-            segon_punts = millor_punts
-            millor, millor_punts, millor_confianca = s, punts, confianca
-        elif punts > segon_punts:
-            segon_punts = punts
+        puntuades.append((punts, confianca, s))
+
+    puntuades.sort(key=lambda x: -x[0])
+    millor, millor_punts, millor_confianca = (
+        (puntuades[0][2], puntuades[0][0], puntuades[0][1])
+        if puntuades else (None, 0.0, ""))
+    segon_punts = puntuades[1][0] if len(puntuades) > 1 else 0.0
 
     altres = []
     if valor is not None:
@@ -1056,13 +1068,17 @@ def resol_serie(entitat: str, metrica: str, valor: float | None,
                     altres.append(s)
                     break
 
+    candidates_ambigues: list[Serie] = []
     if millor is not None:
         ambigu_per_marge = (millor_punts - segon_punts) < _MARGE_AMBIGUITAT
         ambigu_per_atribucio = bool(altres)
         if ambigu_per_marge or ambigu_per_atribucio:
             millor_confianca = "baixa"
+        if ambigu_per_marge:
+            candidates_ambigues = [s for punts, _, s in puntuades[1:]
+                                   if (millor_punts - punts) < _MARGE_AMBIGUITAT]
 
-    return millor, altres, millor_confianca
+    return millor, altres, millor_confianca, candidates_ambigues
 
 
 # ----------------------------------------------------------- verificadors
@@ -1076,35 +1092,32 @@ def _compleix(v: float, direccio: str) -> bool:
     return True  # direccions de tendència es tracten a part
 
 
-def verifica_racha(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
-    """Compta la ratxa real a la sèrie i la compara amb la declarada."""
-    valor = _num_es(str(af.get("valor"))) if af.get("valor") not in (None, "null") else None
-    serie, altres, confianca = resol_serie(
-        af.get("entidad", ""), af.get("metrica", ""), valor,
-        af.get("periodo_final"), series)
-    if serie is None:
-        return "AVIS", (f"no s'ha pogut resoldre cap sèrie per a "
-                        f"'{af.get('entidad')}' / '{af.get('metrica')}'")
-    n_declarada = af.get("n")
-    if not isinstance(n_declarada, int):
-        return "AVIS", f"ratxa sense nombre de periodes; sèrie resolta: {serie.etiqueta}"
+def _verifica_racha_contra(af: dict, serie: Serie) -> tuple[str, str]:
+    """Comprova la reclamació de ratxa contra UNA sèrie candidata concreta.
 
-    direccio_declarada = (af.get("direccion") or "").lower()
-    if direccio_declarada in ("negativo", "negativa") and not serie.te_negatius:
+    Retorna un de quatre estats: COMPLEIX, NO_COMPLEIX (la ratxa real és MÉS
+    CURTA que la declarada — la reclamació sobreestima), CURT (la ratxa real
+    és més llarga — el text es queda curt, que no és fals) o NO_APLICABLE (el
+    tipus de sèrie no permet comprovar aquesta mena de ratxa, p. ex. 'en
+    negatiu' sobre una sèrie de nivells). Només NO_COMPLEIX compta com a
+    contradicció real per a l'escalada de `verifica_racha`."""
+    n_declarada = af.get("n")
+    direccio = (af.get("direccion") or "").lower()
+    if direccio in ("negativo", "negativa") and not serie.te_negatius:
         # Una sèrie de nivells (índexs, milers d'ocupats) no pot tenir cap ratxa
         # 'en negatiu'. Si hi hem arribat, la frase parlava d'una altra cosa
         # —sovint una tendència qualitativa, 'lleva quince años sin atraer
         # jóvenes'— i comptar-hi signes no verifica res.
-        return "AVIS", (f"{serie.etiqueta}: la sèrie no té cap valor negatiu, o "
-                        f"sigui que la ratxa 'en negatiu' no és comprovable aquí; "
-                        f"afirmació qualitativa o sèrie mal resolta")
+        return "NO_APLICABLE", (
+            f"{serie.etiqueta}: la sèrie no té cap valor negatiu, o sigui que "
+            f"la ratxa 'en negatiu' no és comprovable aquí; afirmació "
+            f"qualitativa o sèrie mal resolta")
 
     per = serie.periodes()
     fi = af.get("periodo_final")
     if fi not in serie.punts:
         fi = per[-1]
     idx = per.index(fi)
-    direccio = (af.get("direccion") or "").lower()
 
     real = 0
     if direccio in ("desaceleracion", "aceleracion", "caida", "subida"):
@@ -1125,34 +1138,76 @@ def verifica_racha(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
             i -= 1
 
     if real == n_declarada:
-        return "OK", (f"{serie.etiqueta}: ratxa de {real} periodes fins a {fi} "
-                      f"— coincideix")
+        return "COMPLEIX", (f"{serie.etiqueta}: ratxa de {real} periodes fins "
+                            f"a {fi} — coincideix")
     detall = ", ".join(f"{p} {serie.punts[p]:+.2f}"
                        for p in per[max(0, idx - n_declarada - 1):idx + 1])
     msg = (f"{serie.etiqueta}: el text diu {n_declarada} periodes de "
            f"'{direccio}' fins a {fi}, la sèrie en dona {real}. Sèrie: {detall}")
-    if altres:
-        msg += (f" · ATRIBUCIÓ: el valor citat encaixa amb "
-                f"{', '.join(s.etiqueta for s in altres[:3])}")
     if real > n_declarada:
         # El text es queda curt ('lleva más de una década' quan en són divuit).
         # No és una afirmació falsa: es reporta per si l'editor vol afinar-la.
-        return "AVIS", msg + " · el text es queda curt, la ratxa real és més llarga"
-    if confianca != "alta":
-        return "AVIS", msg + (" · RESOLUCIÓ INCERTA (la mètrica citada no casa "
-                              "clarament amb la sèrie): comprovació no bloquejant")
-    return "ERROR", msg
+        return "CURT", msg + " · el text es queda curt, la ratxa real és més llarga"
+    return "NO_COMPLEIX", msg
 
 
-def verifica_superlatiu(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
-    """'mínimo desde X' / 'primera vez desde X' / 'mínimo de la serie'."""
+def verifica_racha(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
+    """Compta la ratxa real a la sèrie i la compara amb la declarada.
+
+    Comprova la millor sèrie resolta i, si n'hi ha, les candidates gairebé
+    empatades (veure `resol_serie`). Si CAP les confirma i almenys una la
+    CONTRADIU amb xifres concretes, escala a ERROR encara que la resolució
+    fos incerta: no hi ha cap lectura plausible sota la qual la frase sigui
+    certa. Fix del 2026-09-20, ROADMAP punt 0."""
     valor = _num_es(str(af.get("valor"))) if af.get("valor") not in (None, "null") else None
-    serie, altres, confianca = resol_serie(
+    serie, altres, confianca, ambigues = resol_serie(
         af.get("entidad", ""), af.get("metrica", ""), valor,
         af.get("periodo_final"), series)
     if serie is None:
         return "AVIS", (f"no s'ha pogut resoldre cap sèrie per a "
                         f"'{af.get('entidad')}' / '{af.get('metrica')}'")
+    n_declarada = af.get("n")
+    if not isinstance(n_declarada, int):
+        return "AVIS", f"ratxa sense nombre de periodes; sèrie resolta: {serie.etiqueta}"
+
+    pool = [serie] + ambigues
+    resultats = [(*_verifica_racha_contra(af, s), s) for s in pool]
+
+    for estat, msg, _ in resultats:
+        if estat == "COMPLEIX":
+            return "OK", msg
+
+    estat_millor, msg_millor, _ = resultats[0]
+    if estat_millor in ("NO_APLICABLE", "CURT"):
+        # Ni la millor confirma ni la contradiu amb xifres: sense contradicció
+        # de la millor candidata no hi ha res a escalar, encara que hi hagi
+        # ambigües (podrien ser totes igualment inaplicables).
+        return "AVIS", msg_millor
+
+    detall = msg_millor
+    if altres:
+        detall += (f" · ATRIBUCIÓ: el valor citat encaixa amb "
+                  f"{', '.join(s.etiqueta for s in altres[:3])}")
+    if confianca == "alta":
+        return "ERROR", detall
+
+    contradiuen = [m for e, m, _ in resultats if e == "NO_COMPLEIX"]
+    if len(pool) > 1 and contradiuen:
+        return "ERROR", (
+            f"{detall} · falla contra {len(contradiuen)} de {len(pool)} "
+            f"lectures candidates i cap la confirma: no hi ha cap sèrie "
+            f"plausible sota la qual la frase sigui certa")
+    return "AVIS", detall + (" · RESOLUCIÓ INCERTA (la mètrica citada no casa "
+                            "clarament amb la sèrie): comprovació no bloquejant")
+
+
+def _verifica_superlatiu_contra(af: dict, serie: Serie) -> tuple[str, str]:
+    """Comprova el superlatiu contra UNA sèrie candidata concreta.
+
+    Retorna COMPLEIX, NO_COMPLEIX (hi ha períodes que el desmenteixen) o
+    NO_APLICABLE (la referència temporal no s'ha pogut resoldre contra aquesta
+    sèrie). Només NO_COMPLEIX compta com a contradicció real per a l'escalada
+    de `verifica_superlatiu`."""
     per = serie.periodes()
     fi = af.get("periodo_final") if af.get("periodo_final") in serie.punts else per[-1]
     idx = per.index(fi)
@@ -1168,8 +1223,9 @@ def verifica_superlatiu(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
         # traduir a un periode de la sèrie. Comparar contra tota la sèrie donaria
         # errors falsos (i un verificador que crida en fals s'acaba desactivant,
         # que és el pitjor resultat). Es reporta com a avís per a revisió humana.
-        return "AVIS", (f"{serie.etiqueta}: no s'ha pogut resoldre la referència "
-                        f"temporal «{ref_text}»; superlatiu no verificat")
+        return "NO_APLICABLE", (f"{serie.etiqueta}: no s'ha pogut resoldre la "
+                                f"referència temporal «{ref_text}»; superlatiu "
+                                f"no verificat")
     # 'el más bajo DESDE junio de 2021' vol dir que el juny de 2021 va ser
     # l'última vegada que va ser més baix: el punt de referència queda FORA de
     # la finestra de comparació. Incloure'l feia saltar l'error contra la
@@ -1185,17 +1241,54 @@ def verifica_superlatiu(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
 
     abast = f"des de {ref}" if ref in serie.punts else "de tota la sèrie disponible"
     if not violacions:
-        return "OK", f"{serie.etiqueta}: {v_fi:+.2f} a {fi} és el {rel} {abast}"
+        return "COMPLEIX", f"{serie.etiqueta}: {v_fi:+.2f} a {fi} és el {rel} {abast}"
     msg = (f"{serie.etiqueta}: el text diu {rel} {abast}, però hi ha "
            f"{len(violacions)} periode(s) que ho superen "
            f"({', '.join(f'{p} {serie.punts[p]:+.2f}' for p in violacions[:4])})")
+    return "NO_COMPLEIX", msg
+
+
+def verifica_superlatiu(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
+    """'mínimo desde X' / 'primera vez desde X' / 'mínimo de la serie'.
+
+    Mateixa lògica d'escalada que `verifica_racha`: si cap candidata (la
+    millor i les gairebé empatades) confirma el superlatiu i almenys una el
+    contradiu amb xifres, escala a ERROR encara que la resolució fos incerta.
+    Fix del 2026-09-20, ROADMAP punt 0."""
+    valor = _num_es(str(af.get("valor"))) if af.get("valor") not in (None, "null") else None
+    serie, altres, confianca, ambigues = resol_serie(
+        af.get("entidad", ""), af.get("metrica", ""), valor,
+        af.get("periodo_final"), series)
+    if serie is None:
+        return "AVIS", (f"no s'ha pogut resoldre cap sèrie per a "
+                        f"'{af.get('entidad')}' / '{af.get('metrica')}'")
+
+    pool = [serie] + ambigues
+    resultats = [(*_verifica_superlatiu_contra(af, s), s) for s in pool]
+
+    for estat, msg, _ in resultats:
+        if estat == "COMPLEIX":
+            return "OK", msg
+
+    estat_millor, msg_millor, _ = resultats[0]
+    if estat_millor == "NO_APLICABLE":
+        return "AVIS", msg_millor
+
+    detall = msg_millor
     if altres:
-        msg += (f" · ATRIBUCIÓ: el valor citat encaixa amb "
-                f"{', '.join(s.etiqueta for s in altres[:3])}")
-    if confianca != "alta":
-        return "AVIS", msg + (" · RESOLUCIÓ INCERTA (la mètrica citada no casa "
-                              "clarament amb la sèrie): comprovació no bloquejant")
-    return "ERROR", msg
+        detall += (f" · ATRIBUCIÓ: el valor citat encaixa amb "
+                  f"{', '.join(s.etiqueta for s in altres[:3])}")
+    if confianca == "alta":
+        return "ERROR", detall
+
+    contradiuen = [m for e, m, _ in resultats if e == "NO_COMPLEIX"]
+    if len(pool) > 1 and contradiuen:
+        return "ERROR", (
+            f"{detall} · falla contra {len(contradiuen)} de {len(pool)} "
+            f"lectures candidates i cap la confirma: no hi ha cap sèrie "
+            f"plausible sota la qual la frase sigui certa")
+    return "AVIS", detall + (" · RESOLUCIÓ INCERTA (la mètrica citada no casa "
+                            "clarament amb la sèrie): comprovació no bloquejant")
 
 
 _ORDINALS_TRIMESTRE = {
