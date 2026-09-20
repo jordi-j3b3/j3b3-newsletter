@@ -8,6 +8,8 @@ Genera data/semana-YYYY-MM-DD/ con:
   - epa_retail.csv          copia íntegra de epa_retail.csv (EPA, trimestral)
   - confianza_consumidor.csv copia íntegra de confianza_consumidor.csv (ICC, mensual)
   - ipc_coicop.csv          copia íntegra de ipc_coicop.csv (IPC per grup, mensual)
+  - cens_ccaa.csv           copia íntegra de empreses.csv (cens DIRCE CNAE 47
+                            per CCAA, anual)
   - recopilacion_prensa.md  serializado de modules.press.fetch_press(),
                             filtrado a la ventana configurada, con las
                             entradas [EDITOR] de config/noticies_editor.md
@@ -166,6 +168,45 @@ def digitalitzacio_meta(csv_path: Path) -> dict:
             "bretxa_es_ue27_pp": bretxes,
             "universo": "ES i UE-27 (cap altre país al CSV)",
             "cobertura": "empreses de 10 o més ocupats"}
+
+
+def cens_ccaa_meta(csv_path: Path) -> dict:
+    """Metadades del cens DIRCE de comerç al detall per comunitat autònoma.
+
+    Es desa la variació acumulada de la finestra neta (2023 endavant) i no la
+    de la sèrie sencera per un motiu de font: entre 2022 i 2023 el cens espanyol
+    perd 35.318 empreses, gairebé el triple de la caiguda més gran de
+    qualsevol altre any des del 2008, cosa que fa pinta de canvi metodològic
+    no verificat. Qualsevol comparació curta que
+    travessi aquell salt sumaria un artefacte a la variació real.
+    """
+    df = pd.read_csv(csv_path)
+    ultim = int(df["any"].max())
+    base = 2023 if 2023 in set(df["any"]) else int(df["any"].min())
+
+    def _var(territori: str) -> float | None:
+        g = df[df["territori"] == territori]
+        a = g[g["any"] == base]["empreses"]
+        b = g[g["any"] == ultim]["empreses"]
+        if a.empty or b.empty or float(a.iloc[0]) == 0:
+            return None
+        return round((float(b.iloc[0]) / float(a.iloc[0]) - 1) * 100, 2)
+
+    territoris = [t for t in df["territori"].unique() if t != "espanya"]
+    variacions = {t: _var(t) for t in territoris}
+    ordenat = sorted((v, t) for t, v in variacions.items() if v is not None)
+
+    return {"ultim_any": ultim,
+            "any_base_finestra_neta": base,
+            "var_espanya_pct": _var("espanya"),
+            "var_per_ccaa_pct": variacions,
+            "pitjors_tres": [t for _, t in ordenat[:3]],
+            "millors_tres": [t for _, t in ordenat[-3:]][::-1],
+            "avis_trencament": "El salt 2022→2023 (-35.318 empreses a Espanya, "
+                               "gairebé el triple de la caiguda més gran de "
+                               "qualsevol altre any des del 2008) sembla un canvi metodològic "
+                               "no verificat: cap comparació "
+                               "curta l'hauria de travessar."}
 
 
 def mida_empresa_meta(csv_path: Path) -> dict:
@@ -675,6 +716,7 @@ def main() -> int:
     estructura_src = obs_path / SETTINGS["snapshot"]["estructura_origen"]
     digitalitzacio_src = obs_path / SETTINGS["snapshot"]["digitalitzacio_origen"]
     mida_empresa_src = obs_path / SETTINGS["snapshot"]["mida_empresa_origen"]
+    cens_ccaa_src = obs_path / SETTINGS["snapshot"]["cens_ccaa_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
@@ -690,6 +732,7 @@ def main() -> int:
     estructura_dst = semana_dir / "estructura_empreses.csv"
     digitalitzacio_dst = semana_dir / "digitalitzacio_comerc.csv"
     mida_empresa_dst = semana_dir / "mida_empresa.csv"
+    cens_ccaa_dst = semana_dir / "cens_ccaa.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -809,6 +852,17 @@ def main() -> int:
               f"ocupació 10+ ES {mida_empresa_info['pct_ocupacio_ge10']['ES']}% "
               f"(UE-27 {mida_empresa_info['pct_ocupacio_ge10']['UE-27']}%)")
 
+    cens_ccaa_info = copy_csv_optional(cens_ccaa_src, cens_ccaa_dst,
+                                       "Cens DIRCE per CCAA")
+    if cens_ccaa_info:
+        cens_ccaa_info.update(cens_ccaa_meta(cens_ccaa_dst))
+        print(f"  cens_ccaa.csv        · {cens_ccaa_info['filas']:>6} filas · "
+              f"últim any {cens_ccaa_info['ultim_any']} · "
+              f"var {cens_ccaa_info['any_base_finestra_neta']}-"
+              f"{cens_ccaa_info['ultim_any']} Espanya "
+              f"{cens_ccaa_info['var_espanya_pct']}% · "
+              f"més perden: {', '.join(cens_ccaa_info['pitjors_tres'])}")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -849,6 +903,7 @@ def main() -> int:
         "estructura_empreses": estructura_info,
         "digitalitzacio": digitalitzacio_info,
         "mida_empresa": mida_empresa_info,
+        "cens_ccaa": cens_ccaa_info,
         "prensa": prensa_info,
         "noticies_editor": noticies_editor_info,
         "noticies_editor_avisos": noticies_editor_avisos,

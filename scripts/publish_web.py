@@ -1,15 +1,15 @@
 """
 Publica El Pulso de la semana com a HTML web estàtic per a indexació a Google News.
 
-Genera tres fitxers al directori web/:
-  web/pulso/num-{N}.html  — la nota de l'edició amb metadades Google News
-  web/pulso/index.html    — índex de totes les edicions
-  web/sitemap.xml         — sitemap amb extensió Google News (<news:news>)
+Genera tres fitxers al directori docs/ (arrel de GitHub Pages):
+  docs/pulso/num-{N}.html  — la nota de l'edició amb metadades Google News
+  docs/pulso/index.html   — índex de totes les edicions
+  docs/sitemap.xml        — sitemap amb extensió Google News (<news:news>)
 
 Llegeix:
   output/semana-YYYY-MM-DD/newsletter.md   (generat per compose.py)
   templates/web_base.html
-  web/pulso/manifest.json                  (creat/actualitzat per aquest script)
+  docs/pulso/manifest.json                 (creat/actualitzat per aquest script)
 
 Ús:
   python scripts/publish_web.py --semana 2026-06-08 --numero 6
@@ -104,7 +104,7 @@ def update_manifest(numero: int, semana: str, titular: str, subject: str,
 def render_web(semana: str, numero: int, output_root: Path | None = None) -> str:
     """
     Llegeix newsletter.md, renderitza HTML web (sense premailer) i escriu
-    web/pulso/num-{N}.html. Retorna l'HTML generat.
+    docs/pulso/num-{N}.html. Retorna l'HTML generat.
     """
     output_root = output_root or ROOT / "output"
     md_path = output_root / f"semana-{semana}" / "newsletter.md"
@@ -169,7 +169,7 @@ def render_web(semana: str, numero: int, output_root: Path | None = None) -> str
 # --- Index -------------------------------------------------------------------
 
 def generate_index() -> None:
-    """Genera web/pulso/index.html amb la llista de totes les edicions."""
+    """Genera docs/pulso/index.html amb la llista de totes les edicions."""
     entries = load_manifest()
     if not entries:
         print("  Index: cap entrada al manifest, saltant.")
@@ -258,7 +258,7 @@ def generate_index() -> None:
 # --- Sitemap -----------------------------------------------------------------
 
 def generate_sitemap() -> None:
-    """Genera web/sitemap.xml amb extensió Google News."""
+    """Genera docs/sitemap.xml amb extensió Google News."""
     entries = load_manifest()
 
     url_blocks = []

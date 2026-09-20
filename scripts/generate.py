@@ -448,7 +448,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--bloc3", default="",
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
                             "icm_ramas", "marges_branca", "icm_distribucio", "icm_ccaa",
-                            "ipc_coicop", "digitalitzacio"],
+                            "ipc_coicop", "digitalitzacio", "cens_ccaa"],
                    help="Sobreescriu la selecció automàtica del bloc 3. "
                         "'marges_branca' només és vàlid si el dataset de marges "
                         "està verificat (verificat=True al snapshot). 'icm_ccaa' "
@@ -729,6 +729,59 @@ def slice_estructura_empreses(csv_path: Path) -> str:
         piv = g.pivot_table(index="pais", columns="any", values="valor", aggfunc="first")
         parts.append(f"\n{ind} — {nom}:\n" + piv.round(2).to_csv())
     return "".join(parts)
+
+
+def slice_cens_ccaa(csv_path: Path) -> str:
+    """Cens DIRCE de comerç al detall (CNAE 47) per comunitat autònoma.
+
+    Es dona la variació acumulada ja calculada des del 2023 perquè és la xifra
+    editorial i perquè el model no ha de fer aritmètica amb nivells. L'avís del
+    trencament de sèrie va al bloc mateix, no només al diccionari: entre 2022 i
+    2023 el cens espanyol perd 35.318 empreses, gairebé el triple de la caiguda més
+    gran de qualsevol altre any des del 2008, i qualsevol comparació curta que
+    travessi aquell salt sumaria un artefacte a la variació real.
+
+    També va al bloc l'advertiment de cobertura que decideix què es pot dir amb
+    aquesta font: el DIRCE compta EMPRESES, no locals ni establiments. Una
+    empresa que canvia de mans segueix al cens, i una que en tanca un local de
+    dos hi segueix igual. Sobre rotació de locals, aquesta font no diu res.
+    """
+    df = pd.read_csv(csv_path)
+    ultim = int(df["any"].max())
+    base = 2023 if 2023 in set(df["any"]) else int(df["any"].min())
+    anys = [a for a in sorted(set(df["any"])) if a >= base]
+
+    files = []
+    for territori, g in df.groupby("territori"):
+        g = g.set_index("any")
+        if base not in g.index or ultim not in g.index:
+            continue
+        emp0, emp1 = float(g.loc[base, "empreses"]), float(g.loc[ultim, "empreses"])
+        files.append({
+            "territori": "Espanya" if territori == "espanya" else territori,
+            **{f"empreses_{a}": int(g.loc[a, "empreses"]) for a in anys if a in g.index},
+            f"var_{base}_{ultim}_pct": round((emp1 / emp0 - 1) * 100, 2),
+            "per_1000_hab": round(float(g.loc[ultim, "empreses_per_1000hab"]), 2),
+        })
+    taula = pd.DataFrame(files).sort_values(f"var_{base}_{ultim}_pct")
+
+    return (
+        f"Cens d'empreses de comerc al detall (CNAE 47) per comunitat autonoma · "
+        f"INE, DIRCE (1 de gener de cada any)\n"
+        f"UNITAT DE MESURA: son EMPRESES, no locals ni establiments. Una empresa "
+        f"que canvia de mans segueix al cens; una que tanca un local de dos hi "
+        f"segueix igual. Aquesta font NO mesura rotacio de locals, ni locals "
+        f"buits, ni qui ocupa un local. No li facis dir aixo.\n"
+        f"TRENCAMENT DE SERIE: entre 2022 i 2023 el cens espanyol perd 35.318 "
+        f"empreses, gairebe el triple de la caiguda mes gran de qualsevol altre "
+        f"any des del 2008 — sembla un canvi "
+        f"metodologic no verificat. Per aixo la finestra d'aquesta taula comenca "
+        f"el {base}. NO facis cap comparacio curta que travessi el salt; si "
+        f"cites la serie llarga (des del 2018), digues que hi ha un trencament "
+        f"de serie pel mig.\n"
+        f"Ordenat de mes perdua a menys. Variacio acumulada {base}-{ultim} en %.\n\n"
+        + taula.to_csv(index=False)
+    )
 
 
 def slice_digitalitzacio(csv_path: Path) -> str:
@@ -1263,6 +1316,30 @@ def construir_prompts(
             "'Vestido y calzado', 'Menaje del hogar'. Nunca copies la etiqueta "
             "catalana del dataset a la lista de barras."
         )
+    elif bloc3_mode == "cens_ccaa":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (CENSO DE COMERCIOS POR CCAA):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** <subtítulo con la ventana, p.ej. Censo de comercios "
+            "por comunidad · 2023-2025. SIN la palabra 'variación'>\n\n"
+            "   - Comunidad 1: <valor>%\n"
+            "   - Comunidad 2: <valor>%\n"
+            "   - ...\n\n"
+            "   <2-3 párrafos de interpretación>\n\n"
+            "   Usa EXCLUSIVAMENTE la columna de variación acumulada de "
+            "<CENS_CCAA>. Ordena de mayor pérdida a menor e incluye España como "
+            "referencia. compose.py renderiza la lista como barras divergentes.\n"
+            "   COBERTURA (obligatorio respetarlo): el DIRCE cuenta EMPRESAS, no "
+            "locales ni establecimientos. No escribas 'locales', 'establecimientos' "
+            "ni 'persianas' sobre esta serie, y no la uses para hablar de rotación "
+            "de locales ni de quién ocupa un local: mide otra cosa.\n"
+            "   VENTANA: no cruces el salto 2022-2023 en ninguna comparación corta "
+            "(hay un cambio metodológico no verificado). Si citas la serie larga, "
+            "dilo.\n"
+            "   El ranking es el argumento: si el texto sostiene que una comunidad "
+            "concreta no es la que más pierde, las comunidades que sí encabezan la "
+            "pérdida tienen que aparecer en la lista, no solo mencionarse."
+        )
     else:  # "europeu"
         bloque3_instr = (
             "D. Bloque 3, estructura literal:\n\n"
@@ -1413,8 +1490,8 @@ def construir_prompts(
                 "8. La cifra protagonista del Bloque 1 debe proceder SIEMPRE de un dataset "
                 "propio del Observatorio: cualquiera de los bloques de datos <PULSO_...>, "
                 "<PRODUCTIVITAT_SECTOR>, <OCUPACIO_SECTOR>, <IPC_COMERC>, <EPA_COMERC>, "
-                "<CONFIANCA_CONSUMIDOR>, <IPC_GRUPS_COICOP> o "
-                "<ESTRUCTURA_EMPRESES_UE> del mensaje. "
+                "<CONFIANCA_CONSUMIDOR>, <IPC_GRUPS_COICOP>, "
+                "<ESTRUCTURA_EMPRESES_UE> o <CENS_CCAA> del mensaje. "
                 "NUNCA puede proceder de <RECOPILACION_PRENSA>: un dato de prensa no es "
                 "fuente primaria del Bloque 1, porque el lector debe poder verificar la "
                 "cifra directamente en el Observatorio. Ejemplo de violación de esta regla: "
@@ -1615,6 +1692,15 @@ def construir_prompts(
             "",
         ])
 
+    cens_ccaa_path = semana_dir / "cens_ccaa.csv"
+    if cens_ccaa_path.exists():
+        cens_ccaa_data = slice_cens_ccaa(cens_ccaa_path)
+        parts.extend([
+            f"<CENS_CCAA font=INE_DIRCE unitat=empreses>\n{cens_ccaa_data}\n"
+            f"</CENS_CCAA>",
+            "",
+        ])
+
     mida_empresa_path = semana_dir / "mida_empresa.csv"
     if mida_empresa_path.exists():
         mida_empresa_data = slice_mida_empresa(mida_empresa_path)
@@ -1794,6 +1880,10 @@ def main() -> int:
         elif bloc3_mode == "digitalitzacio" and not (semana_dir / "digitalitzacio_comerc.csv").exists():
             print("  Bloc 3: 'digitalitzacio' sol·licitat però digitalitzacio_comerc.csv "
                   "no és al snapshot; recau a context editorial", file=sys.stderr)
+            bloc3_mode = "editorial_contexto"
+        elif bloc3_mode == "cens_ccaa" and not (semana_dir / "cens_ccaa.csv").exists():
+            print("  Bloc 3: 'cens_ccaa' sol·licitat però cens_ccaa.csv no és al "
+                  "snapshot; recau a context editorial", file=sys.stderr)
             bloc3_mode = "editorial_contexto"
         else:
             print(f"  Bloc 3: {bloc3_mode} (sobreescrit per --bloc3)")

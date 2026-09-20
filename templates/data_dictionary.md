@@ -490,6 +490,49 @@ de poder llegir al text. Citar com "Eurostat, demografía empresarial".
 
 ---
 
+## 12bis. Censo de comercios por comunidad autónoma — `cens_ccaa.csv`
+
+**Fuente**: INE, Directorio Central de Empresas (DIRCE), CNAE 47. Foto a 1 de
+enero de cada año, publicada en diciembre del año anterior a la referencia (el
+censo a 1-1-2025 se publicó el 11 de diciembre de 2025).
+
+**Ámbito**: las diecisiete comunidades autónomas y el total nacional
+(`territori = espanya`). Serie 2018-2025.
+
+### Esquema
+
+| Columna | Tipus | Descripció |
+|---|---|---|
+| `territori` | string | CCAA en castellà, o `espanya` per al total |
+| `any` | int | Any de referència del cens (1 de gener) |
+| `empreses` | int | Empreses actives de CNAE 47 |
+| `poblacio` | float | Població de referència |
+| `empreses_per_1000hab` | float | Densitat comercial |
+
+### Tres avisos que hay que respetar al escribir
+
+1. **Cuenta empresas, no locales.** Una empresa que traspasa su negocio sigue en
+   el censo; una que cierra uno de sus dos locales, también. Esta fuente no dice
+   nada sobre locales vacíos, sobre rotación comercial ni sobre quién ocupa un
+   local. Nunca escribir "locales", "establecimientos" ni "persianas" sobre esta
+   serie.
+2. **Hay una rotura de serie entre 2022 y 2023.** España pierde 35.318 empresas
+   de un año a otro, casi el triple de la mayor caída de cualquier otro
+   año desde 2008, y tiene aspecto de cambio metodológico no verificado. Ninguna comparación corta debe cruzar
+   ese salto; si se cita la serie desde 2018, hay que advertirlo en el mismo
+   párrafo.
+3. **No es comparable con el censo de Eurostat** (`estructura_empreses.csv`,
+   426.519 empresas en 2023 frente a 393.287 del DIRCE el mismo año): universos
+   distintos. Si una edición cita las dos, tiene que decirlo.
+
+### Norma d'ús
+
+Dada d'estructura territorial, anual. Citar com "INE, directorio de empresas".
+La variació entre dos anys de la finestra neta (2023 endavant) és la xifra
+editorial; els nivells serveixen per ancorar-la.
+
+---
+
 ## 13. Reglas editoriales de referencia a las fuentes
 
 Las referencias técnicas y metodológicas (códigos de serie, bases de índice,

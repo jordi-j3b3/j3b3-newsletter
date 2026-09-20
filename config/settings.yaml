@@ -41,6 +41,7 @@ snapshot:
   estructura_origen: "data/cache/estructura_retail.csv"
   digitalitzacio_origen: "data/cache/digitalitzacio_comerc.csv"
   mida_empresa_origen: "data/cache/estructura_retail_mida.csv"
+  cens_ccaa_origen: "data/cache/empreses.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.
