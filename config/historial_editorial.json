@@ -542,5 +542,36 @@
     "asunto": "El 32,8% de la plantilla del comercio tiene 50 años o más",
     "titular": "El comercio ha envejecido su plantilla.",
     "created_at_utc": "2026-09-13T16:39:52.826581+00:00"
+  },
+  {
+    "numero": 20,
+    "semana": "2026-09-21",
+    "cifra": "9,3 €",
+    "dataset_bloc1": "Productivitat VA per hora - cost laboral per hora (EEE INE, CNAE 47)",
+    "periodo_bloc1": "2018-2024",
+    "angulo_bloc1": "El comercio minorista produce más valor por hora pero destina menor proporción a salarios",
+    "tema_prediccion": "La cuota salarial del comercio minorista caerá por debajo del 63% en 2025, confirmando tendencia estructural",
+    "angle_backlog": "",
+    "metrica_prediccion": "Quota salarial comercio minorista (CNAE 47) · dato 2025 (resolución primavera 2027)",
+    "umbral_prediccion": "<63,0%",
+    "dataset_prediccion": "Estadística Estructural de Empresas INE (productivitat.csv) + ICM por modo de distribución",
+    "noticias": [
+      "La marca de supermercado supera ya la mitad de la cesta de la compra en España",
+      "Plusfresc llega a Ciutat Jardí y alcanza 23 tiendas en Lleida",
+      "El consumo afronta el otoño sin señales de recuperación en España"
+    ],
+    "periodo_eurostat": "2026-07",
+    "periodo_icm": "2026-07",
+    "periodo_icm_distribucio": "2026-07",
+    "indicador_bloc3": "editorial_contexto",
+    "mode_editorial": "P2",
+    "titular_fixat": "Más valor por hora. Menos para el sueldo.",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "36",
+    "scheduled_at": "2026-09-21T08:30:00+02:00",
+    "asunto": "El comercio gana más por hora trabajada — y no va al sueldo",
+    "titular": "Más valor por hora. Menos para el sueldo.",
+    "created_at_utc": "2026-09-20T10:46:51.237320+00:00"
   }
 ]

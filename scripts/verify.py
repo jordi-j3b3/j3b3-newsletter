@@ -470,6 +470,50 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
                      temes="productividad coste laboral salarios salarial margen "
                            "margenes excedente cuota horas personal")
 
+        # Mitjanes per període de la quota salarial. La sèrie any a any no baixa
+        # de forma sostinguda: fa un esglaó entre 2020 i 2021 i des de llavors
+        # oscil·la (2021 i 2024 difereixen en dotze mil·lèsimes de punt). La
+        # lectura honesta és comparar la mitjana d'abans de la pandèmia amb la
+        # de després, i aquestes mitjanes no són cap cel·la del CSV: sense
+        # carregar-les aquí sortirien ORFES al gate, que al Bloc 1 i al Bloc 3
+        # és un ERROR. Mateix motiu que la bretxa de digitalització i la
+        # variació acumulada del cens, més avall. El 2020 queda fora dels dos
+        # períodes expressament: amb el VAB enfonsat i els sous aguantant, la
+        # quota es dispara al 67,4% i contamina qualsevol mitjana que el tingui.
+        if "quota_salarial" in df.columns:
+            q = {int(r.any_): float(r.quota_salarial) * 100
+                 for r in df.rename(columns={"any": "any_"}).itertuples()
+                 if pd.notna(r.quota_salarial)}
+            for etiqueta, anys in (("2018-2019", (2018, 2019)),
+                                   ("2021-2024", (2021, 2022, 2023, 2024))):
+                vals = [q[a] for a in anys if a in q]
+                if len(vals) == len(anys):
+                    _afegeix(S, f"prod|quota_salarial_mitjana|{etiqueta}",
+                             "comercio al por menor",
+                             "parte que va a sueldos, media del periodo", "%",
+                             {etiqueta: round(sum(vals) / len(vals), 2)},
+                             temes="salarios salarial cuota media periodo "
+                                   "prepandemia postpandemia escalon nivel")
+                    _afegeix(S, f"prod|excedent_quota_mitjana|{etiqueta}",
+                             "comercio al por menor",
+                             "parte que queda como excedente de explotación, "
+                             "media del periodo", "%",
+                             {etiqueta: round(100 - sum(vals) / len(vals), 2)},
+                             temes="excedente explotacion resultado beneficio "
+                                   "empresa media periodo margen")
+            # Complement any a any. El valor afegit es reparteix entre despeses
+            # de personal i excedent brut: el que no va a sous ÉS l'excedent,
+            # per identitat comptable. Aquesta és l'única via defensable per
+            # posar xifra a l'excedent, perquè la columna `excedent_brut` del
+            # CSV està en euros CORRENTS mentre la resta del fitxer va en
+            # constants (veure ROADMAP i la cautela del Núm. 20): dividir-la per
+            # cap magnitud d'aquest fitxer dona un número sense significat.
+            _afegeix(S, "prod|excedent_quota", "comercio al por menor",
+                     "parte que queda como excedente de explotación", "%",
+                     {str(a): round(100 - v, 2) for a, v in q.items()},
+                     temes="excedente explotacion resultado beneficio empresa "
+                           "margen reparto valor")
+
     f = semana_dir / "marges_branca.csv"
     if f.exists():
         df = pd.read_csv(f)
@@ -571,6 +615,69 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
                     punts[str(int(any_))] = round(ge10 / total * 100, 2)
                 _afegeix(S, f"mida|{codi}|{ind}", etiqueta, metrica, "%", punts,
                          temes=f"{temes} eurostat comercio minorista mediana pequeña micro")
+                # El COMPLEMENT (menys de 10 ocupats) també com a sèrie pròpia.
+                # El butlletí escriu tant "el 55,4% del empleo está en empresas
+                # de 10 o más" com "el 44,6% está en empresas de menos de diez",
+                # i només la primera forma era al gate. La segona s'ancorava per
+                # casualitat: el 49,1% de 2021 casava amb l'índex de vendes de
+                # Bulgària del juliol de 2006 i amb quatre dies del CDMGE.
+                # Comprovat el 2026-09-20. Amb 356 sèries carregades, qualsevol
+                # número de dos dígits i un decimal troba parella: ANCORAT no
+                # vol dir correcte si la sèrie bona no hi és.
+                _afegeix(S, f"mida|{codi}|{ind}|LT10", etiqueta,
+                         metrica.replace("con 10 o más ocupados",
+                                         "con menos de 10 ocupados")
+                                .replace("en empresas de 10 o más ocupados",
+                                         "en empresas de menos de 10 ocupados"),
+                         "%", {p: round(100 - v, 2) for p, v in punts.items()},
+                         temes=f"{temes} eurostat comercio minorista micro "
+                               f"microempresas autonomos pequeña menos diez")
+
+    # -- Cens DIRCE de comerc al detall per CCAA (INE) ----------------------
+    # La variacio acumulada de la finestra neta es carrega com a serie propia i
+    # no es deixa a _es_derivat(), que nomes reprodueix diferencies absolutes
+    # entre cel·les: el -2,9% d'una comunitat no es cap resta de 63.295 i 61.450,
+    # i sense aquesta serie tot el ranking del Bloc 3 cauria orfe.
+    f = semana_dir / "cens_ccaa.csv"
+    if f.exists():
+        df = pd.read_csv(f)
+        _TEMES_CENS = ("censo parque tejido empresas comercios negocios "
+                       "establecimientos altas bajas cierres aperturas")
+        base = 2023 if 2023 in set(df["any"]) else int(df["any"].min())
+        for territori, g in df.groupby("territori"):
+            etiqueta = "España" if territori == "espanya" else str(territori)
+            g = g.set_index("any").sort_index()
+            nivells = {str(int(a)): float(v) for a, v in g["empreses"].items()}
+            _afegeix(S, f"cens|{territori}|empreses", etiqueta,
+                     "número de empresas de comercio minorista", "", nivells,
+                     temes=f"{_TEMES_CENS} dirce ine")
+            _afegeix(S, f"cens|{territori}|densitat", etiqueta,
+                     "comercios por cada 1.000 habitantes", "",
+                     {str(int(a)): float(v)
+                      for a, v in g["empreses_per_1000hab"].items()},
+                     temes=f"{_TEMES_CENS} densidad habitantes poblacion")
+            # Variacio acumulada des de l'any base, un punt per any: aixi la
+            # xifra editorial (-2,9% de 2023 a 2025) te periode i es pot
+            # comprovar una ratxa, i no nomes ancorar un valor solt.
+            if base in g.index:
+                emp0 = float(g.loc[base, "empreses"])
+                acumulada = {str(int(a)): round((float(v) / emp0 - 1) * 100, 2)
+                             for a, v in g["empreses"].items()
+                             if int(a) >= base and emp0}
+                _afegeix(S, f"cens|{territori}|var_acum", etiqueta,
+                         f"variación acumulada del censo de comercios desde {base}, %",
+                         "%", acumulada,
+                         temes=f"{_TEMES_CENS} {_TEMES_VARIACIO} perdida caida "
+                               f"acumulada retroceso")
+            anual = {}
+            anys = sorted(int(a) for a in g.index)
+            for a, b in zip(anys, anys[1:]):
+                v0 = float(g.loc[a, "empreses"])
+                if v0:
+                    anual[str(b)] = round((float(g.loc[b, "empreses"]) / v0 - 1) * 100, 2)
+            _afegeix(S, f"cens|{territori}|var_anual", etiqueta,
+                     "variación anual del censo de comercios, %", "%", anual,
+                     temes=f"{_TEMES_CENS} {_TEMES_VARIACIO} anual")
 
     _afegeix_ocupacio_edat(S, semana_dir)
     return S
@@ -801,9 +908,33 @@ TEXTO:
 """
 
 
-def extreu_afirmacions(cos: str, modelo: str) -> list[dict]:
-    """Demana a l'LLM que faci NOMÉS de parser. La verificació és a la funció
-    de sota, amb codi i contra els CSV: si aquí s'inventa res, allà falla."""
+PASSADES_DEFECTE = 3
+# Nombre de passades de l'extractor. temperature=0.0 NO fa determinista una
+# crida a l'API: sobre un mateix borrador, vuit passades van donar 5, 5, 4, 4,
+# 1, 5, 5 i 5 afirmacions (mesura del 2026-09-20). L'afirmació que generava
+# l'únic ERROR real d'aquell número sortia en 4 de 8 passades, o sigui que una
+# sola crida se la deixava la meitat de les vegades. La unió de passades satura
+# de pressa —6 afirmacions diferents a partir de la segona— i és per això que
+# la reparació va aquí i no al prompt. Amb una afirmació que surt la meitat de
+# les vegades, 3 passades la cacen el 87,5% dels cops i 5 passades el 96,9%.
+
+
+def _clau_afirmacio(af: dict) -> tuple:
+    """Identitat d'una afirmació per a la unió entre passades.
+
+    Entra la frase i també l'entitat i la mètrica: si dues passades parsegen la
+    MATEIXA frase amb subjectes diferents, les dues lectures s'han de verificar
+    (quedar-se'n una seria tornar a triar a l'atzar). Les línies d'informe
+    duplicades es col·lapsen després, a main()."""
+    return (
+        re.sub(r"\s+", " ", (af.get("frase") or "")).strip().lower(),
+        (af.get("tipo") or "").lower(),
+        _norm(af.get("entidad") or ""),
+        _norm(af.get("metrica") or ""),
+    )
+
+
+def _una_passada(cos: str, modelo: str) -> list[dict]:
     from anthropic import Anthropic
     client = Anthropic()
     r = client.messages.create(
@@ -814,6 +945,38 @@ def extreu_afirmacions(cos: str, modelo: str) -> list[dict]:
     text = re.sub(r"^```(?:json)?\s*\n?", "", text)
     text = re.sub(r"\n?```\s*$", "", text)
     return json.loads(text).get("afirmaciones", [])
+
+
+def extreu_afirmacions(cos: str, modelo: str,
+                       passades: int = PASSADES_DEFECTE) -> tuple[list[dict], list[int]]:
+    """Demana a l'LLM que faci NOMÉS de parser. La verificació és a la funció
+    de sota, amb codi i contra els CSV: si aquí s'inventa res, allà falla.
+
+    Fa `passades` crides i retorna la UNIÓ deduplicada, que és el resultat més
+    conservador disponible: una afirmació que surti en qualsevol passada entra
+    a verificar-se. Retorna també el recompte de cada passada, perquè l'operador
+    vegi la dispersió en lloc de confiar en un número que varia sol.
+
+    Una passada que peti no atura la resta: es descarta i les altres continuen.
+    Només si peten TOTES es propaga l'excepció, perquè aleshores no hi ha gate.
+    """
+    vistes: dict[tuple, dict] = {}
+    per_passada: list[int] = []
+    ultima_excepcio: Exception | None = None
+    for _ in range(max(1, passades)):
+        try:
+            af = _una_passada(cos, modelo)
+        except Exception as e:          # xarxa, JSON invàlid, límit de tokens
+            ultima_excepcio = e
+            per_passada.append(-1)
+            continue
+        per_passada.append(len(af))
+        for a in af:
+            vistes.setdefault(_clau_afirmacio(a), a)
+    if not any(n >= 0 for n in per_passada):
+        raise ultima_excepcio if ultima_excepcio else RuntimeError(
+            "cap passada de l'extractor ha retornat res")
+    return list(vistes.values()), per_passada
 
 
 # ------------------------------------------------------ resolució de sèrie
@@ -1098,6 +1261,11 @@ def main() -> int:
     p.add_argument("--fitxer", help="Borrador a verificar (default: output/semana-X/newsletter.md)")
     p.add_argument("--sense-llm", action="store_true",
                    help="Només el gate de números; sense extracció d'afirmacions")
+    p.add_argument("--passades", type=int, default=PASSADES_DEFECTE,
+                   help=f"Passades de l'extractor d'afirmacions; es verifica la "
+                        f"unió de totes (default: {PASSADES_DEFECTE}). L'API no "
+                        f"és determinista ni amb temperature=0: una sola passada "
+                        f"deixa passar afirmacions reals.")
     p.add_argument("--json", dest="json_out", help="Desa l'informe en JSON en aquesta ruta")
     args = p.parse_args()
 
@@ -1159,13 +1327,24 @@ def main() -> int:
     # ---- afirmacions de ratxa i superlatiu -------------------------------
     if not args.sense_llm:
         modelo = os.environ.get("VERIFY_MODEL", "claude-sonnet-4-6")
+        per_passada: list[int] = []
         try:
-            afirmacions = extreu_afirmacions(cos, modelo)
+            afirmacions, per_passada = extreu_afirmacions(
+                cos, modelo, passades=args.passades)
         except Exception as e:
             afirmacions = []
             avisos.append(f"no s'ha pogut extreure afirmacions ({e}); només "
                           f"s'ha aplicat el gate de números")
-        print(f"  afirmacions de ratxa/superlatiu detectades: {len(afirmacions)}")
+        fallides = sum(1 for n in per_passada if n < 0)
+        if fallides:
+            avisos.append(f"{fallides} de {len(per_passada)} passades de "
+                          f"l'extractor han fallat; el gate d'afirmacions "
+                          f"s'ha aplicat amb les que han respost")
+        detall_passades = ", ".join(
+            ("error" if n < 0 else str(n)) for n in per_passada)
+        print(f"  afirmacions de ratxa/superlatiu detectades: "
+              f"{len(afirmacions)} (unió de {len(per_passada)} passades: "
+              f"{detall_passades})")
         blocs = parteix_blocs(cos)
         for af in afirmacions:
             tipus = (af.get("tipo") or "").lower()
@@ -1189,6 +1368,19 @@ def main() -> int:
                 print(f"  OK · {detall}")
 
     # ---- informe ---------------------------------------------------------
+    # La unió de passades pot portar la mateixa frase parsejada dues vegades i
+    # produir línies idèntiques. Es col·lapsen aquí, conservant l'ordre: el que
+    # no es col·lapsa mai és una afirmació, que sempre es verifica.
+    def _unics(linies: list[str]) -> list[str]:
+        vist, fora = set(), []
+        for l in linies:
+            if l not in vist:
+                vist.add(l)
+                fora.append(l)
+        return fora
+
+    errors, avisos = _unics(errors), _unics(avisos)
+
     print("  números: " + " · ".join(f"{k} {v}" for k, v in classificacio.items()))
     if avisos:
         print(f"\n{len(avisos)} AVÍS(OS) — no bloquegen:")

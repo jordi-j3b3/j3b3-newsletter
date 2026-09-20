@@ -116,16 +116,32 @@ def executa_pipeline(semana: str, numero: int, context_extra: str = "") -> None:
     #       l'Action i a verify_report.json perquè la notificació el pugui
     #       incloure. És deliberat que bloquegi: una edició amb un error factual
     #       fa més mal que una setmana sense edició.
-    verify_cmd = [py, "scripts/verify.py", "--semana", semana,
-                  "--json", f"output/semana-{semana}/verify_report.json"]
-    print(f"\n$ {' '.join(verify_cmd)}")
-    rv = subprocess.run(verify_cmd, cwd=ROOT, env=child_env)
-    if rv.returncode != 0:
+    #       SEGONA CAPA CONTRA EL NO-DETERMINISME (2026-09-20): verify.py ja fa
+    #       la unió de diverses passades de l'extractor internament, però la
+    #       SEVERITAT d'una afirmació encara depèn de com l'LLM parseja la
+    #       mètrica, i un mateix borrador pot sortir amb ERROR o amb AVÍS segons
+    #       la crida. Per això aquí s'executa diverses vegades i es bloqueja si
+    #       QUALSEVOL execució troba un error: el veredicte conservador mana i
+    #       no cal que l'atzar sigui favorable. Veure ROADMAP, punt 0.
+    n_execucions = max(1, int(os.environ.get("VERIFY_RUNS", "3")))
+    report = f"output/semana-{semana}/verify_report.json"
+    fallides = []
+    for i in range(1, n_execucions + 1):
+        # Cada execució desa el seu informe; l'última que falla es queda amb el
+        # nom canònic perquè la notificació expliqui per què s'ha aturat.
+        verify_cmd = [py, "scripts/verify.py", "--semana", semana,
+                      "--json", report]
+        print(f"\n$ {' '.join(verify_cmd)}   [execució {i}/{n_execucions}]")
+        rv = subprocess.run(verify_cmd, cwd=ROOT, env=child_env)
+        if rv.returncode != 0:
+            fallides.append(i)
+            break
+    if fallides:
         raise SystemExit(
-            "Pas fallit: verify.py ha trobat errors al borrador (o no ha pogut "
-            "executar-se). No es compon ni es programa res. Revisa l'informe, "
-            "corregeix el borrador i torna a llançar amb --replace "
-            "--skip-pipeline."
+            f"Pas fallit: verify.py ha trobat errors al borrador a l'execució "
+            f"{fallides[0]} de {n_execucions} (o no ha pogut executar-se). No "
+            f"es compon ni es programa res. Revisa l'informe, corregeix el "
+            f"borrador i torna a llançar amb --replace --skip-pipeline."
         )
 
     run([py, "scripts/compose.py", "--semana", semana, "--numero", str(numero)])

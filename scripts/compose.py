@@ -162,7 +162,13 @@ CIFRA_PATTERN = re.compile(
 # el número (modo P1, **Cifra:** +4,1%). Si hay texto tras el número/unidad,
 # se traslada al inicio del Contexto para que la caja-exhibit muestre un
 # número corto en tipografía grande y la frase completa como subtítulo.
-CIFRA_VALOR_PATTERN = re.compile(r"^([+\-−]?\s*\d[\d.,]*\s*(?:%|pp|p\.p\.))\s*(.*)$")
+# La xifra protagonista se separa del text que l'acompanya perquè la caixa la
+# pugui compondre en gran. Fins al Núm. 20 la unitat només podia ser %, pp o
+# p.p.: una xifra en EUROS no casava i la frase sencera queia dins del <div> de
+# la xifra, composta a cos de titular. Afegit l'euro, i el guió separador es
+# consumeix aquí perquè el context no comenci amb un guió solt.
+CIFRA_VALOR_PATTERN = re.compile(
+    r"^([+\-−]?\s*\d[\d.,]*\s*(?:%|pp|p\.p\.|€))\s*(?:[—–-]\s*)?(.*)$")
 
 
 def extraer_cifra(body: str) -> tuple[str, dict | None]:
@@ -372,6 +378,19 @@ def render(semana_str: str, numero: int) -> tuple[str, str, str, str]:
     body, datos_data = extraer_datos(body)
 
     body_html = md_lib.markdown(body, extensions=["extra", "tables", "sane_lists"])
+
+    # Les taules que escriu l'editor al cos surten de markdown sense cap classe,
+    # i la fulla d'estil només té regles per a les taules de maquetació
+    # (.exhibit-table, .bars-table) i per al selector `table` genèric. Sense
+    # classe, premailer no té què inlinear: els <th> sortien sense cap atribut
+    # d'estil i els <td> només amb l'antialiasing, o sigui tipografia per
+    # defecte del client de correu (Times New Roman a Outlook) i zero marges.
+    # Detectat al Núm. 20, que és la primera edició amb una taula de contingut.
+    # Es marquen aquí, abans d'inserir-les a la plantilla, perquè les taules de
+    # maquetació ja porten atributs i no casen amb l'etiqueta nua.
+    body_html = body_html.replace("<table>", '<table class="data-table">')
+    body_html = body_html.replace("<th>", '<th class="data-th">')
+    body_html = body_html.replace("<td>", '<td class="data-td">')
 
     # Sustituir marcadores limpiando posibles <p> wrappers
     if cifra_data:

@@ -151,5 +151,14 @@
     "description": "El tramo de 50+ casi se ha doblado desde 2008. Los menores de 25 han caído del 14,4% al 8,5%.",
     "published_iso": "2026-09-14T08:30:00+02:00",
     "url": "https://pulso.j3b3.com/pulso/num-19.html"
+  },
+  {
+    "numero": 20,
+    "semana": "2026-09-21",
+    "titular": "Más valor por hora. Menos para el sueldo.",
+    "subject": "El comercio gana más por hora trabajada — y no va al sueldo",
+    "description": "Seis años de datos sobre productividad, costes y reparto del valor en el comercio minorista español.",
+    "published_iso": "2026-09-21T08:30:00+02:00",
+    "url": "https://pulso.j3b3.com/pulso/num-20.html"
   }
 ]

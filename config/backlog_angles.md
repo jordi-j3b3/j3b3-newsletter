@@ -132,6 +132,25 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Mecanisme**: acompanya A8/A11 com a **hipòtesi etiquetada**, mai com a diagnòstic. El dataset diu què es paga; no diu res sobre per què els joves trien un sector o un altre. Formulació admissible: "una hipótesis posible, no verificable solo con estos datos, es que…".
 - **Estat**: LLIURE com a suport d'A8/A11; no aguanta una edició sola.
 
+## A13 · El cens de comerç perd empreses a tot arreu, i el rànquing no s'assembla al mapa de la renda
+
+> **Estat: RESERVAT — NO TRIAR.** Angle preparat i verificat, retirat de la
+> circulació el 2026-09-20 per decisió editorial. **El model no l'ha de
+> seleccionar** mentre aquesta línia hi sigui. Qui el reprengui ha de llegir
+> abans la nota d'ús que hi ha al final de la fitxa.
+
+- **Dataset**: `cens_ccaa.csv` a l'snapshot (origen `empreses.csv`, INE DIRCE, CNAE 47 per CCAA, sèrie 2008-2025, foto a 1 de gener)
+- **Xifra** (finestra neta 2023-2025, verificada contra el CSV el 2026-09-19): Espanya **−4,0%** (393.287 → 377.471). Perden més: Astúries −6,8%, País Basc −6,2%, Castella i Lleó −6,0%, Cantàbria −5,9%, Galícia −5,8%. Perden menys: Balears −1,1%, Madrid −1,9%, Navarra −2,0%, la Rioja −2,8%, Catalunya −2,9%.
+- **Mecanisme**: les disset comunitats perden empreses; l'única cosa que varia és el ritme, i el rànquing no segueix cap eix obvi. A dalt hi ha Balears i Madrid, que no s'assemblen en res excepte en pressió de demanda sobre el local; a baix hi ha la cornisa cantàbrica sencera, que comparteix piràmide d'edat i no densitat ni renda. La lectura defensable és demogràfica abans que comercial: on la població envelleix i no es reposa, el cens es buida al ritme de les jubilacions sense relleu. La caiguda no és un indicador de salut del comerç sinó de relleu.
+- **Bloc 3**: barres de variació acumulada 2023-2025 per CCAA (la sèrie ja la construeix `verify.py`, o sigui que el rànquing sencer ancora).
+- **Dues cauteles que no es negocien**:
+  1. **Compta EMPRESES, no locals.** Un traspàs no surt del cens; un tancament de local d'una empresa amb dos locals, tampoc. Cap frase pot fer servir aquesta font per parlar de locals buits, de rotació ni de qui ocupa un baix.
+  2. **Trencament de sèrie 2022→2023**: Espanya perd 35.318 empreses en un sol any, 2,8 vegades el moviment més gran de qualsevol altre any des del 2008 (−12.606 el 2011) i 4,9 vegades la mitjana (−7.230). Sembla canvi metodològic **no verificat**. Cap comparació pot travessar aquest salt: la finestra comença el 2023 i prou.
+- **Matís obligatori si s'usa Catalunya**: l'avantatge català ve gairebé tot del 2024 (−1,05% contra −2,16% d'Espanya). El 2025 les dues sèries convergeixen (−1,88% i −1,90%). Presentar el −2,9% com a tendència catalana sostinguda seria fals.
+- **No comparable amb Eurostat**: el BSD dona 426.519 empreses el 2023 i el DIRCE 393.287 el mateix any. Universos diferents. Si un text cita totes dues, ho ha de dir.
+- **Per què no està cremat**: cap edició enviada ha usat el cens per CCAA com a xifra protagonista. El Núm. 17 va fer demografia empresarial amb Eurostat BSD (natalitat), que és una altra font i un altre mecanisme; el Núm. 20 el va tenir al borrador i no es va publicar.
+- **NOTA D'ÚS quan es desbloquegi**: l'angle es va preparar en una setmana en què hi havia mesures d'administracions sobre locals comercials a la premsa, i el borrador el connectava amb elles. Aquesta connexió és la que queda descartada, no la dada. Si es reprèn, ha de sostenir-se sol —variació del cens i lectura demogràfica— sense citar ni avaluar cap mesura concreta de cap administració, i sense fer de la comparació entre comunitats un judici sobre les seves polítiques. El punt de partida net és el rànquing complet de les disset, no una comunitat destacada.
+
 ---
 
 ## Angles descartats deliberadament
@@ -143,4 +162,5 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **CDMGE com a protagonista**: descartat el 2026-08-16 per finestra massa curta (15 dies volàtils). Val com a Bloc 3 amb el mes tancat.
 
 Xifres verificades contra els CSV de `observatori-comerc/data/cache/` el
-**2026-08-17**. Última actualització del fitxer: 2026-08-17.
+**2026-08-17**, excepte l'A13, verificada contra l'snapshot de la setmana
+2026-09-21 el **2026-09-19**. Última actualització del fitxer: 2026-09-20.

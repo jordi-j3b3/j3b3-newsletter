@@ -2,6 +2,103 @@
 
 Tareas pendientes ordenadas por momento de ejecución.
 
+## 0 · PRIORITAT MÀXIMA — el gate deixa passar errors per atzar (2026-09-20)
+
+**Per davant de qualsevol altra cosa d'aquest fitxer.** El bug del Núm. 17
+bloquejava contingut bo (fals positiu): costava una setmana sense edició. Aquest
+deixa passar contingut dolent (fals negatiu): posa una xifra falsa a la bústia
+dels subscriptors i no hi ha manera de saber quantes vegades ja ha passat.
+
+### Què es va mesurar
+
+Sobre el borrador del Núm. 20, sense tocar ni el text ni l'snapshot:
+
+- **Set execucions de `verify.py`**: la primera va donar 1 ERROR i va dir "el
+  borrador NO passa el gate"; les sis següents, "Gate superat". L'error era
+  real (una afirmació de superlatiu sobre la quota salarial que la sèrie no
+  aguanta).
+- **Vuit passades de `extreu_afirmacions()`** sobre el mateix cos: 5, 5, 4, 4,
+  1, 5, 5, 5 afirmacions. La unió satura en 6 afirmacions diferents a partir de
+  la segona passada.
+- L'afirmació que genera l'ERROR surt en **4 de 8 passades**.
+- La part determinista (ancoratge de números) va sortir **idèntica a totes**:
+  51 ancorats, 0 orfes. El problema és només la capa LLM.
+
+### Causa
+
+`extreu_afirmacions()` (`scripts/verify.py`) crida l'API amb
+`temperature=0.0`. Temperatura zero **no** garanteix determinisme: la mateixa
+entrada torna llistes d'afirmacions diferents. `schedule.py` decideix per codi
+de sortida, o sigui que la fiabilitat del bloqueig era una loteria.
+
+### Fet (2026-09-20)
+
+1. **Unió de passades a `verify.py`.** `extreu_afirmacions(cos, modelo,
+   passades=3)` fa N crides i verifica la **unió deduplicada**: una afirmació
+   que aparegui en qualsevol passada entra al gate. Nou flag `--passades`.
+   L'informe imprimeix el recompte de cada passada perquè la dispersió es vegi.
+   La clau de deduplicació inclou entitat i mètrica: si dues passades parsegen
+   la mateixa frase amb subjectes diferents, es verifiquen les dues lectures.
+2. **Segona capa a `schedule.py`.** Executa `verify.py` `VERIFY_RUNS` vegades
+   (default 3) i bloqueja si **qualsevol** execució troba un error.
+3. **Dues sèries derivades noves a `carrega_series()`**, pel mateix motiu que
+   ja tenien la bretxa de digitalització i la variació del cens: si una xifra
+   editorial no és cap cel·la, o surt ORFA (ERROR al Bloc 1 i 3) o s'ancora on
+   no toca. Afegides les mitjanes per període de la quota salarial
+   (`prod|quota_salarial_mitjana`) i el complement de la classe de mida
+   (`mida|<pais>|<ind>|LT10`, el pes de les empreses de menys de 10 ocupats).
+
+### Tercera troballa: "ANCORAT" no vol dir correcte
+
+Amb 356 sèries carregades, l'ancoratge és una cerca de valor i qualsevol número
+de dos dígits i un decimal troba parella. Comprovat el 2026-09-20 sobre el
+Núm. 20: el **49,1%** del pes de les microempreses sortia com a ANCORAT perquè
+casava amb l'índex de vendes minoristes de **Bulgària del juliol de 2006** i
+amb quatre dies del CDMGE. La sèrie correcta no estava carregada. El recompte
+"ANCORAT 40 · ORFE 0" donava, doncs, una seguretat que no hi era.
+
+Carregar la sèrie bona (punt 3 de la llista de dalt) ho arregla per a aquest
+cas: ara el diagnòstic d'ATRIBUCIÓ diu "el valor citat encaixa amb España · %
+del empleo del comercio en empresas de menos de 10 ocupados". Però la resolució
+principal d'aquella frase **segueix caient a la sèrie equivocada** (UE-27,
+menors de 25 anys), perquè el vocabulari de mètrica se solapa molt. No bloqueja
+perquè la confiança és baixa, que és el comportament correcte.
+
+Pendent de decidir: si l'ancoratge ha d'exigir que la sèrie on encaixa el valor
+sigui també plausible per entitat i mètrica, en lloc d'acceptar qualsevol
+coincidència numèrica. Avui no ho exigeix.
+
+### El que NO queda resolt — cal decidir
+
+La unió arregla la **cobertura** (quines frases s'examinen) però no la
+**severitat**. Mesurat després del canvi, amb 3 passades: de 5 execucions, 2 van
+donar ERROR i 3 "Gate superat". La raó és que el parse de la mètrica varia i
+això canvia contra quina sèrie es resol la frase:
+
+- parsejada com a *quota salarial* → resolució neta → **ERROR**;
+- parsejada com a *valor afegit constants* → la mètrica no casa → "RESOLUCIÓ
+  INCERTA" → **AVÍS**, i el gate passa.
+
+En totes dues lectures la comprovació **falla**. La frase no és certa sota cap
+sèrie candidata; l'única cosa que canvia és la confiança de la resolució, i la
+confiança baixa la converteix en avís per disseny (la decisió que es va prendre
+arran del Núm. 17, i que segueix sent correcta).
+
+Amb una probabilitat d'encert per passada del 15-20%, pujar passades no és
+solució: caldrien ~18 per arribar al 95%.
+
+**Proposta per al fix de fons** (no aplicada; toca la part més delicada del
+pipeline i no es va voler fer el dia d'una edició): si una afirmació falla la
+comprovació contra **totes** les sèries candidates a què es resol, ha de ser
+ERROR encara que la resolució sigui incerta. Això no reobre els falsos positius
+del Núm. 17, que eren casos on l'afirmació era CERTA contra la sèrie bona i el
+gate n'havia triat una de dolenta: aquí no hi ha cap lectura sota la qual la
+frase sigui certa. Requereix que `verifica_racha()` i `verifica_superlatiu()`
+avaluïn contra la llista de candidates i no només contra la millor.
+
+**Mentrestant**: el gate no és una garantia. Cap edició s'hauria de programar
+només perquè `verify.py` digui "Gate superat".
+
 ## Gate: falsos positius que van costar el Núm. 17 · FET (2026-08-28)
 
 El diumenge 2026-08-23 el cron va generar el Núm. 17 i `verify.py` el va
