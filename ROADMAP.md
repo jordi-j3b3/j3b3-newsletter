@@ -99,6 +99,60 @@ avaluïn contra la llista de candidates i no només contra la millor.
 **Mentrestant**: el gate no és una garantia. Cap edició s'hauria de programar
 només perquè `verify.py` digui "Gate superat".
 
+### Línia de base abans del fix de fons (2026-09-20)
+
+Mesurada per poder comparar contra un número quan s'implementi la proposta
+del punt anterior ("ERROR si falla contra totes les candidates"), no contra
+una impressió. Executada des del clon net (`~/repos/j3b3-newsletter`), amb
+`data/semana-2026-08-24` com a snapshot.
+
+**Nivell de superfície — `tests/casos_verify/executa.py`, 10 execucions del
+banc sencer**: 10/10 execucions amb els 5 casos correctes (exit code igual a
+l'esperat als cinc). Cap fals bloqueig, cap fals negatiu detectat **a aquest
+nivell**.
+
+**Nivell de detall — 10 execucions directes de cada cas crític, mirant per
+sota de l'exit code:**
+
+- **Cas 3 (falsos positius del Núm. 17): totalment estable.** 1 afirmació
+  detectada, 1 avís, idèntic a les 10 execucions. Ja no és un problema amb
+  l'extractor actual.
+- **Cas 4 (resolució ambigua del Núm. 19): la variància hi és, viva.** El
+  nombre d'afirmacions detectades (unió de 3 passades) oscil·la entre 5 i 9
+  segons l'execució. Més important: la mateixa afirmació —*"la distancia en
+  el tramo joven se ha estrechado tres años seguidos: 6,8 puntos en 2022, 5,8
+  en 2025"*— apareix a les 10 execucions i es resol de **tres maneres
+  diferents** segons la tirada:
+    1. "no s'ha pogut resoldre cap sèrie" (~4 de 10)
+    2. resolta contra `tramo 15-24 años · ocupados, miles`, amb "sèrie mal
+       resolta" o "RESOLUCIÓ INCERTA" (~5 de 10)
+    3. resolta contra una tercera sèrie, `brecha de peso... UE-27, puntos`
+       (1 de 10)
+
+  En cap de les tres lectures la sèrie candidata dona els tres anys de
+  reducció que el text afirma: la sèrie real puja tots els anys (2021-2025:
+  129,9 → 131,1 → 153,0 → 157,2 → 172,2). **Aquesta afirmació és falsa sota
+  qualsevol candidata i és exactament el cas que el fix de fons hauria de
+  convertir en ERROR.** Avui queda com a AVÍS a totes les tirades perquè la
+  confiança de resolució és baixa. L'exit code del cas4 és 0 (correcte, tal
+  com espera `executa.py`) a totes les 10 execucions, o sigui que aquest
+  fals negatiu no el detecta el banc de proves actual: cal ampliar
+  `cas4_ocupacio_edat_ambigua.md` (o un cas nou) perquè n'esperi ERROR, no
+  només exit 0.
+
+**Conclusió de la línia de base**: el comportament de superfície (exit code
+sobre els 5 casos documentats) ja és estable. La inestabilitat de fons
+continua exactament on el punt anterior la va localitzar, i el cas 4 en dona
+ara una reproducció concreta amb les tres resolucions documentades. El fix de
+fons hauria d'aconseguir que aquesta afirmació concreta passi a ERROR a les
+10 de 10 execucions, sense que els cassos 1-3 i el "borrador real" es
+bloquegin de nou (repetir aquesta mateixa bateria després del canvi n'és la
+prova).
+
+Cost de la mesura: ~25 execucions completes de `verify.py` (10 banc sencer +
+10 cas3 + 10 cas4 + proves prèvies), tot Sonnet, sense tocar context de
+sessió.
+
 ## Gate: falsos positius que van costar el Núm. 17 · FET (2026-08-28)
 
 El diumenge 2026-08-23 el cron va generar el Núm. 17 i `verify.py` el va
