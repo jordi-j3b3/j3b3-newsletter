@@ -573,5 +573,35 @@
     "asunto": "El comercio gana más por hora trabajada — y no va al sueldo",
     "titular": "Más valor por hora. Menos para el sueldo.",
     "created_at_utc": "2026-09-20T10:46:51.237320+00:00"
+  },
+  {
+    "numero": 21,
+    "semana": "2026-09-28",
+    "cifra": "-0,9%",
+    "dataset_bloc1": "Ventas minoristas por volumen · España · serie desestacionalizada y corregida de calendario · Eurostat",
+    "periodo_bloc1": "2026-07",
+    "angulo_bloc1": "La caída del comercio minorista en julio se concentra en el combustible, no en el conjunto del sector.",
+    "tema_prediccion": "En agosto el comercio sin combustible seguirá positivo y el combustible encadenará su quinto mes negativo.",
+    "angle_backlog": "",
+    "metrica_prediccion": "ICM real por rama · España · agosto 2026",
+    "umbral_prediccion": "(a) comercio sin estaciones de servicio > 0% interanual; (b) combustible para automoción < 0% interanual",
+    "dataset_prediccion": "ICM real por ramas CNAE 47 · INE",
+    "noticias": [
+      "El comercio español se hunde y registra la segunda mayor caída de ventas de toda Europa",
+      "Bilbao impulsa un plan para facilitar el relevo generacional de un millar de comercios",
+      "JYSK supera los 400 millones de euros de facturación en España tras crecer un 31,9%"
+    ],
+    "periodo_eurostat": "2026-07",
+    "periodo_icm": "2026-07",
+    "periodo_icm_distribucio": "2026-07",
+    "indicador_bloc3": "icm_ramas",
+    "mode_editorial": "P2",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "37",
+    "scheduled_at": "2026-09-28T08:30:00+02:00",
+    "asunto": "La caída de julio está en el surtidor, y Europa ya crece más que España",
+    "titular": "El combustible explica la caída de julio.",
+    "created_at_utc": "2026-09-25T14:12:36.635635+00:00"
   }
 ]

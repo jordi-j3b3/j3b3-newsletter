@@ -225,6 +225,22 @@ estable i confiada, i el que falla és que ha llegit malament una frase de dues
 clàusules. Mateix tractament que el punt anterior: mesura i disseny amb calma,
 no el dia d'una edició.
 
+### Núm. 21 (2026-09-25): la ratxa del combustible cau a la sèrie de marges
+
+`snapshot.py` porta ara l'històric de la branca de combustible de l'ICM (abans
+només l'últim mes), però `resol_serie()` continua resolent «el combustible
+para automoción cae… su cuarto mes negativo consecutivo» contra
+`Combustible (gasolineres) · margen sobre ventas` (marges, sense cap valor
+negatiu → AVÍS) o no la resol. La ratxa es va verificar a mà (abril −4,5,
+maig −6,6, juny −3,4, juliol −8,4). A les mateixes execucions van sortir dos
+OK sobre sèries equivocades: la ratxa de 16 mesos del diferencial ES−UE-27
+resolta també contra el combustible («coincideix» per casualitat) i un
+superlatiu sobre l'ICM nominal 47-sin-473 sense sentit. Les afirmacions reals
+quedaven comprovades per les línies correctes, però un OK del gate no diu
+contra quina sèrie s'ha comprovat si no es llegeix. Mateixa família que la
+troballa anterior: la mètrica "ventas" no discrimina prou entre marges i ICM
+quan la branca coincideix.
+
 ## Gate: falsos positius que van costar el Núm. 17 · FET (2026-08-28)
 
 El diumenge 2026-08-23 el cron va generar el Núm. 17 i `verify.py` el va

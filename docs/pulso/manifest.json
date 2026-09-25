@@ -160,5 +160,14 @@
     "description": "Seis años de datos sobre productividad, costes y reparto del valor en el comercio minorista español.",
     "published_iso": "2026-09-21T08:30:00+02:00",
     "url": "https://pulso.j3b3.com/pulso/num-20.html"
+  },
+  {
+    "numero": 21,
+    "semana": "2026-09-28",
+    "titular": "El combustible explica la caída de julio.",
+    "subject": "La caída de julio está en el surtidor, y Europa ya crece más que España",
+    "description": "El dato que la prensa leyó como hundimiento tiene una dirección muy concreta. Y hay un giro de fondo que sí merece atención.",
+    "published_iso": "2026-09-28T08:30:00+02:00",
+    "url": "https://pulso.j3b3.com/pulso/num-21.html"
   }
 ]

@@ -338,6 +338,11 @@ def copy_csv_optional(src: Path, dst: Path, label: str) -> dict | None:
 # estacions de servei (soroll del preu del combustible).
 ICM_BRANCA_GENERAL = "Comercio al por menor, excepto de vehículos de motor y motocicletas"
 ICM_BRANCA_SIN473 = "Comercio al por menor sin Estaciones de Servicio (47 sin 473)"
+# Estacions de servei amb històric (canvi 2026-09-25, Núm. 21): quan el total i
+# el 47-sin-473 divergeixen, el combustible és l'explicació, i sense la sèrie
+# sencera verify.py no podia comptar-ne cap ratxa (només hi havia l'últim mes).
+ICM_BRANCA_COMBUSTIBLE = ("Comercio al por menor de combustible para la "
+                          "automoción en establecimientos especializados")
 
 
 def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
@@ -368,7 +373,8 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
     cutoff = periodes[-meses] if len(periodes) >= meses else periodes[0]
 
     general = df[
-        df["branca"].isin([ICM_BRANCA_GENERAL, ICM_BRANCA_SIN473])
+        df["branca"].isin([ICM_BRANCA_GENERAL, ICM_BRANCA_SIN473,
+                           ICM_BRANCA_COMBUSTIBLE])
         & df["tipus"].isin(["nominal", "real"])
         & df["indicador"].isin(["index", "var_anual", "var_mitjana_acum"])
         & (df["data"] >= cutoff)
