@@ -241,6 +241,32 @@ contra quina sèrie s'ha comprovat si no es llegeix. Mateixa família que la
 troballa anterior: la mètrica "ventas" no discrimina prou entre marges i ICM
 quan la branca coincideix.
 
+## Detector de negació binària al borrador del butlletí · Prioritat: mitjana (2026-09-25)
+
+La guia (`estil_editorial.md` §4, patró "No A. Sí B.") no n'hi ha prou: al Núm. 21 el primer
+borrador en portava **quatre** (l'asunto "cae la gasolinera, no el comercio"; "La tesis no
+es que todo lo demás crezca; es que…"; "no es la falta de compradores sino…"; "no es un dato
+de ciclo: es un dato de cuota") i la TRAZABILIDAD afirmava "No se usa en ningún bloque ✓".
+El model no s'autoavalua bé en aquest punt: s'ha de mirar la sortida, com ja fa
+`scripts/linkedin.py` amb `revisa()`.
+
+**Proposta:** una comprovació **no bloquejant** entre `generate.py` i `compose.py` (al costat
+de `verify.py`, o dins seu com a secció d'avisos) que llisti les coincidències amb el text i
+el bloc. Patrons en castellà, provats sobre el borrador inicial del Núm. 21
+(`newsletter_21_v1.md`), que les cacen totes quatre:
+
+```
+no… sino       \bno\b[^.;!?]{0,90}\bsino\b
+no es A: es B  \bno es\b[^.:;!?]{0,80}[.:;]\s*es\b
+A, no B        ,\s*no\s+(?:el|la|los|las|en|de)\b[^.;!?]{0,40}
+```
+
+El tercer també va caçar "…, no de márgenes en surtidor", que era el mateix contrast. Falta
+mesurar els falsos positius sobre les edicions enviades abans de posar-lo en marxa (p. ex.
+"no disponemos" no hi entra, però "…, no en el total" en una frase legítima sí que hi
+entraria). Ha d'avisar, mai bloquejar: la decisió és editorial. Revisar també l'asunto, el
+pre-header i el titular, que és on el tic fa més mal i on més fàcilment s'escapa.
+
 ## Gate: falsos positius que van costar el Núm. 17 · FET (2026-08-28)
 
 El diumenge 2026-08-23 el cron va generar el Núm. 17 i `verify.py` el va

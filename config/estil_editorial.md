@@ -247,6 +247,28 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
     un problema estructural, dilo explícitamente y apunta qué tipo de medida
     tendría escala real, en vez de cerrar con un elogio genérico. Ver catálogo
     de ejemplos en §4.
+19. **Ningún peso sin ponderación.** No escribas que una rama, un formato o un
+    segmento "pesa", "representa" o "tiene peso suficiente para arrastrar" el
+    total si la ponderación no está en los datos del snapshot. Di lo que sí se
+    mide: la distancia entre el agregado con y sin esa rama. (Núm. 21: "el
+    combustible tiene un peso suficiente para arrastrar el total" no tenía
+    ninguna ponderación detrás; lo correcto era "entre el total y el agregado
+    sin estaciones de servicio hay 1,5 puntos".)
+20. **Si del artículo solo tienes el titular, comenta solo el titular.** Cuando
+    el snapshot no trae el cuerpo de la noticia (el `Snippet:` repite el
+    titular o es navegación de la web), el comentario del Bloque 2 no puede
+    atribuirle mecanismo, cifra, plazo, dotación ni detalle que no esté en el
+    titular. Puedes situarla con nuestros datos y decir qué habría que saber
+    para valorarla, pero sin inventar su contenido. (Núm. 21: al plan de
+    Bilbao se le atribuyó un mecanismo de precio de traspaso, y a JYSK un
+    patrón "Lidl y Primark", que no estaban en ninguna de las dos piezas.)
+21. **Dos fuentes con ajuste distinto se dicen distintas.** El volumen de ventas
+    de Eurostat es una serie desestacionalizada y corregida de calendario; el
+    ICM del INE que usa el Observatorio es la serie original, sin ajustar. Si
+    una edición usa las dos, el cuerpo tiene que decirlo en una frase y no
+    puede restarlas ni presentarlas como la misma medida. Si sus cifras del
+    mismo mes no coinciden, se explica por el ajuste, no se esconde. (Núm. 21:
+    julio 2026, total del INE −0,2% frente al −0,4% interanual de Eurostat.)
 
 ---
 
