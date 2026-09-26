@@ -42,6 +42,9 @@ snapshot:
   digitalitzacio_origen: "data/cache/digitalitzacio_comerc.csv"
   mida_empresa_origen: "data/cache/estructura_retail_mida.csv"
   cens_ccaa_origen: "data/cache/empreses.csv"
+  # LOCALS DIRCE (unitats locals), no empreses: no comparables amb cens_ccaa.
+  locals_provincia_origen: "data/cache/locals_provincia.csv"
+  locals_ccaa_grups_origen: "data/cache/locals_ccaa_grups.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.

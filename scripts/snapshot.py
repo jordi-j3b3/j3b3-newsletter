@@ -10,6 +10,10 @@ Genera data/semana-YYYY-MM-DD/ con:
   - ipc_coicop.csv          copia íntegra de ipc_coicop.csv (IPC per grup, mensual)
   - cens_ccaa.csv           copia íntegra de empreses.csv (cens DIRCE CNAE 47
                             per CCAA, anual)
+  - locals_provincia.csv    copia íntegra de locals_provincia.csv (LOCALS DIRCE
+                            CNAE 47 per província, anual; no són empreses)
+  - locals_ccaa_grups.csv   copia íntegra de locals_ccaa_grups.csv (LOCALS DIRCE
+                            per CCAA i grup 471-479, anual)
   - recopilacion_prensa.md  serializado de modules.press.fetch_press(),
                             filtrado a la ventana configurada, con las
                             entradas [EDITOR] de config/noticies_editor.md
@@ -207,6 +211,48 @@ def cens_ccaa_meta(csv_path: Path) -> dict:
                                "qualsevol altre any des del 2008) sembla un canvi metodològic "
                                "no verificat: cap comparació "
                                "curta l'hauria de travessar."}
+
+
+def locals_provincia_meta(csv_path: Path) -> dict:
+    """Metadades dels locals de CNAE 47 per província (DIRCE T=301).
+
+    Són LOCALS, no empreses: no es poden comparar amb cens_ccaa.csv. La
+    finestra neta comença a l'últim any de trencament que marca el mateix CSV
+    (columna travessa_trencament, calculada des de TRENCAMENTS_DIRCE a
+    l'Observatori), o sigui que aquí no hi ha cap any escrit a mà.
+    """
+    df = pd.read_csv(csv_path, dtype={"codi_geo": str})
+    ultim = int(df["any"].max())
+    anys_trenc = sorted(df[df["travessa_trencament"]]["any"].unique())
+    base = int(anys_trenc[-1]) if anys_trenc else int(df["any"].min())
+
+    def _var(g: pd.DataFrame) -> float | None:
+        a = g[g["any"] == base]["locals_cnae47"]
+        b = g[g["any"] == ultim]["locals_cnae47"]
+        if a.empty or b.empty or float(a.iloc[0]) == 0:
+            return None
+        return round((float(b.iloc[0]) / float(a.iloc[0]) - 1) * 100, 2)
+
+    esp = df[df["nivell_geo"] == "espanya"]
+    prov = df[df["nivell_geo"] == "provincia"]
+    variacions = {n: _var(g) for n, g in prov.groupby("provincia")}
+    ordenat = sorted((v, n) for n, v in variacions.items() if v is not None)
+
+    avis = None
+    if anys_trenc:
+        salt = esp[esp["any"] == base]
+        if not salt.empty:
+            avis = (f"{salt['nota_trencament'].iloc[0]} Espanya: "
+                    f"{salt['var_interanual_pct'].iloc[0]}% aquell any.")
+
+    return {"ultim_any": ultim,
+            "any_base_finestra_neta": base,
+            "unitat": "locals (unitats locals), no empreses",
+            "locals_espanya": int(esp[esp["any"] == ultim]["locals_cnae47"].iloc[0]),
+            "var_espanya_pct": _var(esp),
+            "pitjors_tres": [n for _, n in ordenat[:3]],
+            "millors_tres": [n for _, n in ordenat[-3:]][::-1],
+            "avis_trencament": avis}
 
 
 def mida_empresa_meta(csv_path: Path) -> dict:
@@ -723,6 +769,8 @@ def main() -> int:
     digitalitzacio_src = obs_path / SETTINGS["snapshot"]["digitalitzacio_origen"]
     mida_empresa_src = obs_path / SETTINGS["snapshot"]["mida_empresa_origen"]
     cens_ccaa_src = obs_path / SETTINGS["snapshot"]["cens_ccaa_origen"]
+    locals_provincia_src = obs_path / SETTINGS["snapshot"]["locals_provincia_origen"]
+    locals_ccaa_grups_src = obs_path / SETTINGS["snapshot"]["locals_ccaa_grups_origen"]
 
     pulso_diario_dst = semana_dir / "pulso_diario.csv"
     pulso_europeo_dst = semana_dir / "pulso_europeo.csv"
@@ -739,6 +787,8 @@ def main() -> int:
     digitalitzacio_dst = semana_dir / "digitalitzacio_comerc.csv"
     mida_empresa_dst = semana_dir / "mida_empresa.csv"
     cens_ccaa_dst = semana_dir / "cens_ccaa.csv"
+    locals_provincia_dst = semana_dir / "locals_provincia.csv"
+    locals_ccaa_grups_dst = semana_dir / "locals_ccaa_grups.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -869,6 +919,22 @@ def main() -> int:
               f"{cens_ccaa_info['var_espanya_pct']}% · "
               f"més perden: {', '.join(cens_ccaa_info['pitjors_tres'])}")
 
+    locals_provincia_info = copy_csv_optional(locals_provincia_src, locals_provincia_dst,
+                                              "Locals DIRCE per província")
+    if locals_provincia_info:
+        locals_provincia_info.update(locals_provincia_meta(locals_provincia_dst))
+        print(f"  locals_provincia.csv · {locals_provincia_info['filas']:>6} filas · "
+              f"últim any {locals_provincia_info['ultim_any']} · "
+              f"var {locals_provincia_info['any_base_finestra_neta']}-"
+              f"{locals_provincia_info['ultim_any']} Espanya "
+              f"{locals_provincia_info['var_espanya_pct']}% · "
+              f"més perden: {', '.join(locals_provincia_info['pitjors_tres'])}")
+
+    locals_ccaa_grups_info = copy_csv_optional(locals_ccaa_grups_src, locals_ccaa_grups_dst,
+                                               "Locals DIRCE per CCAA i grup")
+    if locals_ccaa_grups_info:
+        print(f"  locals_ccaa_grups.csv · {locals_ccaa_grups_info['filas']:>5} filas")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -910,6 +976,8 @@ def main() -> int:
         "digitalitzacio": digitalitzacio_info,
         "mida_empresa": mida_empresa_info,
         "cens_ccaa": cens_ccaa_info,
+        "locals_provincia": locals_provincia_info,
+        "locals_ccaa_grups": locals_ccaa_grups_info,
         "prensa": prensa_info,
         "noticies_editor": noticies_editor_info,
         "noticies_editor_avisos": noticies_editor_avisos,
