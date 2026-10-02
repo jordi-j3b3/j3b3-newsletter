@@ -603,5 +603,28 @@
     "asunto": "La caída de julio está en el surtidor, y Europa ya crece más que España",
     "titular": "El combustible explica la caída de julio.",
     "created_at_utc": "2026-09-25T14:12:36.635635+00:00"
+  },
+  {
+    "numero": 22,
+    "semana": "2026-10-05",
+    "brevo_campaign_id": "40",
+    "scheduled_at": "2026-10-05T08:30:00+02:00",
+    "asunto": "El comercio cobra más y vende lo mismo: el informe del segundo trimestre",
+    "titular": "El comercio cobra más y vende lo mismo.",
+    "created_at_utc": "2026-10-02T11:02:36.261415+00:00",
+    "cifra": "86 €",
+    "dataset_bloc1": "ICM nacional, conjunto CNAE 47 · facturación (nominal) frente a volumen (real) · serie original · INE",
+    "periodo_bloc1": "2026-T2",
+    "angulo_bloc1": "Edición especial con el informe trimestral: de cada 100 euros de crecimiento, 86 son precio; el volumen apenas se mueve.",
+    "tema_prediccion": "El ICM real del 3T 2026 cerrará por debajo del 3T 2025 en el conjunto y por encima sin estaciones de servicio.",
+    "angle_backlog": "",
+    "metrica_prediccion": "ICM real · España · 3T 2026 frente a 3T 2025",
+    "umbral_prediccion": "(a) conjunto CNAE 47 < 0%; (b) comercio sin estaciones de servicio > 0%",
+    "dataset_prediccion": "ICM real por ramas CNAE 47 · INE",
+    "noticias": [],
+    "periodo_icm": "2026-08",
+    "periodo_icm_distribucio": "2026-08",
+    "indicador_bloc3": "informe_trimestral",
+    "mode_editorial": "especial_informe_trimestral"
   }
 ]

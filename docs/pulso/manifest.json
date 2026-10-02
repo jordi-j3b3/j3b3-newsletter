@@ -169,5 +169,14 @@
     "description": "El dato que la prensa leyó como hundimiento tiene una dirección muy concreta. Y hay un giro de fondo que sí merece atención.",
     "published_iso": "2026-09-28T08:30:00+02:00",
     "url": "https://pulso.j3b3.com/pulso/num-21.html"
+  },
+  {
+    "numero": 22,
+    "semana": "2026-10-05",
+    "titular": "El comercio cobra más y vende lo mismo.",
+    "subject": "El comercio cobra más y vende lo mismo: el informe del segundo trimestre",
+    "description": "86 de cada 100 euros de crecimiento son precio, las pequeñas cadenas caen un 10% y el comercio pierde 22 empresas al día.",
+    "published_iso": "2026-10-05T08:30:00+02:00",
+    "url": "https://pulso.j3b3.com/pulso/num-22.html"
   }
 ]
