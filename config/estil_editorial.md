@@ -269,6 +269,19 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
     puede restarlas ni presentarlas como la misma medida. Si sus cifras del
     mismo mes no coinciden, se explica por el ajuste, no se esconde. (Núm. 21:
     julio 2026, total del INE −0,2% frente al −0,4% interanual de Eurostat.)
+22. **Titular no repetido.** Antes de fijar el titular o el asunto, léelos
+    contra los de `config/historial_editorial.json`. Ni el mismo titular ni una
+    variación del mismo molde (misma estructura con otro verbo o cifra). Si el
+    tema es recurrente, cambia el ángulo y no solo las palabras. (Núm. 22:
+    "El comercio cobra más y vende lo mismo" se había usado en varias
+    ocasiones; pasó a "Más precio y menos empresas".)
+23. **Ninguna nota de método que haga dudar al lector.** En un gráfico o en el
+    cuerpo no se escribe "posible cambio de método", "tiene el aspecto de" ni
+    otra advertencia hipotética sobre la serie. Si la comparabilidad exige
+    acotar el periodo, se dice en positivo y en una frase: "comparamos desde
+    2023", con el motivo en términos de qué cifra no es comparable. (Núm. 22:
+    el gráfico de empresas decía "Posible cambio de método" sobre el salto
+    2022-2023; ahora dice "Desde 2023".)
 
 ---
 
