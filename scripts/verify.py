@@ -78,6 +78,17 @@ comptava una ratxa que no hi tenia cap sentit. D'aquí quatre regles:
      I si la ratxa real és més llarga que la declarada, el text es queda curt:
      tampoc és una afirmació falsa.
 
+Verificació de xifres i fail-closed (2026-10-04)
+------------------------------------------------
+El gate de números només comprova que el valor sigui alguna cel·la d'alguna
+sèrie, i això no discrimina (veure el bloc `verifica_xifra` i ROADMAP punt 0):
+cap xifra inventada d'un decimal queda orfa. Per això hi ha un segon extractor
+(entitat, mètrica, període, valor) i una comprovació contra la sèrie que el text
+diu. Va en mode ombra, o sigui que avisa però no bloqueja, fins mesurar-la sobre
+més edicions (`--xifres-bloquejant`). I si l'extractor d'afirmacions cau a totes
+les passades el gate SUSPÈN (abans donava "Gate superat" sense haver comprovat
+res).
+
 Codis de sortida
 ----------------
   0  cap error (pot haver-hi avisos)
@@ -908,6 +919,37 @@ TEXTO:
 """
 
 
+_PROMPT_XIFRES = """Eres un extractor. Del texto siguiente, extrae TODAS las \
+cifras que el texto presenta como dato de una serie estadística: porcentajes, \
+variaciones, índices, puntos de diferencia, número de ocupados o de empresas, \
+márgenes, tasas. Una entrada por cifra.
+
+NO extraigas: fechas, números de edición, edades o tramos de edad ('de 15 a 24 \
+años'), años, ordinales, fracciones coloquiales ('uno de cada siete'), cifras \
+de predicciones o umbrales futuros, ni importes de noticias.
+
+Devuelve EXCLUSIVAMENTE un JSON válido, sin code fences:
+
+{"cifras": [
+  {
+    "frase": "<la frase literal del texto, completa>",
+    "entidad": "<el SUJETO exacto al que el texto atribuye la cifra: 'España', \
+'UE-27', 'Cataluña', 'grandes cadenas', 'alimentación y bebidas'>",
+    "metrica": "<qué se mide: 'ventas reales interanuales', 'tasa de defunción \
+empresarial', 'ocupados menores de 25 años (peso sobre el total)'>",
+    "periodo": "<periodo al que se refiere la cifra, formato YYYY-MM o YYYY-Tn \
+o YYYY; null si el texto no lo da>",
+    "valor": "<la cifra tal como está escrita, con coma decimal y signo si lo \
+lleva: '-0,4', '8,83', '442.838'>"
+  }
+]}
+
+Si no hay ninguna cifra de este tipo, devuelve {"cifras": []}.
+
+TEXTO:
+"""
+
+
 PASSADES_DEFECTE = 3
 # Nombre de passades de l'extractor. temperature=0.0 NO fa determinista una
 # crida a l'API: sobre un mateix borrador, vuit passades van donar 5, 5, 4, 4,
@@ -931,24 +973,29 @@ def _clau_afirmacio(af: dict) -> tuple:
         (af.get("tipo") or "").lower(),
         _norm(af.get("entidad") or ""),
         _norm(af.get("metrica") or ""),
+        str(af.get("valor") or ""),
     )
 
 
-def _una_passada(cos: str, modelo: str) -> list[dict]:
+def _una_passada(cos: str, modelo: str, prompt: str = _PROMPT_CLAIMS,
+                 camp: str = "afirmaciones", max_tokens: int = 2000) -> list[dict]:
     from anthropic import Anthropic
     client = Anthropic()
     r = client.messages.create(
-        model=modelo, max_tokens=2000, temperature=0.0,
-        messages=[{"role": "user", "content": _PROMPT_CLAIMS + cos}],
+        model=modelo, max_tokens=max_tokens, temperature=0.0,
+        messages=[{"role": "user", "content": prompt + cos}],
     )
     text = "".join(b.text for b in r.content if b.type == "text").strip()
     text = re.sub(r"^```(?:json)?\s*\n?", "", text)
     text = re.sub(r"\n?```\s*$", "", text)
-    return json.loads(text).get("afirmaciones", [])
+    return json.loads(text).get(camp, [])
 
 
 def extreu_afirmacions(cos: str, modelo: str,
-                       passades: int = PASSADES_DEFECTE) -> tuple[list[dict], list[int]]:
+                       passades: int = PASSADES_DEFECTE,
+                       prompt: str = _PROMPT_CLAIMS,
+                       camp: str = "afirmaciones",
+                       max_tokens: int = 2000) -> tuple[list[dict], list[int]]:
     """Demana a l'LLM que faci NOMÉS de parser. La verificació és a la funció
     de sota, amb codi i contra els CSV: si aquí s'inventa res, allà falla.
 
@@ -965,7 +1012,7 @@ def extreu_afirmacions(cos: str, modelo: str,
     ultima_excepcio: Exception | None = None
     for _ in range(max(1, passades)):
         try:
-            af = _una_passada(cos, modelo)
+            af = _una_passada(cos, modelo, prompt, camp, max_tokens)
         except Exception as e:          # xarxa, JSON invàlid, límit de tokens
             ultima_excepcio = e
             per_passada.append(-1)
@@ -1291,6 +1338,174 @@ def verifica_superlatiu(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
                             "clarament amb la sèrie): comprovació no bloquejant")
 
 
+# --------------------------------------------- verificació de xifres (ombra)
+#
+# Per què existeix (mesurat el 2026-10-04): el gate de números només exigeix que
+# el valor sigui ALGUNA cel·la d'ALGUNA sèrie. Amb 220 sèries i ~40.000 punts,
+# CAP número inventat d'un decimal entre 0,1 i 99,9 queda orfe (999 de 999
+# surten ANCORAT), i afegir-hi el període no ho arregla (75-98% segueixen
+# casant, perquè les sèries mensuals en tenen dotze per any). Els enters de
+# 10 a 999 s'ancoren el 42% i la resta sol sortir com a DERIVAT. És a dir: el
+# recompte "ANCORAT 40 · ORFE 0" no diu que les xifres siguin bones. Una xifra
+# falsa en un decimal passa el gate neta.
+#
+# El que SÍ discrimina és comprovar la xifra contra la sèrie que el text diu
+# (entitat + mètrica) al període que el text diu. Això és el que fa aquí un
+# segon extractor LLM —que només parseja, com el de ratxes— i la comparació és
+# codi contra el CSV. S'ha posat en MODE OMBRA: informa i avisa, però no
+# bloqueja (excepte amb --xifres-bloquejant), fins mesurar-ne els falsos
+# positius sobre edicions reals. Un gate que bloqueja en fals costa edicions
+# (Núm. 17) i s'acaba desactivant.
+
+_ESTATS_XIFRA = ("VERIFICADA", "DERIVADA", "DISCREPANT", "DUBTOSA",
+                 "NO_COMPROVABLE")
+
+
+def _valor_xifra(af: dict) -> tuple[float | None, int]:
+    brut = re.sub(r"[%\s]|puntos?|pp", "", str(af.get("valor") or ""),
+                  flags=re.IGNORECASE)
+    return _num_es(brut), _decimals(brut)
+
+
+def _casa_valor(v: float, serie: Serie, periode: str, decimals: int) -> bool:
+    punt = serie.punts.get(periode)
+    if punt is None:
+        return False
+    tol = _TOL_PER_DECIMALS.get(decimals, 0.005)
+    escales = [(v, tol)]
+    if serie.unitat == "milers" and abs(v) >= 1000:
+        escales.append((v / 1000, tol / 1000))
+    # Les variacions es citen sovint en valor absolut ('cae un 7,1%').
+    escales += [(-x, t_) for x, t_ in list(escales)]
+    return any(abs(punt - x) <= t_ for x, t_ in escales)
+
+
+def _unitat_compatible(brut: str, valor: float, s: Serie) -> bool:
+    """Una xifra escrita amb '%' no pot ser una cel·la de milers d'ocupats ni
+    d'un índex; un número gran sense '%' tampoc d'una taxa. Sense aquest filtre
+    '9,3%' casava per diferència amb la sèrie d'ocupats del tram 40-49."""
+    brut = brut or ""
+    if "%" in brut:
+        return s.unitat in ("%", "")
+    if re.search(r"puntos?|pp\b", brut, re.IGNORECASE):
+        return s.unitat in ("punts", "pp", "%", "")
+    if abs(valor) >= 1000:
+        return s.unitat in ("milers", "")
+    return True
+
+
+def _plausibles(entitat: str, metrica: str, series: dict[str, Serie],
+                brut: str = "", valor: float = 0.0) -> list[tuple[float, Serie]]:
+    """Sèries on entitat I mètrica del text són versemblants, per puntuació.
+
+    A diferència de `resol_serie`, NO admet cap sèrie per haver-hi trobat el
+    valor: aquí el valor és precisament el que es vol comprovar, i deixar-lo
+    triar la sèrie reintroduïa la coincidència numèrica que és el problema."""
+    def _ent(x: str) -> set[str]:
+        # 'UE-27' es queda sense tokens (els de menys de 3 lletres cauen) i
+        # aleshores cap sèrie europea no és versemblant per a cap xifra.
+        tk = _tokens(x)
+        if re.search(r"\b(?:ue|eu)[\s-]?27\b|union europea|europea", _norm(x)):
+            tk.add("ue27")
+        return tk
+    te, tm = _ent(entitat), _tokens(metrica)
+    out = []
+    for s in series.values():
+        se = _ent(s.entitat)
+        if not se or not te:
+            continue
+        ent = _solapament(te, se)
+        if ent < _LLINDAR_ENTITAT:
+            continue
+        met = _solapament(tm, s.vocabulari)
+        if met < _LLINDAR_METRICA_MINIM:
+            continue
+        if brut and not _unitat_compatible(brut, valor, s):
+            continue
+        out.append((ent + met, s))
+    out.sort(key=lambda x: -x[0])
+    return out
+
+
+def verifica_xifra(af: dict, series: dict[str, Serie]) -> tuple[str, str]:
+    """Comprova UNA xifra contra les sèries versemblants, al període citat.
+
+    És una comprovació EXISTENCIAL sobre un conjunt petit: la xifra és bona si
+    ALGUNA sèrie amb l'entitat i la mètrica del text té aquest valor en aquest
+    període. Així una mala tria entre dues sèries parescudes no genera falsos
+    errors (només en pot deixar passar més), i el filtre d'entitat+mètrica és
+    el que dona poder de discriminació: un valor inventat només hi casa per
+    atzar amb unes poques sèries, no amb les 220.
+
+    Estats: VERIFICADA, DERIVADA (diferència entre el període citat i un altre
+    d'una sèrie versemblant), DISCREPANT (hi ha sèries versemblants amb aquest
+    període i cap té el valor; el millor candidat és d'alta coincidència),
+    DUBTOSA (el mateix amb coincidència baixa) i NO_COMPROVABLE (sense valor,
+    període o sèrie versemblant amb aquest període: es diu, no es dona per bo)."""
+    valor, decimals = _valor_xifra(af)
+    periode = (af.get("periodo") or "").strip() or None
+    ent, met = af.get("entidad") or "", af.get("metrica") or ""
+    brut = af.get("valor")
+    if valor is None:
+        return "NO_COMPROVABLE", "valor il·legible"
+    if not periode:
+        return "NO_COMPROVABLE", f"«{brut}»: el text no dona període"
+    pl = _plausibles(ent, met, series, str(brut or ""), valor)
+    # Bretxa entre dues entitats ('Aragón vs. Illes Balears'): no és cel·la de
+    # cap sèrie però sí |A − B| al mateix període.
+    parell = re.split(r"\s+(?:vs\.?|versus|frente a|contra)\s+", ent, maxsplit=1,
+                      flags=re.IGNORECASE)
+    if len(parell) == 2:
+        pa = _plausibles(parell[0], met, series, str(brut or ""), valor)
+        pb = _plausibles(parell[1], met, series, str(brut or ""), valor)
+        tol_p = _TOL_PER_DECIMALS.get(decimals, 0.005)
+        for _x, sa in pa[:5]:
+            for _y, sb in pb[:5]:
+                if (periode in sa.punts and periode in sb.punts
+                        and abs(abs(sa.punts[periode] - sb.punts[periode])
+                                - abs(valor)) <= tol_p):
+                    return "DERIVADA", (
+                        f"«{brut}» = diferència entre {sa.etiqueta} i "
+                        f"{sb.etiqueta} a {periode}")
+    if not pl:
+        return "NO_COMPROVABLE", (
+            f"«{brut}» ({ent} · {met} · {periode}): cap sèrie amb aquesta "
+            f"entitat i mètrica")
+    amb_periode = [(p_, s) for p_, s in pl if periode in s.punts]
+    if amb_periode and periode not in pl[0][1].punts:
+        # La sèrie que millor encaixa amb el text no té aquest període (una
+        # sèrie diària quan el text parla del mes, p. ex.): comparar amb una
+        # candidata pitjor donaria falsos desquadraments. No es pot comprovar.
+        amb_periode = [x for x in amb_periode
+                       if _casa_valor(valor, x[1], periode, decimals)]
+    if not amb_periode:
+        return "NO_COMPROVABLE", (
+            f"«{brut}» ({ent} · {met} · {periode}): {pl[0][1].etiqueta} no té "
+            f"aquest període")
+    for _p, s in amb_periode:
+        if _casa_valor(valor, s, periode, decimals):
+            return "VERIFICADA", f"«{brut}» = {s.etiqueta} a {periode}"
+    tol = _TOL_PER_DECIMALS.get(decimals, 0.005)
+    for _p, s in amb_periode:
+        base = s.punts[periode]
+        escales = [(valor, tol)]
+        if s.unitat == "milers" and abs(valor) >= 1000:
+            escales.append((valor / 1000, tol / 1000))
+        for p_, v_ in s.punts.items():
+            if p_ != periode and any(abs(abs(base - v_) - abs(x)) <= t_
+                                     for x, t_ in escales):
+                return "DERIVADA", (
+                    f"«{brut}» no és cel·la però sí la diferència entre "
+                    f"{periode} i {p_} a {s.etiqueta}")
+    punts_millor, millor = amb_periode[0]
+    detall = (f"«{brut}» ({ent} · {met} · {periode}): {millor.etiqueta} val "
+              f"{millor.punts[periode]:.2f}")
+    if len(amb_periode) > 1:
+        detall += f" (i {len(amb_periode) - 1} sèrie(s) més, cap amb aquest valor)"
+    alta = _solapament(_tokens(met), millor.vocabulari) >= _LLINDAR_METRICA_ALTA
+    return ("DISCREPANT" if alta else "DUBTOSA"), detall
+
+
 _ORDINALS_TRIMESTRE = {
     "primer": 1, "primero": 1, "1r": 1, "1er": 1,
     "segundo": 2, "2n": 2, "2o": 2,
@@ -1359,6 +1574,13 @@ def main() -> int:
                         f"unió de totes (default: {PASSADES_DEFECTE}). L'API no "
                         f"és determinista ni amb temperature=0: una sola passada "
                         f"deixa passar afirmacions reals.")
+    p.add_argument("--xifres-bloquejant", action="store_true",
+                   help="Les xifres DISCREPANTS (confiança alta) bloquegen. "
+                        "Per defecte són mode ombra: avisen però no bloquegen.")
+    p.add_argument("--detall-xifres", action="store_true",
+                   help="Imprimeix l'estat de CADA xifra extreta")
+    p.add_argument("--sense-xifres", action="store_true",
+                   help="No executa la verificació de xifres per sèrie i període")
     p.add_argument("--json", dest="json_out", help="Desa l'informe en JSON en aquesta ruta")
     args = p.parse_args()
 
@@ -1426,8 +1648,18 @@ def main() -> int:
                 cos, modelo, passades=args.passades)
         except Exception as e:
             afirmacions = []
-            avisos.append(f"no s'ha pogut extreure afirmacions ({e}); només "
-                          f"s'ha aplicat el gate de números")
+            # FAIL-CLOSED (2026-10-04). Fins avui això era un AVÍS i el gate
+            # acabava dient "Gate superat" (exit 0) sense haver comprovat cap
+            # afirmació: amb el saldo de l'API esgotat, una clau caducada, un
+            # límit de taxa o un JSON trencat a totes les passades, el borrador
+            # passava només amb el gate de números, que no discrimina (veure
+            # més avall). `schedule.py` decideix per codi de sortida, o sigui
+            # que programava el correu. Si es vol saltar a posta, hi ha
+            # --sense-llm.
+            errors.append(f"no s'ha pogut extreure afirmacions ({e}): el gate "
+                          f"d'afirmacions NO s'ha aplicat i el borrador no es "
+                          f"pot donar per verificat. Reintenta, o usa "
+                          f"--sense-llm si vols saltar-te'l a consciència")
         fallides = sum(1 for n in per_passada if n < 0)
         if fallides:
             avisos.append(f"{fallides} de {len(per_passada)} passades de "
@@ -1460,6 +1692,40 @@ def main() -> int:
             else:
                 print(f"  OK · {detall}")
 
+    # ---- xifres contra sèrie + període (mode ombra) ----------------------
+    estat_xifres = {k: 0 for k in _ESTATS_XIFRA}
+    if not args.sense_llm and not args.sense_xifres:
+        modelo = os.environ.get("VERIFY_MODEL", "claude-sonnet-4-6")
+        try:
+            xifres, pass_x = extreu_afirmacions(
+                cos, modelo, passades=args.passades,
+                prompt=_PROMPT_XIFRES, camp="cifras", max_tokens=8000)
+        except Exception as e:
+            xifres, pass_x = [], []
+            avisos.append(f"no s'ha pogut extreure xifres ({e}); la "
+                          f"verificació per sèrie i període no s'ha aplicat")
+        print(f"  xifres extretes: {len(xifres)} (unió de {len(pass_x)} "
+              f"passades: " + ", ".join(("error" if n < 0 else str(n))
+                                         for n in pass_x) + ")")
+        blocs_x = parteix_blocs(cos)
+        for xf in xifres:
+            estat, detall = verifica_xifra(xf, series)
+            bloc = bloc_de_la_frase(xf.get("frase") or "", blocs_x)
+            if bloc in ("bloc2", "cabecera") and estat in ("DISCREPANT", "DUBTOSA"):
+                continue                  # notícies i capçalera: no és dada nostra
+            if args.detall_xifres:
+                print(f"    {estat:<15} [{bloc or '?'}] {detall[:200]}")
+            estat_xifres[estat] += 1
+            if estat in ("DISCREPANT", "DUBTOSA"):
+                linia = (f"[xifra {estat.lower()}] [{bloc or '?'}] "
+                         f"«{(xf.get('frase') or '')[:100]}» → {detall}")
+                if estat == "DISCREPANT" and args.xifres_bloquejant \
+                        and bloc in _BLOCS_DADES_PROPIES:
+                    errors.append(linia)
+                else:
+                    avisos.append(linia)
+        print("  xifres: " + " · ".join(f"{k} {v}" for k, v in estat_xifres.items()))
+
     # ---- informe ---------------------------------------------------------
     # La unió de passades pot portar la mateixa frase parsejada dues vegades i
     # produir línies idèntiques. Es col·lapsen aquí, conservant l'ordre: el que
@@ -1488,7 +1754,8 @@ def main() -> int:
     if args.json_out:
         Path(args.json_out).write_text(json.dumps(
             {"semana": args.semana, "errors": errors, "avisos": avisos,
-             "classificacio": classificacio}, indent=2, ensure_ascii=False),
+             "classificacio": classificacio, "xifres": estat_xifres},
+            indent=2, ensure_ascii=False),
             encoding="utf-8")
 
     if errors:

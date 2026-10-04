@@ -9,6 +9,61 @@ bloquejava contingut bo (fals positiu): costava una setmana sense edició. Aques
 deixa passar contingut dolent (fals negatiu): posa una xifra falsa a la bústia
 dels subscriptors i no hi ha manera de saber quantes vegades ja ha passat.
 
+### 2026-10-04: el gate de números no discrimina, i el gate obert per l'API
+
+**Mesura (sobre el snapshot del 2026-08-24, 220 sèries i ~40.000 punts):** de les
+999 xifres inventades 0,1–99,9 amb un decimal, **999 surten ANCORAT** (100%). Amb
+el període afegit encara en casen entre el 75% i el 98%, perquè les sèries
+mensuals en tenen dotze per any. Els enters de 10 a 999 s'ancoren el 42% i quasi
+tota la resta com a DERIVAT. És a dir: "ANCORAT 40 · ORFE 0" no vol dir res per a
+xifres curtes. De la prova amb 4 xifres canviades a mà al Núm. 17 (8,5→9,3,
+14,2→15,2, 444.100→454.100, 18,3→19,8) el gate de números en va enxampar **una**,
+la de sis xifres.
+
+**Segon forat: fail-open.** Si l'extractor LLM fallava a totes les passades (saldo
+de l'API esgotat, clau invàlida, límit de taxa), `main()` ho convertia en un AVÍS i
+acabava en "Gate superat", exit 0, amb zero afirmacions comprovades. `schedule.py`
+decideix per codi de sortida. Es va descobrir el 2026-10-04 perquè el saldo es va
+esgotar a mitja prova i el banc va donar el cas 1 i el cas 2 amb exit 0.
+
+**Fet:**
+1. **Fail-closed.** Si fallen totes les passades de l'extractor d'afirmacions, és
+   ERROR (exit 2). `--sense-llm` segueix existint per saltar-s'ho a consciència.
+   Provat sense API a `unitaris.py` (clau invàlida → exit 2; `--sense-llm` → exit 0).
+2. **Verificació de xifres per sèrie i període** (`verifica_xifra`, `_plausibles`).
+   Un segon extractor LLM només parseja (frase, entitat, mètrica, període, valor tal
+   com està escrit); la comparació és codi contra el CSV. Comprovació existencial:
+   la xifra és bona si ALGUNA sèrie amb aquesta entitat I mètrica té el valor en
+   aquest període. No es deixa que el valor triï la sèrie (era el soroll de
+   Bulgària 2006). Estats: VERIFICADA, DERIVADA (diferència que toca el període
+   citat, o bretxa entre dues entitats), DISCREPANT, DUBTOSA, NO_COMPROVABLE.
+   Filtre d'unitat (un «9,3%» no casa amb milers d'ocupats) i `UE-27` ja no queda
+   sense tokens. Ven al final: `xifres: VERIFICADA 12 · … · NO_COMPROVABLE 13`.
+   `--detall-xifres` llista cada xifra.
+3. **Resultat:** les 999 inventades passen de 999 a 57 (`unitaris.py` exigeix ≤100).
+   Al Núm. 17 doctorat, detecta 3 de 4 (la quarta, Alemanya, és NO_COMPROVABLE: el
+   snapshot no té aquesta sèrie). Al Núm. 17 original, 12 verificades i **1
+   discrepant legítima**: el text diu bretxa de 5,7 punts i la sèrie dona 5,76
+   (s'havia restat 14,2−8,5 amb les xifres ja arrodonides; hauria de ser 5,8).
+
+**MODE OMBRA.** La verificació de xifres informa i avisa, però **no bloqueja**
+(`--xifres-bloquejant` per activar-ho: només DISCREPANT, només Bloc 1 i 3). Falten
+edicions reals per mesurar-ne els falsos positius; recordem el Núm. 17. Pendents
+vistos: **(a)** una part important surt NO_COMPROVABLE perquè el snapshot no té la
+sèrie (xifres per país d'ocupació jove, cens d'empreses derivat, comptatges de
+premsa); això és honest però vol dir que un editor ha de mirar-les; **(b)** la
+base de la predicció (p. ex. «−8.513» al Núm. 17) surt DISCREPANT perquè és una
+variació derivada que no és cel·la; **(c)** les xifres que depenen d'una sèrie
+diària (CDMGE) no es poden comparar per mes; **(d)** l'extracció varia (de 18 a 32
+xifres entre execucions del mateix text, tot i que el recompte per passada és
+estable). **Abans de bloquejar:** passar-la per les 6-8 edicions reals que tenen
+snapshot, llegir cada DISCREPANT, i només aleshores decidir.
+
+**No fet:** el banc `executa.py` NO s'ha tornat a passar sencer després dels últims
+canvis (es va esgotar el saldo de l'API). Cal repetir-lo, i `schedule.py` (que
+corre `verify.py` 3 cops) triplica ara el cost per execució (6 crides per passada
+de verify).
+
 ### Què es va mesurar
 
 Sobre el borrador del Núm. 20, sense tocar ni el text ni l'snapshot:

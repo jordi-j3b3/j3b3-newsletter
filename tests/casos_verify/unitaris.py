@@ -156,6 +156,59 @@ def main() -> int:
                  f"{len(hits)} coincidència(es); p.ex. "
                  f"{hits[0][0].etiqueta} a {hits[0][1]}" if hits else "cap")
 
+    # 6. Verificació de xifres per sèrie i període (2026-10-04). Entren xifres
+    #    ja parsejades; tot és codi, sense LLM. Mesura el que el gate de números
+    #    no feia: que una xifra inventada d'un decimal quedés com a ANCORADA.
+    def _xifra(valor, entitat, metrica, periode):
+        return {"frase": "", "entidad": entitat, "metrica": metrica,
+                "periodo": periode, "valor": valor}
+    MET = "ocupados menores de 25 años (peso sobre el total del comercio)"
+    for valor, entitat, periode, esperat, descripcio in [
+        ("8,5%", "España", "2025", {"VERIFICADA"}, "xifra certa (8,48)"),
+        ("9,3%", "España", "2025", {"DISCREPANT", "DUBTOSA"}, "xifra inventada"),
+        ("14,2%", "UE-27", "2025", {"VERIFICADA"}, "xifra certa de la UE-27 (14,24)"),
+        ("15,2%", "UE-27", "2025", {"DISCREPANT", "DUBTOSA"}, "xifra inventada de la UE-27"),
+        ("8,5%", "España", None, {"NO_COMPROVABLE"}, "sense període no es dona per bona"),
+    ]:
+        estat, detall = verify.verifica_xifra(_xifra(valor, entitat, MET, periode), series)
+        comprova(estat in esperat, f"xifra «{valor}» ({entitat}): {descripcio}",
+                 f"{estat} · {detall[:150]}")
+    for valor, esperat, descripcio in [
+        ("444.100", {"VERIFICADA"}, "xifra certa (milers escalats)"),
+        ("454.100", {"DISCREPANT", "DUBTOSA"}, "xifra inventada en persones"),
+    ]:
+        estat, detall = verify.verifica_xifra(_xifra(
+            valor, "España", "ocupados de 50 a 64 años en el comercio minorista",
+            "2018"), series)
+        comprova(estat in esperat, f"xifra «{valor}»: {descripcio}",
+                 f"{estat} · {detall[:150]}")
+
+    # Poder de discriminació: de les 999 xifres 0,1..99,9 amb un decimal, el
+    # gate de números n'ancorava el 100%. Aquí només han de passar les que són
+    # a la sèrie (o a una diferència que toqui el període citat).
+    passen = sum(
+        verify.verifica_xifra(_xifra(f"{k / 10:.1f}".replace(".", ",") + "%",
+                                     "España", MET, "2025"), series)[0]
+        in ("VERIFICADA", "DERIVADA") for k in range(1, 1000))
+    comprova(passen <= 100, "una xifra inventada ja no passa per coincidència",
+             f"{passen} de 999 xifres inventades passen (gate de números: 999)")
+
+    # 7. Fail-closed: si l'extractor falla a TOTES les passades (saldo esgotat,
+    #    clau invàlida, límit de taxa), el gate ha de suspendre. Abans donava
+    #    "Gate superat" amb exit 0 havent comprovat zero afirmacions.
+    import os
+    import subprocess
+    env = dict(os.environ, ANTHROPIC_API_KEY="clau-invalida-per-a-la-prova")
+    cas = str(ROOT / "tests" / "casos_verify" / "cas3_falsos_positius.md")
+    base = [sys.executable, str(ROOT / "scripts" / "verify.py"),
+            "--semana", args.semana, "--fitxer", cas, "--passades", "1"]
+    r = subprocess.run(base, capture_output=True, text=True, env=env)
+    comprova(r.returncode == 2, "extractor caigut a totes les passades: el gate suspèn",
+             f"exit {r.returncode}")
+    r = subprocess.run(base + ["--sense-llm"], capture_output=True, text=True, env=env)
+    comprova(r.returncode == 0, "--sense-llm es pot demanar a consciència",
+             f"exit {r.returncode}")
+
     print(f"\n{'tot correcte' if not fallades else f'{fallades} comprovació(ns) falla'}")
     return 1 if fallades else 0
 
