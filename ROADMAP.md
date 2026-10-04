@@ -38,7 +38,7 @@ esgotar a mitja prova i el banc va donar el cas 1 i el cas 2 amb exit 0.
    Bulgària 2006). Estats: VERIFICADA, DERIVADA (diferència que toca el període
    citat, o bretxa entre dues entitats), DISCREPANT, DUBTOSA, NO_COMPROVABLE.
    Filtre d'unitat (un «9,3%» no casa amb milers d'ocupats) i `UE-27` ja no queda
-   sense tokens. Ven al final: `xifres: VERIFICADA 12 · … · NO_COMPROVABLE 13`.
+   sense tokens. Surt al final: `xifres: VERIFICADA 12 · … · NO_COMPROVABLE 13`.
    `--detall-xifres` llista cada xifra.
 3. **Resultat:** les 999 inventades passen de 999 a 57 (`unitaris.py` exigeix ≤100).
    Al Núm. 17 doctorat, detecta 3 de 4 (la quarta, Alemanya, és NO_COMPROVABLE: el
