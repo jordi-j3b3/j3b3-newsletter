@@ -695,7 +695,7 @@
   <!-- HERO -->
   <div class="hero">
     <div class="kicker">Análisis trimestral · Sector CNAE 47</div>
-    <h1>El comercio cobra más y vende lo mismo</h1>
+    <h1>Más precio y menos empresas</h1>
     <p class="subtitle">Análisis trimestral · 2.º trimestre de 2026 (abril-junio), con datos hasta agosto · Observatorio del Comercio Minorista · J3B3 Consulting</p>
   </div>
 
@@ -850,7 +850,7 @@
         <svg class="chart-svg" id="chart2" viewBox="0 0 700 360" preserveAspectRatio="xMidYMid meet"></svg>
         <div class="tooltip" id="tooltip2"></div>
       </div>
-      <div class="mini-note">Entre 2022 y 2023 el censo cae en 35.318 empresas, casi el triple de la mayor caída de cualquier otro año desde 2008. Tiene el aspecto de un cambio de método, por lo que las comparaciones de este análisis empiezan en 2023.</div>
+      <div class="mini-note">Entre 2022 y 2023 el censo cae en 35.318 empresas, casi el triple de la mayor caída de cualquier otro año desde 2008. Para no mezclar dos series distintas, las comparaciones de este análisis empiezan en 2023.</div>
     </div>
 
     <div class="callout">
@@ -1352,8 +1352,8 @@ function drawChart2() {
   const iBrk = data.findIndex(d => d.y === 2023);
   const xBrk = (xScale(iBrk - 1) + xScale(iBrk)) / 2;
   svg.appendChild(svgEl('line', {x1: xBrk, y1: M.top, x2: xBrk, y2: M.top + ch, stroke: '#9a9a9a', 'stroke-width': '1', 'stroke-dasharray': '4,3'}));
-  const brkLbl = svgEl('text', {x: xBrk - 6, y: M.top + 12, 'text-anchor': 'end', class: 'axis-label'});
-  brkLbl.textContent = 'Posible cambio de método';
+  const brkLbl = svgEl('text', {x: xBrk + 6, y: M.top + 12, 'text-anchor': 'start', class: 'axis-label'});
+  brkLbl.textContent = 'Desde 2023';
   svg.appendChild(brkLbl);
 
   const peak = data[0];
