@@ -166,6 +166,39 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Per què no està cremat**: cap edició l'ha tractada.
 - **Estat**: **PENDENT — cal mecanisme.**
 
+## A15 · El cens de comerç minorista perd empreses més a poc a poc (2024)
+
+> **Estat: ESPERAR CONSOLIDACIÓ DEL 2024.** Apuntat el 2026-10-09 com a candidat
+> a troballa positiva i no passat: el que es pot documentar és una moderació,
+> no un mecanisme ni una tendència. **No es pot publicar com a troballa fins
+> que Eurostat consolidi el 2024.** No s'ha escrit la predicció de reafirmació
+> de P063 (<372.000); si l'angle es desbloqueja, cal reafirmar el llindar tal
+> qual, sense canvi en silenci.
+
+- **Datasets**: `estructura_retail.csv` i `estructura_retail_supervivencia.csv` (Eurostat BSD, CNAE 47, empreses) i `empreses.csv` (INE DIRCE, CNAE 47, foto a 1 de gener). Xifres verificades a mà contra els CSV el 2026-10-09.
+- **Eurostat BSD 2021-2024, natalitat / mortalitat / variació del nombre d'empreses (%)**. La variació (`GRW_ENT_PC`) no és natalitat menys mortalitat i no existeix per al 2021.
+
+| | Natalitat 21 / 22 / 23 / 24 | Mortalitat 21 / 22 / 23 / 24 | Variació 22 / 23 / 24 |
+|---|---|---|---|
+| Espanya | 8,14 / 7,28 / 7,65 / 7,83 | 7,78 / 10,14 / 8,87 / 8,65 | −0,74 / −3,69 / −2,11 |
+| UE-27 | 9,53 / 8,34 / 8,82 / 8,91 | 8,31 / 8,94 / 8,77 / 10,13 | −0,55 / −0,96 / −0,68 |
+| Alemanya | 7,85 / 7,95 / 8,19 / 7,99 | 7,88 / 8,78 / 9,16 / 12,16 | −0,19 / −1,25 / −1,43 |
+| França | 14,45 / 11,34 / 12,09 / 12,58 | 11,25 / 11,24 / 11,47 / 12,95 | +2,23 / −0,17 / +0,88 |
+| Itàlia | 5,95 / 5,58 / 5,59 / 5,52 | 6,39 / 6,04 / 6,86 / 6,76 | −0,19 / −3,08 / −3,85 |
+| Portugal | 8,87 / 8,55 / 8,76 / 8,66 | 8,07 / 9,30 / 9,25 / 8,30 | +0,38 / −0,82 / −0,14 |
+| Països Baixos | 18,42 / 10,18 / 11,91 / 11,57 | 7,13 / 9,71 / 7,52 / 9,71 | +4,63 / +2,86 / +7,46 |
+| Polònia | 10,76 / 10,32 / 10,18 / 10,03 | 14,19 / 12,83 / 12,14 / 16,21 | −4,05 / −1,93 / −1,83 |
+
+- **Cohort, supervivència a un any d'Espanya** (percentatge d'empreses nascudes l'any t−1 que sobreviuen l'any t, any d'observació t): 74,38 (2022), 75,88 (2023), 75,85 (2024). UE-27: 78,15 / 78,00 / 78,21. A dos anys, Espanya 58,69 (2023) i 60,69 (2024); UE-27 61,69 i 62,95. El 2022 és una cohort bona i la del 2023 torna a 75,85: no hi ha millora sostinguda de la supervivència, i el relat "sobreviuen més" no es pot sostenir.
+- **DIRCE (empreses a 1 de gener, Espanya)**: 428.605 (2022), 393.287 (2023), 384.774 (2024), 377.471 (2025). Variació: −35.318 (2023, trencament de sèrie), −8.513 (2024), −7.303 (2025). La pèrdua es modera 1.210 empreses (−2,16% a −1,90%).
+- **El que sí es pot dir**: la caiguda del cens es modera al DIRCE i, a Eurostat, la variació espanyola passa de −3,69% (2023) a −2,11% (2024).
+- **El que no es pot dir**: que és una millora amb mecanisme. L'aritmètica natalitat menys mortalitat explica només una part de la moderació (uns 0,4 punts dels 1,6), i la resta queda sense explicar. El 2024 de Polònia (mortalitat 12,14 a 16,21) i Alemanya (9,16 a 12,16) fa pensar en un any encara provisional.
+- **Cautela que no es negocia: Eurostat i DIRCE NO són dues confirmacions independents.** Eurostat pren el registre de l'INE per a Espanya, i els universos difereixen (el BSD dona 426.519 empreses el 2023 i el DIRCE 393.287). Cap text pot presentar-los com a creuament.
+- **Per què esperar**: Eurostat va revisar el 2023 al BSD (mortalitat espanyola 8,83 a 8,87, UE-27 9,07 a 8,77; també DE, PL, FR, IT, PT). Una xifra del 2024 que es mou en revisions no aguanta com a xifra protagonista d'una edició que obre en positiu.
+- **Matís ja publicat**: el Núm. 17 va dir que la mortalitat espanyola era per sota de la UE; amb el 2023 revisat només aguanta per al 2024 (8,65 contra 10,13). Veure la nota d'actualització del Núm. 17.
+- **Per què no està cremat**: el Núm. 17 va tractar la natalitat i el cens com a diagnòstic negatiu; aquest angle seria la moderació, que és una altra lectura però toca la mateixa predicció (P063).
+- **Estat**: **ESPERAR CONSOLIDACIÓ DEL 2024.**
+
 ---
 
 ## Angles descartats deliberadament
