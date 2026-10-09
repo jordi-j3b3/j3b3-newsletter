@@ -286,4 +286,18 @@
     <changefreq>never</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://pulso.j3b3.com/pulso/num-23.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Observatorio del Comercio</news:name>
+        <news:language>es</news:language>
+      </news:publication>
+      <news:publication_date>2026-10-12T08:30:00+02:00</news:publication_date>
+      <news:title>Cultura y ocio sale del bache.</news:title>
+    </news:news>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>

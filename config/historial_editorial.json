@@ -635,5 +635,32 @@
     "mode_editorial": "especial_informe_trimestral",
     "signo": "negativo",
     "nota_correccio": "2026-10-09: asunto, titular, ángulo y umbral reescritos al texto de la campaña Brevo 40, enviada el 2026-10-05. El historial conservaba la versión del 2026-10-02 (asunto 'El comercio cobra más y vende lo mismo...') y un umbral sin los límites de septiembre registrados en P074."
+  },
+  {
+    "numero": 23,
+    "semana": "2026-10-12",
+    "cifra": "+11,0%",
+    "dataset_bloc1": "ICM real · rama 476 (artículos culturales y recreativos en establecimientos especializados) · variación interanual · serie original · INE",
+    "periodo_bloc1": "2026-08",
+    "angulo_bloc1": "Cultura y ocio sube un 11,0% en agosto y un 8,0% de enero a agosto, tras un 2024 (−1,7%) y un 2025 (0,0%) flojos: el ritmo se duplica a partir de mayo; no se conoce la causa (el INE no desglosa la rama) y frente a 2023 el nivel (+6,1%) aún queda por debajo del comercio sin gasolineras (+7,6%).",
+    "tema_prediccion": "El ICM real de cultura y ocio de septiembre crecerá al menos un +6,0% interanual.",
+    "angle_backlog": "",
+    "metrica_prediccion": "ICM real · cultura y ocio (476) · España · septiembre 2026",
+    "umbral_prediccion": "≥ +6,0% interanual en la primera estimación del INE (serie original, real). Falla si queda por debajo de +6,0%.",
+    "dataset_prediccion": "ICM real por rama 476 · INE",
+    "noticias": [
+      "Lidl destina 30 millones a cinco aperturas este octubre",
+      "Deporvillage amplía su catálogo con marcas técnicas y premium"
+    ],
+    "periodo_icm": "2026-08",
+    "periodo_icm_distribucio": "2026-08",
+    "indicador_bloc3": "icm_rama_476_mensual",
+    "mode_editorial": "manual_cultura_ocio",
+    "brevo_campaign_id": "41",
+    "scheduled_at": "2026-10-12T08:30:00+02:00",
+    "asunto": "Cultura y ocio sube un 11,0% en agosto tras dos años flojos",
+    "titular": "Cultura y ocio sale del bache.",
+    "created_at_utc": "2026-10-09T16:18:46.585447+00:00",
+    "signo": "positivo"
   }
 ]
