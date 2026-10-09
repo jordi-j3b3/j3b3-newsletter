@@ -309,8 +309,16 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
             es_ocupacio = "ocupa" in str(tipus)
             temes = (_TEMES_OCUPACIO if es_ocupacio else _TEMES_VENDES) + " " + (
                 _TEMES_VARIACIO if "var" in str(ind) else "") + " " + str(branca)
+            # La branca 476 (INE: "artículos culturales y recreativos") es cita al
+            # text com "comercio de cultura y ocio". La resolució exigeix
+            # coincidència d'ENTITAT, i amb entitat només "España" la xifra no
+            # trobava la seva sèrie i el gate la resolia contra una no relacionada
+            # (ocupats EPA), amb falsos ERROR de ratxa i superlatiu.
+            entitat_serie = str(ambit) if ambit != "nacional" else "España"
+            if "culturales y recreativos" in str(branca):
+                entitat_serie += " · comercio de cultura y ocio"
             _afegeix(S, f"icm|{ambit}|{tipus}|{branca}|{ind}",
-                     entitat=str(ambit) if ambit != "nacional" else "España",
+                     entitat=entitat_serie,
                      metrica=f"ICM {tipus} {ind} · {branca}",
                      unitat="%" if "var" in str(ind) else "index", punts=punts,
                      temes=temes)

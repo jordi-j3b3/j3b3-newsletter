@@ -314,6 +314,9 @@ def main() -> int:
     p.add_argument("--replace", action="store_true",
                    help="Regenera: suspèn la campanya ja programada d'aquesta setmana, "
                         "la treu de l'historial i en crea una de nova amb el mateix número")
+    p.add_argument("--signo", default="",
+                   help="Signe de l'edició fixat a mà (p.ex. positivo): mana sobre la "
+                        "tesi, l'historial i el classificador (regla 24)")
     p.add_argument("--context-extra", default="",
                    help="Context macro addicional, afegit al que es detecta "
                         "automàticament a la premsa i passat a generate.py")
@@ -462,7 +465,7 @@ def main() -> int:
     historial = carrega_historial()
     entrada = next((e for e in historial
                     if e.get("numero") == numero and e.get("semana") == semana), None)
-    signo = signo_fixat(semana, entrada)
+    signo = args.signo.strip() or signo_fixat(semana, entrada)
     if signo:
         print(f"Signe de l'edició (fixat a mà): {signo}")
     else:

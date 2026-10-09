@@ -384,6 +384,8 @@ def copy_csv_optional(src: Path, dst: Path, label: str) -> dict | None:
 # estacions de servei (soroll del preu del combustible).
 ICM_BRANCA_GENERAL = "Comercio al por menor, excepto de vehículos de motor y motocicletas"
 ICM_BRANCA_SIN473 = "Comercio al por menor sin Estaciones de Servicio (47 sin 473)"
+ICM_BRANCA_CULTURA = ("Comercio al por menor de artículos culturales y recreativos "
+                      "en establecimientos especializados")
 # Estacions de servei amb històric (canvi 2026-09-25, Núm. 21): quan el total i
 # el 47-sin-473 divergeixen, el combustible és l'explicació, i sense la sèrie
 # sencera verify.py no podia comptar-ne cap ratxa (només hi havia l'últim mes).
@@ -426,6 +428,17 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
         & (df["data"] >= cutoff)
     ]
 
+    # Branca 476 (cultura i oci), sèrie sencera en real (canvi 2026-10-09): amb
+    # només el mes més recent per branca, verify.py no podia comprovar cap
+    # xifra ni ratxa d'una edició centrada en aquesta branca i les resolia
+    # contra una sèrie no relacionada (falsos ERROR al gate del Núm. 23).
+    cultura = df[
+        (df["branca"] == ICM_BRANCA_CULTURA)
+        & (df["tipus"] == "real")
+        & df["indicador"].isin(["index", "var_anual", "var_mitjana_acum"])
+        & (df["data"] >= cutoff)
+    ]
+
     # Desglossament per branca del mes més recent (real, var_anual)
     ult_data = df["data"].max()
     branques = df[
@@ -459,7 +472,7 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
     else:
         ccaa = ccaa_full
 
-    out = pd.concat([general, branques, ccaa]).drop_duplicates()
+    out = pd.concat([general, cultura, branques, ccaa]).drop_duplicates()
     cols = ["ambit", "tipus", "branca", "indicador", "any", "mes", "data", "valor"]
     out = out[cols].sort_values(["tipus", "branca", "indicador", "ambit", "data"])
     out.to_csv(dst, index=False)
