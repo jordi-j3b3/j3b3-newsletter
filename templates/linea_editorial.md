@@ -563,7 +563,10 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
 2. ¿La frase tesis del bloque 1 implica una decisión?
 3. ¿La cifra protagonista del bloque 1 procede de un dataset propio del
    Observatorio (no de la recopilación de prensa)?
-4. ¿Las tres noticias sostienen la misma tesis de fondo?
+4. ¿Las tres noticias dialogan con la tesis de fondo —la sostienen, la
+   matizan o la contrastan— sin que ninguna quede como relleno? Una noticia
+   buena y real puede contrastar una tesis negativa y una mala puede matizar
+   una positiva; lo que no vale es forzar una para mezclar signos (regla 24).
 5. ¿La predicción detecta una oportunidad, no solo un riesgo?
 6. ¿La predicción editorial tiene cláusula condicional con factores correctivos?
 7. ¿Hay una predicción cuantitativa falsable derivada para el `registro.csv`?

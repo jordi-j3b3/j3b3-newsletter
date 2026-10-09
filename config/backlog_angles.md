@@ -151,6 +151,21 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Per què no està cremat**: cap edició enviada ha usat el cens per CCAA com a xifra protagonista. El Núm. 17 va fer demografia empresarial amb Eurostat BSD (natalitat), que és una altra font i un altre mecanisme; el Núm. 20 el va tenir al borrador i no es va publicar.
 - **NOTA D'ÚS quan es desbloquegi**: l'angle es va preparar en una setmana en què hi havia mesures d'administracions sobre locals comercials a la premsa, i el borrador el connectava amb elles. Aquesta connexió és la que queda descartada, no la dada. Si es reprèn, ha de sostenir-se sol —variació del cens i lectura demogràfica— sense citar ni avaluar cap mesura concreta de cap administració, i sense fer de la comparació entre comunitats un judici sobre les seves polítiques. El punt de partida net és el rànquing complet de les disset, no una comunitat destacada.
 
+## A14 · El comerç de cultura i oci creix un 8% en volum aquest any
+
+> **Estat: PENDENT — CAL MECANISME.** Apuntat el 2026-10-09 després de buscar-ne
+> un amb les dades del repo i no trobar-ne cap de verificable. **No es pot
+> publicar com a troballa positiva fins que n'hi hagi un.**
+
+- **Dataset**: `icm.csv` (INE, ICM, taula 60096, preus constants, branca "artículos culturales y recreativos en establecimientos especializados", CNAE 476)
+- **Xifra** (verificada contra el CSV el 2026-10-09): volum gener-agost 2026 **+8,0%** sobre el 2025; agost **+11,0%**; vuit mesos positius, el mínim +1,3% (febrer); quinze mesos de variació interanual positiva seguits fins a l'agost.
+- **Base de comparació, i per què no és prou**: el 2024 va fer −1,7% i el 2025 0,0% (gener-agost). És una recuperació. Contra el 2023 el nivell és només **+6,1%**, per sota del comerç sense gasolineres (+7,6%). Pes de la branca: 3,2% de la xifra de negoci i 4,3% de l'ocupació del CNAE 47 (EAS 2024).
+- **Mecanisme**: cap de verificable amb el que tenim. L'ICM no desglossa la branca (llibres, esport, joguines, música), no hi ha sèrie nominal per branca (només volum) i no es pot separar volum de deflactor. La despesa de les llars en "activitats recreatives, esport i cultura" (`subsectors_epf`) puja un 3,8% el 2025, en la mateixa direcció, però barreja serveis i és molt per sota del +8%. El marge sobre vendes de la 476 és estable (7,0-7,8%), de manera que no ve de marge.
+- **Cautela de mètode**: la discrepància ICM-EAS (veure ROADMAP, "Discrepància ICM-EAS a la branca 476"). La sèrie és original, sense ajust de calendari.
+- **Què faria falta**: un desglossament de la 476 (taula INE per subbranques), un deflactor propi de la branca o una font externa que expliqui el canvi de tendència a partir de maig.
+- **Per què no està cremat**: cap edició l'ha tractada.
+- **Estat**: **PENDENT — cal mecanisme.**
+
 ---
 
 ## Angles descartats deliberadament

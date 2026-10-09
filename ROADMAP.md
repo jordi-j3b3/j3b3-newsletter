@@ -675,6 +675,36 @@ Corregit a mà (2026-10-09) amb `nota_correccio`. Sense el mecanisme proposat
 `generate.py`, i els tancaments manuals ho fan de manera habitual. Ja no és un
 cas puntual.
 
+## Discrepància ICM-EAS a la branca 476 (cultura i oci) · Prioridad: mitjana
+
+Detectada el 2026-10-09 en buscar el mecanisme del +8,0% de l'ICM de cultura i
+oci (angle A14 del backlog). La mitjana anual de l'índex ICM real de la branca
+476 i la facturació nominal de l'EAS del mateix CNAE no expliquen el mateix:
+
+| Any | ICM real 476 (mitjana de l'índex) | EAS nominal 476 (xifra de negoci) |
+|---|---|---|
+| 2022 | +6,3% | +10,1% |
+| 2023 | **+13,1%** | **+7,3%** |
+| 2024 | **−1,9%** | **+5,3%** |
+
+El 2023 el volum surt per sobre de la facturació nominal (cosa que exigiria un
+deflactor negatiu del −5%) i el 2024 el volum cau mentre la facturació puja un
+5,3%. No és exclusiu de la 476: a l'agregat sense gasolineres, l'ICM nominal fa
++11,5% (2023) i +4,3% (2024) contra l'EAS nominal del CNAE 47 total, +5,0% i
++8,0%. Aquest segon cas no és net, perquè l'EAS total inclou el combustible
+(CNAE 473) i l'ICM "sense estacions de servei" no. Però apunta a una diferència
+d'abast i de calendari entre les dues fonts (ICM: enquesta mensual
+d'establiments, original; EAS: enquesta anual d'empreses) més que a un error de la
+branca.
+
+**Conseqüència:** cap xifra de volum de l'ICM per branca es pot ancorar a l'EAS
+ni el contrari, i un text no ha de barrejar-les al mateix argument sense dir-ho
+(la regla 21 d'`estil_editorial.md` ja ho demana per a dues fonts amb ajust diferent; aquí la diferència és d'abast). **Per fer:**
+comparar branca per branca (totes les que l'ICM publica a preus constants i
+nominals) per veure si la discrepància és general; mirar si l'INE publica el
+deflactor per branca; i no usar l'ICM de la 476 com a protagonista fins que
+això estigui aclarit.
+
 ## Post-lanzamiento (después del 1 de junio de 2026)
 
 - **Sincronització única dels tres punts de sortida (Brevo + mirall + web)** · FET (2026-08-17): `scripts/resync.py`

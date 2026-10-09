@@ -231,12 +231,21 @@ def format_historial_para_prompt(entries: list, max_n: int = HISTORIAL_VENTANA) 
         lines.append(
             f"- Núm. {e.get('numero', '?')} ({e.get('semana', '?')}): "
             f"cifra {e.get('cifra', '?')}. "
+            f"Signo: {e.get('signo', '(sin registro)')}"
+            f"{' (pendiente de confirmación)' if e.get('signo_estado') else ''}. "
             f"Ángulo: {e.get('angulo_bloc1', '(sin registro)')}. "
             f"Predicción: {e.get('tema_prediccion', '(sin registro)')}"
             f"{pred_detalle}. "
             f"Noticias citadas: {noticias}."
         )
     lines.extend([
+        "",
+        "ALTERNANCIA DE SIGNO (regla 24 del estilo editorial). Mira el campo "
+        "'Signo' de las dos últimas ediciones: si ninguna de las dos abrió "
+        "con un hallazgo positivo, esta abre con uno siempre que los datos de "
+        "la semana lo sostengan (mejora real frente a una base relevante, "
+        "mecanismo, sin cautela que lo deshaga). Si no lo sostienen, sigue el "
+        "ángulo que tocaba y dilo en la TRAZABILIDAD: no se fuerza ninguno.",
         "",
         "Para esta edición, evita tratar de nuevo los ángulos listados. No "
         "basta con cambiar la cifra — busca una dimensión analítica nueva: "

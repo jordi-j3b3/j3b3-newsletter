@@ -228,6 +228,30 @@ def extreu_metadades(semana: str) -> dict:
     }
 
 
+def calcula_signo(semana: str) -> str | None:
+    """Signe de l'edició (positivo/negativo/mixto) sobre el text FINAL, el que
+    s'envia. Ajuda, no gate: si falla, avisa i retorna None (l'historial es
+    queda com estava). Veure scripts/signo.py i la regla 24 d'estil_editorial."""
+    try:
+        import yaml
+        from anthropic import Anthropic
+        from signo import clasifica_signo
+
+        md_path = ROOT / "output" / f"semana-{semana}" / "newsletter.md"
+        md_text = md_path.read_text(encoding="utf-8")
+        with open(ROOT / "config" / "settings.yaml", encoding="utf-8") as f:
+            modelo = yaml.safe_load(f)["modelo"]["modelo"]
+        signo = clasifica_signo(Anthropic(), modelo, md_text)
+        if signo is None:
+            print("[signo] El model no ha retornat positivo/negativo/mixto; "
+                  "el camp queda sense tocar.", file=sys.stderr)
+        return signo
+    except Exception as e:  # noqa: BLE001 — no ha de bloquejar l'enviament
+        print(f"[signo] No s'ha pogut classificar ({type(e).__name__}: {e}); "
+              "el camp queda sense tocar.", file=sys.stderr)
+        return None
+
+
 def llegeix_avisos_noticies_editor(semana: str) -> list[str]:
     """Llegeix els avisos de fetch fallit de notícies [EDITOR] desats a
     _meta.json pel snapshot d'aquesta setmana (camp noticies_editor_avisos,
@@ -417,11 +441,18 @@ def main() -> int:
         "titular": meta["titular"],
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
     }
+    # Signe de l'edició, calculat sobre el text final (regla 24 d'estil_editorial).
+    signo = calcula_signo(semana)
+    if signo:
+        brevo_fields["signo"] = signo
+        print(f"Signe de l'edició (text final): {signo}")
     historial = carrega_historial()
     entrada = next((e for e in historial
                     if e.get("numero") == numero and e.get("semana") == semana), None)
     if entrada is not None:
         entrada.update(brevo_fields)
+        if signo:
+            entrada.pop("signo_estado", None)
     else:
         historial.append({"numero": numero, "semana": semana, **brevo_fields})
     desa_historial(historial)
