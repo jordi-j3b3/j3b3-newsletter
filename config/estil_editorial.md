@@ -282,6 +282,20 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
     2023", con el motivo en términos de qué cifra no es comparable. (Núm. 22:
     el gráfico de empresas decía "Posible cambio de método" sobre el salto
     2022-2023; ahora dice "Desde 2023".)
+24. **Alternancia de signo.** Antes de elegir el ángulo, mira el signo de las
+    dos últimas ediciones enviadas (campo `signo` del historial: positivo,
+    negativo o mixto; si falta, léelo del titular y de la cifra del Bloque 1).
+    Si ninguna de las dos ha abierto con un hallazgo positivo, esta edición
+    abre con uno, siempre que los datos de la semana lo sostengan. Si no lo
+    sostienen, sigue el ángulo que tocaba y lo dices en la TRAZABILIDAD: no se
+    fuerza ninguno. Un hallazgo es positivo cuando cumple tres condiciones a la
+    vez: mejora real frente a una base relevante (la misma serie un año antes
+    o la UE-27), un mecanismo que la explique más allá de "sube", y ninguna
+    cautela de muestra o de metodología que la deshaga. "Positivo" describe el
+    signo del dato. La verificación, las cautelas y la predicción son las
+    mismas que en cualquier otra edición. El Bloque 2 mezcla signos: al menos
+    una de las tres noticias es buena y real (apertura, crecimiento, inversión)
+    si el recull la ofrece; si no, no se fuerza y se anota en la TRAZABILIDAD.
 
 ---
 

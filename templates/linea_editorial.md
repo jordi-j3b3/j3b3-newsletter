@@ -577,6 +577,12 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
 13. ¿Las tres noticias del Bloque 2 cubren al menos dos segmentos (gran
     distribución / comerç de proximitat / centres comercials)? Si el snapshot
     no lo permite, ¿se ha registrado en TRAZABILIDAD (`diversidad_segmentos`)?
+14. ¿Se ha aplicado la alternancia de signo (`estil_editorial.md`, regla 24)?
+    Si las dos últimas ediciones no abrieron en positivo, ¿abre esta con un
+    hallazgo que cumple las tres condiciones (mejora frente a base relevante,
+    mecanismo, sin cautela que lo deshaga)? Si los datos no lo sostienen,
+    ¿consta en TRAZABILIDAD? ¿El Bloque 2 incluye una noticia buena y real, o
+    se ha anotado que el recull no la ofrecía?
 
 ---
 

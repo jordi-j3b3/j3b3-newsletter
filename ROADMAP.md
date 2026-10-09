@@ -590,7 +590,7 @@ Val la pena revisar de camí si `OBSERVATORI_PATH` hauria de ser obligatori i
 fallar d'entrada quan no hi és, en lloc de tenir un valor per defecte relatiu
 que només és correcte en una disposició de carpetes que ja no fem servir.
 
-## Els camps estructurats de l'historial no reflecteixen les correccions manuals · Prioridad: mitjana
+## Els camps estructurats de l'historial no reflecteixen les correccions manuals · Prioridad: alta
 
 Detectat el 2026-09-04 al Núm. 18. La predicció generada per Sonnet es fixava
 sobre "el tramo de 10 a 49 ocupados", un desglossament que **no existeix al
@@ -644,6 +644,36 @@ Sigui quina sigui l'opció, convé deixar constància al propi historial quan un
 camp s'ha corregit a mà. Al Núm. 18 s'hi ha posat un camp `nota_correccio`
 amb el motiu; si es formalitza, millor un nom fix i documentat al
 `data_dictionary.md`.
+
+### 2026-10-09: reincidència al Núm. 22 (prioritat pujada de mitjana a alta)
+
+Segona vegada que passa, amb el mateix mecanisme. L'historial del Núm. 22 va
+quedar amb el que es va registrar en programar la campanya (2026-10-02) i no
+amb el que es va enviar (2026-10-05, campanya Brevo 40), després dels retocs
+manuals del 2026-10-04:
+
+| Camp | Historial | Enviat (Brevo 40) |
+|---|---|---|
+| `asunto` | El comercio cobra más y vende lo mismo: el informe del segundo trimestre | Más precio y menos empresas: el informe del segundo trimestre |
+| `titular` | El comercio cobra más y vende lo mismo. | Más precio y menos empresas |
+| `angulo_bloc1` | només el 86% i el volum | 86% preu, petites cadenes −10%, 22 empreses menys al dia |
+| `umbral_prediccion` | sense els límits de setembre | límits +1,42% i −1,67% (els que ja constaven a P074) |
+
+El `tema_prediccion` i la `metrica_prediccion` sí que coincidien. Al registre de
+prediccions (`observatori-prediccions`) la fila P074 es va escriure a mà i era
+correcta, o sigui que el dany aquesta vegada es va quedar a l'historial. Però
+l'historial alimenta l'anti-repetició: `format_historial_para_prompt()` hauria
+injectat durant sis edicions un titular i un assumpte que els subscriptors no
+han rebut mai, i la regla 22 d'`estil_editorial.md` compara contra aquests camps.
+El titular antic segueix també al `newsletter.html` local de
+`output/semana-2026-10-05/` (fora de git); la web (`docs/pulso/num-22.html`) i
+Brevo sí que tenen el bo.
+
+Corregit a mà (2026-10-09) amb `nota_correccio`. Sense el mecanisme proposat
+(re-extreure del text final just abans de crear la campanya, o comparar a
+`verify.py`) tornarà a passar a cada edició que es retoqui després de
+`generate.py`, i els tancaments manuals ho fan de manera habitual. Ja no és un
+cas puntual.
 
 ## Post-lanzamiento (después del 1 de junio de 2026)
 

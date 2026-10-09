@@ -479,7 +479,8 @@
     "scheduled_at": "2026-08-31T08:30:00+02:00",
     "asunto": "España no cierra más comercios que Europa — abre muchos menos",
     "titular": "España: el problema es la natalidad empresarial.",
-    "created_at_utc": "2026-08-28T09:59:08.089451+00:00"
+    "created_at_utc": "2026-08-28T09:59:08.089451+00:00",
+    "signo": "negativo"
   },
   {
     "numero": 18,
@@ -511,7 +512,9 @@
     "asunto": "Vende en línea mejor que Europa, pero la nube no escala.",
     "titular": "Digitalización a medias: venta sí, nube no.",
     "created_at_utc": "2026-09-04T16:25:34.120709+00:00",
-    "nota_correccio": "2026-09-04: predicció reformulada a mà després de generate. El borrador la fixava sobre el tram de 10-49 ocupats, que NO existeix al pipeline (el fetcher demana size_emp=GE10 agregat) i contradeia el mecanisme del Bloc 1, que parla del tram per sota de 10. Reformulada sobre la bretxa GE10, que sí que mesurem, amb llindar resoluble."
+    "nota_correccio": "2026-09-04: predicció reformulada a mà després de generate. El borrador la fixava sobre el tram de 10-49 ocupats, que NO existeix al pipeline (el fetcher demana size_emp=GE10 agregat) i contradeia el mecanisme del Bloc 1, que parla del tram per sota de 10. Reformulada sobre la bretxa GE10, que sí que mesurem, amb llindar resoluble.",
+    "signo": "mixto",
+    "signo_estado": "pendiente de confirmación"
   },
   {
     "numero": 19,
@@ -541,7 +544,8 @@
     "scheduled_at": "2026-09-14T08:30:00+02:00",
     "asunto": "El 32,8% de la plantilla del comercio tiene 50 años o más",
     "titular": "El comercio ha envejecido su plantilla.",
-    "created_at_utc": "2026-09-13T16:39:52.826581+00:00"
+    "created_at_utc": "2026-09-13T16:39:52.826581+00:00",
+    "signo": "negativo"
   },
   {
     "numero": 20,
@@ -572,7 +576,9 @@
     "scheduled_at": "2026-09-21T08:30:00+02:00",
     "asunto": "El comercio gana más por hora trabajada — y no va al sueldo",
     "titular": "Más valor por hora. Menos para el sueldo.",
-    "created_at_utc": "2026-09-20T10:46:51.237320+00:00"
+    "created_at_utc": "2026-09-20T10:46:51.237320+00:00",
+    "signo": "mixto",
+    "signo_estado": "pendiente de confirmación"
   },
   {
     "numero": 21,
@@ -602,29 +608,32 @@
     "scheduled_at": "2026-09-28T08:30:00+02:00",
     "asunto": "La caída de julio está en el surtidor, y Europa ya crece más que España",
     "titular": "El combustible explica la caída de julio.",
-    "created_at_utc": "2026-09-25T14:12:36.635635+00:00"
+    "created_at_utc": "2026-09-25T14:12:36.635635+00:00",
+    "signo": "mixto"
   },
   {
     "numero": 22,
     "semana": "2026-10-05",
     "brevo_campaign_id": "40",
     "scheduled_at": "2026-10-05T08:30:00+02:00",
-    "asunto": "El comercio cobra más y vende lo mismo: el informe del segundo trimestre",
-    "titular": "El comercio cobra más y vende lo mismo.",
+    "asunto": "Más precio y menos empresas: el informe del segundo trimestre",
+    "titular": "Más precio y menos empresas.",
     "created_at_utc": "2026-10-02T11:02:36.261415+00:00",
     "cifra": "86 €",
     "dataset_bloc1": "ICM nacional, conjunto CNAE 47 · facturación (nominal) frente a volumen (real) · serie original · INE",
     "periodo_bloc1": "2026-T2",
-    "angulo_bloc1": "Edición especial con el informe trimestral: de cada 100 euros de crecimiento, 86 son precio; el volumen apenas se mueve.",
+    "angulo_bloc1": "Edición especial con el informe trimestral: 86 de cada 100 euros de crecimiento del segundo trimestre son precio, las pequeñas cadenas caen un 10% y el comercio pierde 22 empresas al día.",
     "tema_prediccion": "El ICM real del 3T 2026 cerrará por debajo del 3T 2025 en el conjunto y por encima sin estaciones de servicio.",
     "angle_backlog": "",
     "metrica_prediccion": "ICM real · España · 3T 2026 frente a 3T 2025",
-    "umbral_prediccion": "(a) conjunto CNAE 47 < 0%; (b) comercio sin estaciones de servicio > 0%",
+    "umbral_prediccion": "(a) conjunto CNAE 47 < 0%; (b) comercio sin estaciones de servicio > 0%; las dos a la vez. Falla si septiembre del conjunto crece más de +1,42% interanual o si sin estaciones de servicio cae más de -1,67% (límites de P074).",
     "dataset_prediccion": "ICM real por ramas CNAE 47 · INE",
     "noticias": [],
     "periodo_icm": "2026-08",
     "periodo_icm_distribucio": "2026-08",
     "indicador_bloc3": "informe_trimestral",
-    "mode_editorial": "especial_informe_trimestral"
+    "mode_editorial": "especial_informe_trimestral",
+    "signo": "negativo",
+    "nota_correccio": "2026-10-09: asunto, titular, ángulo y umbral reescritos al texto de la campaña Brevo 40, enviada el 2026-10-05. El historial conservaba la versión del 2026-10-02 (asunto 'El comercio cobra más y vende lo mismo...') y un umbral sin los límites de septiembre registrados en P074."
   }
 ]
