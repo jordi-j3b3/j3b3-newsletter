@@ -228,10 +228,27 @@ def extreu_metadades(semana: str) -> dict:
     }
 
 
+def signo_fixat(semana: str, entrada: dict | None) -> str | None:
+    """Signe fixat a mà, que mana sobre el classificador. Dues vies:
+    una línia `SIGNO: <valor>` a config/tesi_setmana.md, o el camp `signo` de
+    l'entrada de l'historial amb `signo_estado: "fijado a mano"`."""
+    tesi = ROOT / "config" / "tesi_setmana.md"
+    if tesi.exists():
+        m = re.search(r"^\s*SIGNO:\s*(.+?)\s*$", tesi.read_text(encoding="utf-8"),
+                      re.MULTILINE | re.IGNORECASE)
+        if m:
+            return m.group(1)
+    if entrada and entrada.get("signo") and entrada.get("signo_estado") == "fijado a mano":
+        return entrada["signo"]
+    return None
+
+
 def calcula_signo(semana: str) -> str | None:
     """Signe de l'edició (positivo/negativo/mixto) sobre el text FINAL, el que
-    s'envia. Ajuda, no gate: si falla, avisa i retorna None (l'historial es
-    queda com estava). Veure scripts/signo.py i la regla 24 d'estil_editorial."""
+    s'envia. Recurs de reserva: només s'usa si el signe no s'ha fixat a mà
+    (signo_fixat). Ajuda, no gate: s'executa DESPRÉS de crear la campanya i, si
+    falla o triga, avisa i retorna None (l'historial es queda com estava).
+    Veure scripts/signo.py i la regla 24 d'estil_editorial."""
     try:
         import yaml
         from anthropic import Anthropic
@@ -241,7 +258,7 @@ def calcula_signo(semana: str) -> str | None:
         md_text = md_path.read_text(encoding="utf-8")
         with open(ROOT / "config" / "settings.yaml", encoding="utf-8") as f:
             modelo = yaml.safe_load(f)["modelo"]["modelo"]
-        signo = clasifica_signo(Anthropic(), modelo, md_text)
+        signo = clasifica_signo(Anthropic(timeout=30.0, max_retries=1), modelo, md_text)
         if signo is None:
             print("[signo] El model no ha retornat positivo/negativo/mixto; "
                   "el camp queda sense tocar.", file=sys.stderr)
@@ -442,13 +459,18 @@ def main() -> int:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
     }
     # Signe de l'edició, calculat sobre el text final (regla 24 d'estil_editorial).
-    signo = calcula_signo(semana)
-    if signo:
-        brevo_fields["signo"] = signo
-        print(f"Signe de l'edició (text final): {signo}")
     historial = carrega_historial()
     entrada = next((e for e in historial
                     if e.get("numero") == numero and e.get("semana") == semana), None)
+    signo = signo_fixat(semana, entrada)
+    if signo:
+        print(f"Signe de l'edició (fixat a mà): {signo}")
+    else:
+        signo = calcula_signo(semana)
+        if signo:
+            print(f"Signe de l'edició (classificador, text final): {signo}")
+    if signo:
+        brevo_fields["signo"] = signo
     if entrada is not None:
         entrada.update(brevo_fields)
         if signo:
