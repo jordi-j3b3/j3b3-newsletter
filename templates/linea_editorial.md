@@ -586,6 +586,9 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
     mecanismo, sin cautela que lo deshaga)? Si los datos no lo sostienen,
     ¿consta en TRAZABILIDAD? ¿El Bloque 2 incluye una noticia buena y real, o
     se ha anotado que el recull no la ofrecía?
+15. ¿El Bloque 1 lleva tres cifras como máximo, sin parejas eco, sin "no
+    sabemos" y sin imágenes que haya que releer (`estil_editorial.md`,
+    regla 25)?
 
 ---
 

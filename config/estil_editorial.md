@@ -296,6 +296,27 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
     mismas que en cualquier otra edición. El Bloque 2 mezcla signos: al menos
     una de las tres noticias es buena y real (apertura, crecimiento, inversión)
     si el recull la ofrece; si no, no se fuerza y se anota en la TRAZABILIDAD.
+25. **Relato, no baile de cifras.** El Bloque 1 lleva dos o tres cifras como
+    máximo. El resto se dice con palabras ("dos años sin avanzar", "al doble",
+    "algo más de tres de cada cien euros") y el detalle numérico va a la
+    TRAZABILIDAD. Antes de entregar el bloque, cuenta las cifras. Se aplican
+    además cuatro reglas:
+    - **Comparables que se entiendan a la primera.** "El comercio sin
+      gasolineras" obliga al lector a pararse; en el cuerpo se dice "el conjunto
+      del comercio" y el agregado exacto va a la TRAZABILIDAD.
+    - **Sin parejas eco.** No digas lo mismo dos veces con verbos parecidos en
+      párrafos seguidos ("la rama remonta" y, después, "la rama recupera,
+      pero..."). Una idea, una vez.
+    - **Nunca "no sabemos".** Si la estadística no desglosa la causa, dilo así:
+      el motivo existe, pero la fuente no lo separa ("el INE agrupa librerías,
+      tiendas de deporte, jugueterías y tiendas de música en una sola cifra").
+      "No sabemos a qué se debe" hace que el lector dude de todo el boletín.
+    - **Imágenes llanas, no eslóganes.** Una imagen tiene que entenderse sin
+      releerla, y si es abstracta, la frase siguiente la explica. (Núm. 23:
+      se rechazaron "viven de las ganas", "el motor existe, pero no está a la
+      vista", "suma las cuatro tiendas" y "sus vaivenes dicen mucho del humor
+      del consumidor". Se aceptaron "lo que se compra cuando sobra algo a final
+      de mes" y "sirve de termómetro", seguida de su explicación.)
 
 ---
 
