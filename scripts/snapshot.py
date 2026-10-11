@@ -14,6 +14,10 @@ Genera data/semana-YYYY-MM-DD/ con:
                             CNAE 47 per província, anual; no són empreses)
   - locals_ccaa_grups.csv   copia íntegra de locals_ccaa_grups.csv (LOCALS DIRCE
                             per CCAA i grup 471-479, anual)
+  - fets.csv                copia íntegra de fets.csv (hechos del motor del
+                            Observatorio, data/sql/fets.py)
+  - fets_setmana.md         hechos nuevos, cambiados y desaparecidos frente a
+                            la semana anterior (scripts/fets_setmana.py)
   - recopilacion_prensa.md  serializado de modules.press.fetch_press(),
                             filtrado a la ventana configurada, con las
                             entradas [EDITOR] de config/noticies_editor.md
@@ -44,6 +48,8 @@ import pandas as pd
 import requests
 import yaml
 from dotenv import load_dotenv
+
+import fets_setmana
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -802,6 +808,8 @@ def main() -> int:
     cens_ccaa_dst = semana_dir / "cens_ccaa.csv"
     locals_provincia_dst = semana_dir / "locals_provincia.csv"
     locals_ccaa_grups_dst = semana_dir / "locals_ccaa_grups.csv"
+    fets_src = obs_path / SETTINGS["snapshot"]["fets_origen"]
+    fets_dst = semana_dir / "fets.csv"
     prensa_dst = semana_dir / "recopilacion_prensa.md"
 
     print(f"Capturando snapshot para semana del {semana_str}")
@@ -948,6 +956,13 @@ def main() -> int:
     if locals_ccaa_grups_info:
         print(f"  locals_ccaa_grups.csv · {locals_ccaa_grups_info['filas']:>5} filas")
 
+    fets_info = copy_csv_optional(fets_src, fets_dst, "Hechos del motor")
+    if fets_info:
+        fets_info.update(fets_setmana.genera(semana_str, obs_path) or {})
+        print(f"  fets.csv             · {fets_info['filas']:>6} hechos · "
+              f"{fets_info['nuevos']} nuevos · {fets_info['cambiados']} cambiados · "
+              f"{fets_info['desaparecidos']} desaparecidos → fets_setmana.md")
+
     prensa_info = capture_press(prensa_dst, obs_path, SETTINGS["prensa"]["dias_ventana"])
     print(
         f"  recopilacion_prensa  · {prensa_info['items']:>6} items · "
@@ -991,6 +1006,7 @@ def main() -> int:
         "cens_ccaa": cens_ccaa_info,
         "locals_provincia": locals_provincia_info,
         "locals_ccaa_grups": locals_ccaa_grups_info,
+        "fets": fets_info,
         "prensa": prensa_info,
         "noticies_editor": noticies_editor_info,
         "noticies_editor_avisos": noticies_editor_avisos,

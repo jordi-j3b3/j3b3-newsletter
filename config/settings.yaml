@@ -45,6 +45,8 @@ snapshot:
   # LOCALS DIRCE (unitats locals), no empreses: no comparables amb cens_ccaa.
   locals_provincia_origen: "data/cache/locals_provincia.csv"
   locals_ccaa_grups_origen: "data/cache/locals_ccaa_grups.csv"
+  # Hechos del motor (observatori data/sql/fets.py); enunciados en catalán.
+  fets_origen: "data/cache/fets.csv"
 
 # Paleta de marca J3B3 (espejada desde observatori-comerc/style.py).
 # Se usa en email_base.html y en cualquier visualización.

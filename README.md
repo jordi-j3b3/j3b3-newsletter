@@ -98,6 +98,7 @@ j3b3-newsletter/
 │       └── metrics.json
 ├── scripts/
 │   ├── snapshot.py             Captura de datos desde observatori-comerc
+│   ├── fets_setmana.py         Hechos del motor: nuevos, cambiados y desaparecidos (lo llama snapshot.py)
 │   ├── generate.py             Llama a Sonnet 4.6 con la línea editorial
 │   ├── compose.py              Markdown → HTML email-safe
 │   ├── preview.py              Envía preview vía MailerLite
