@@ -153,9 +153,11 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 
 ## A14 · El comerç de cultura i oci creix un 8% en volum aquest any
 
-> **Estat: PENDENT — CAL MECANISME.** Apuntat el 2026-10-09 després de buscar-ne
-> un amb les dades del repo i no trobar-ne cap de verificable. **No es pot
-> publicar com a troballa positiva fins que n'hi hagi un.**
+> **Estat: USAT (Núm. 23, setmana 2026-10-12, enviat el 2026-10-13).** Es va
+> publicar com a peça curta amb signe positiu i cautela de mètode, sense mecanisme
+> verificable: "Cultura y ocio sale del bache", amb la predicció P077 (ICM 476
+> setembre ≥ +6,0%). Es resol a finals d'octubre. El text que segueix és la fitxa
+> original, abans de l'edició.
 
 - **Dataset**: `icm.csv` (INE, ICM, taula 60096, preus constants, branca "artículos culturales y recreativos en establecimientos especializados", CNAE 476)
 - **Xifra** (verificada contra el CSV el 2026-10-09): volum gener-agost 2026 **+8,0%** sobre el 2025; agost **+11,0%**; vuit mesos positius, el mínim +1,3% (febrer); quinze mesos de variació interanual positiva seguits fins a l'agost.
@@ -164,7 +166,7 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Cautela de mètode**: la discrepància ICM-EAS (veure ROADMAP, "Discrepància ICM-EAS a la branca 476"). La sèrie és original, sense ajust de calendari.
 - **Què faria falta**: un desglossament de la 476 (taula INE per subbranques), un deflactor propi de la branca o una font externa que expliqui el canvi de tendència a partir de maig.
 - **Per què no està cremat**: cap edició l'ha tractada.
-- **Estat**: **PENDENT — cal mecanisme.**
+- **Estat**: **USAT (Núm. 23, 2026-10-12).** Veure la nota de dalt.
 
 ## A15 · El cens de comerç minorista perd empreses més a poc a poc (2024)
 

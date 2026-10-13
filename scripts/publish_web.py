@@ -10,6 +10,8 @@ Llegeix:
   output/semana-YYYY-MM-DD/newsletter.md   (generat per compose.py)
   templates/web_base.html
   docs/pulso/manifest.json                 (creat/actualitzat per aquest script)
+  config/notas_actualizacion/num-{N}.html  (opcional: nota posterior a l'enviament,
+                                            s'afegeix al final del cos; sobreviu al backfill)
 
 Ús:
   python scripts/publish_web.py --semana 2026-06-08 --numero 6
@@ -136,6 +138,10 @@ def render_web(semana: str, numero: int, output_root: Path | None = None) -> str
         r"<h2>\1</h2>",
         body_html,
     )
+
+    nota_path = ROOT / "config" / "notas_actualizacion" / f"num-{numero}.html"
+    if nota_path.exists():
+        body_html += "\n" + nota_path.read_text(encoding="utf-8").strip()
 
     titular = meta["titular"] or meta["subject"]
     published_iso = f"{semana}T08:30:00+02:00"
