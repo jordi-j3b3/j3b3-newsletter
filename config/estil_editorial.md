@@ -284,9 +284,13 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
     2022-2023; ahora dice "Desde 2023".)
 24. **Alternancia de signo.** Antes de elegir el ángulo, mira el signo de las
     dos últimas ediciones enviadas (campo `signo` del historial: positivo,
-    negativo o mixto; si falta, léelo del titular y de la cifra del Bloque 1).
-    Si ninguna de las dos ha abierto con un hallazgo positivo, esta edición
-    abre con uno, siempre que los datos de la semana lo sostengan. Si no lo
+    negativo, mixto o neutro). Obliga a abrir en positivo solo si ninguna de
+    las dos últimas ediciones lo ha hecho. Si la última abrió en positivo, la
+    edición es libre y se procura que sea mixta. "Neutro" y "mixto" no cuentan
+    como positivo. Si falta el `signo` de alguna de las dos, la regla no se
+    aplica y se avisa en la TRAZABILIDAD; no se deduce del titular ni de la
+    cifra. Cuando ninguna de las dos ha abierto con un hallazgo positivo, esta
+    edición abre con uno, siempre que los datos de la semana lo sostengan. Si no lo
     sostienen, sigue el ángulo que tocaba y lo dices en la TRAZABILIDAD: no se
     fuerza ninguno. Un hallazgo es positivo cuando cumple tres condiciones a la
     vez: mejora real frente a una base relevante (la misma serie un año antes

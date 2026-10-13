@@ -245,7 +245,11 @@ def format_historial_para_prompt(entries: list, max_n: int = HISTORIAL_VENTANA) 
         "con un hallazgo positivo, esta abre con uno siempre que los datos de "
         "la semana lo sostengan (mejora real frente a una base relevante, "
         "mecanismo, sin cautela que lo deshaga). Si no lo sostienen, sigue el "
-        "ángulo que tocaba y dilo en la TRAZABILIDAD: no se fuerza ninguno.",
+        "ángulo que tocaba y dilo en la TRAZABILIDAD: no se fuerza ninguno. "
+        "Si la última abrió en positivo, la edición es libre y se procura "
+        "mixta. 'Neutro' y 'mixto' no cuentan como positivo. Si falta el "
+        "signo de alguna de las dos, la regla no se aplica: avísalo en la "
+        "TRAZABILIDAD y no lo deduzcas del titular.",
         "",
         "Para esta edición, evita tratar de nuevo los ángulos listados. No "
         "basta con cambiar la cifra — busca una dimensión analítica nueva: "

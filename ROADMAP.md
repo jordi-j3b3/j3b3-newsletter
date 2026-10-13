@@ -960,3 +960,11 @@ exactament els dos mecanismes de fallada amb `entidad` genèric). Verificat:
 5/5 execucions de `unitaris.py` idèntiques (determinista per construcció) i
 4/4 execucions de `executa.py --semana 2026-09-14` amb `cas4` en verd
 (crida real a l'LLM, confirma estabilitat de punta a punta).
+
+## Workflow diari de dades d'observatori-comerc: provar els canvis en un venv amb el Python del CI · Prioritat: baixa (2026-10-13)
+
+Les fallades del 11-13/10 (`_exporta_fets`, `AttributeError` amb pandas 3) no es van veure en local perquè el Mac tenia pandas 2.3.3. Ara `requirements.txt` fixa pandas 3.0.6, pyarrow 25.0.1 i duckdb 1.5.6, i hi ha un venv `~/.venvs/observatori-ci` amb Python 3.11 (el del CI). Regla: **tot canvi al workflow diari es prova en aquest venv i amb un `workflow_dispatch` el mateix dia.** Instruccions al README d'observatori-comerc.
+
+## Validació de salts a `data/processor.py` (observatori-comerc): ràtio contra diferència absoluta · Prioritat: baixa (2026-10-13)
+
+`_is_valid_series` mira el ràtio entre valors consecutius (`max_jump`) i cada dia avisa de dos fals positius: `confianza_consumidor/index_confianca` (34,5×: abril del 2020, de +0,6 a −20,7, salt real amb base propera a zero) i `cdmge/valor` (995,0×: `tasa_mensual` l'1/06/2026, de 0,5 a 497,5; els primers dies del mes la base acumulada és de pocs dècimes; 19 casos de més de 50×). Proposta: **diferència absoluta només per a les sèries de taxes** (variacions, índexs de confiança) i ràtio per als nivells (euros, files, unitats). No tocat; ho decideix el Jordi.

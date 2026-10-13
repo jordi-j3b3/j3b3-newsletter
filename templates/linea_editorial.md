@@ -581,7 +581,11 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
     distribución / comerç de proximitat / centres comercials)? Si el snapshot
     no lo permite, ¿se ha registrado en TRAZABILIDAD (`diversidad_segmentos`)?
 14. ¿Se ha aplicado la alternancia de signo (`estil_editorial.md`, regla 24)?
-    Si las dos últimas ediciones no abrieron en positivo, ¿abre esta con un
+    Obliga a abrir en positivo solo si ninguna de las dos últimas ediciones lo
+    ha hecho; si la última abrió en positivo, la edición es libre y se procura
+    mixta; "neutro" y "mixto" no cuentan como positivo; si falta el `signo`,
+    la regla no se aplica y se avisa, sin deducirlo del titular. Si las dos
+    últimas ediciones no abrieron en positivo, ¿abre esta con un
     hallazgo que cumple las tres condiciones (mejora frente a base relevante,
     mecanismo, sin cautela que lo deshaga)? Si los datos no lo sostienen,
     ¿consta en TRAZABILIDAD? ¿El Bloque 2 incluye una noticia buena y real, o
