@@ -665,14 +665,15 @@
   },
   {
     "numero": 24,
-    "semana": "2026-10-26",
+    "semana": "2026-10-19",
     "cifra": "29,7 €",
     "angulo_bloc1": "La compra media con tarjeta ha pasado de unos 80 euros (de 2025) en 2005 a menos de 30: la tarjeta ha entrado en la compra de cada día.",
     "tema_prediccion": "Compra media con tarjeta 3T 2026 por debajo de 29,7 euros (P078).",
     "signo": "positivo",
     "brevo_campaign_id": "42",
-    "scheduled_at": "2026-10-26T08:30:00+01:00",
+    "scheduled_at": "2026-10-19T08:39:38+02:00",
     "asunto": "La tarjeta ya sale a diario",
-    "titular": "La tarjeta se ha hecho un hueco en la compra de cada día."
+    "titular": "La tarjeta se ha hecho un hueco en la compra de cada día.",
+    "nota_envio": "Programada per error per al 26/10; enviada amb sendNow el 19/10 a les 08:39. La capçalera del correu va sortir amb '26 octubre - 1 noviembre 2026' (ja no es pot corregir); web i mirall amb les dates bones."
   }
 ]

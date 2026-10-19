@@ -187,5 +187,14 @@
     "description": "Libros, deporte, juguetes y música venden más desde mayo. Septiembre dirá si dura.",
     "published_iso": "2026-10-12T08:30:00+02:00",
     "url": "https://pulso.j3b3.com/pulso/num-23.html"
+  },
+  {
+    "numero": 24,
+    "semana": "2026-10-19",
+    "titular": "La tarjeta se ha hecho un hueco en la compra de cada día.",
+    "subject": "La tarjeta ya sale a diario",
+    "description": "Se paga siete veces más a menudo que en 2005, y cada vez por menos dinero.",
+    "published_iso": "2026-10-19T08:30:00+02:00",
+    "url": "https://pulso.j3b3.com/pulso/num-24.html"
   }
 ]
