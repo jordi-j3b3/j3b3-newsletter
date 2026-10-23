@@ -70,7 +70,16 @@ def _referencia_git(semana: str, obs_path: Path) -> tuple[pd.DataFrame, str] | N
             f"historial del Observatorio, commit {commit[:7]} (antes del {limite})")
 
 
+def _texto(df: pd.DataFrame) -> pd.Series:
+    """Enunciado en castellano; el catalán si el CSV es anterior a enunciat_es."""
+    if "enunciat_es" not in df.columns:
+        return df["enunciat"]
+    return df["enunciat_es"].fillna(df["enunciat"])
+
+
 def compara(actual: pd.DataFrame, previa: pd.DataFrame | None) -> dict[str, pd.DataFrame]:
+    # La comparación usa el enunciado catalán, que existe en todas las versiones
+    # del CSV; el castellano sale de las mismas cifras.
     actual = actual.sort_values(["rellevancia", "fet_id"], ascending=[False, True])
     if previa is None:
         return {"nuevos": actual, "cambiados": actual.iloc[0:0],
@@ -79,7 +88,7 @@ def compara(actual: pd.DataFrame, previa: pd.DataFrame | None) -> dict[str, pd.D
     es_nou = ~actual["fet_id"].isin(ant.index)
     canviat = ~es_nou & (actual["enunciat"] != actual["fet_id"].map(ant))
     cambiados = actual[canviat].copy()
-    cambiados["antes"] = cambiados["fet_id"].map(ant)
+    cambiados["antes"] = cambiados["fet_id"].map(_texto(previa).set_axis(previa["fet_id"]))
     return {
         "nuevos": actual[es_nou],
         "cambiados": cambiados,
@@ -95,7 +104,10 @@ def _linea(row) -> str:
         marcas.append(f"avisos: {row['avis'].replace(',', ', ')}")
     if row["regla"] in REGLAS_PREDICCION:
         marcas.append("candidata a predicción")
-    return f"- {row['enunciat']}  \n  _{' · '.join(marcas)}_"
+    texto = row.get("enunciat_es")
+    if not isinstance(texto, str) or not texto:
+        texto = row["enunciat"]
+    return f"- {texto}  \n  _{' · '.join(marcas)}_"
 
 
 def informe(semana: str, actual: pd.DataFrame, grupos: dict[str, pd.DataFrame],
@@ -109,7 +121,7 @@ def informe(semana: str, actual: pd.DataFrame, grupos: dict[str, pd.DataFrame],
     lineas += [f"{total} hechos · nuevos: {len(grupos['nuevos'])} · "
                f"cambiados: {len(grupos['cambiados'])} · "
                f"desaparecidos: {len(grupos['desaparecidos'])}", "",
-               "Enunciados en catalán, tal como salen del motor. Cualquier cifra que pase "
+               "Enunciados en castellano, tal como salen del motor. Cualquier cifra que pase "
                "al boletín se verifica contra el CSV de origen.", ""]
 
     secciones = [("Nuevos", "nuevos"), ("Cambiados", "cambiados"),
