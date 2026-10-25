@@ -321,6 +321,23 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
       vista", "suma las cuatro tiendas" y "sus vaivenes dicen mucho del humor
       del consumidor". Se aceptaron "lo que se compra cuando sobra algo a final
       de mes" y "sirve de termómetro", seguida de su explicación.)
+26. **El Bloque 1 se escribe como un relato en orden.** Primero el hecho
+    (qué ha pasado), después el mecanismo (por qué, presentado como lectura
+    si la fuente no lo demuestra) y, al final, las cifras que lo sostienen,
+    cada una en el paso del argumento que apoya. Si la tesis de la semana
+    trae los pasos numerados, se respetan en ese orden. El lector tiene que
+    poder contar la historia a otra persona sin recordar ningún número.
+    (Núm. 25: el turista gastó lo mismo por cabeza, la habitación y la mesa
+    se lo llevaron, y a las tiendas les llegó menos.)
+27. **Ninguna comparación entre comunidades sin haber mirado cada cifra.**
+    Antes de escribir que un grupo de comunidades tiene más (o menos)
+    inflación, más ventas o precios que suben "al doble", comprueba el dato de
+    cada una en el snapshot o en la tesis. Si la afirmación vale solo para una,
+    nómbrala a ella sola; si vale para la media del grupo, di que es la media.
+    (Núm. 25: el borrador decía "más inflación en las comunidades turísticas",
+    y era al revés: Castilla-La Mancha y Galicia estaban por encima de
+    Cataluña. También decía que restauración y alojamiento subían "al doble
+    de la inflación", y eso solo era cierto en Illes Balears.)
 
 ---
 

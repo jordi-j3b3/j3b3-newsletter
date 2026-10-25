@@ -593,6 +593,11 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
 15. ¿El Bloque 1 lleva tres cifras como máximo, sin parejas eco, sin "no
     sabemos" y sin imágenes que haya que releer (`estil_editorial.md`,
     regla 25)?
+16. ¿El Bloque 1 sigue el orden hecho, mecanismo y cifras de apoyo, y se
+    puede contar sin recordar ningún número (`estil_editorial.md`, regla 26)?
+17. ¿Cada comparación entre comunidades está comprobada con la cifra de cada
+    una, y lo que vale solo para una o para la media se dice así
+    (`estil_editorial.md`, regla 27)?
 
 ---
 
