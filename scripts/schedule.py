@@ -26,6 +26,7 @@ import subprocess
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
@@ -398,7 +399,11 @@ def main() -> int:
         print("Error: falten BREVO_FROM_EMAIL o BREVO_LIST_PILOT_ID a l'entorn", file=sys.stderr)
         return 2
 
-    scheduled_at_iso = f"{semana}T08:30:00+02:00"
+    # Hora local de Madrid: +02:00 a l'estiu, +01:00 a l'hivern. Amb l'offset
+    # fix, del canvi d'hora d'octubre fins al de març sortia a les 07:30.
+    scheduled_at_iso = datetime.combine(
+        date.fromisoformat(semana), datetime.min.time().replace(hour=8, minute=30),
+        tzinfo=ZoneInfo("Europe/Madrid")).isoformat()
     name = f"Núm. {numero} · semana {semana}"
 
     print("\n" + "=" * 64)

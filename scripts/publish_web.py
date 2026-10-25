@@ -24,8 +24,9 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import markdown as md_lib
 
@@ -144,7 +145,9 @@ def render_web(semana: str, numero: int, output_root: Path | None = None) -> str
         body_html += "\n" + nota_path.read_text(encoding="utf-8").strip()
 
     titular = meta["titular"] or meta["subject"]
-    published_iso = f"{semana}T08:30:00+02:00"
+    published_iso = datetime.combine(
+        date.fromisoformat(semana), datetime.min.time().replace(hour=8, minute=30),
+        tzinfo=ZoneInfo("Europe/Madrid")).isoformat()
     canonical_url = f"{BASE_URL}/pulso/num-{numero}.html"
 
     template = template_path.read_text(encoding="utf-8")
