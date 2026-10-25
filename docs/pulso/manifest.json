@@ -196,5 +196,14 @@
     "description": "Se paga siete veces más a menudo que en 2005, y cada vez por menos dinero.",
     "published_iso": "2026-10-19T08:30:00+02:00",
     "url": "https://pulso.j3b3.com/pulso/num-24.html"
+  },
+  {
+    "numero": 25,
+    "semana": "2026-10-26",
+    "titular": "La temporada no llegó a las tiendas.",
+    "subject": "El turista llegó. A las tiendas, no.",
+    "description": "Agosto de récord en turistas. En las tres comunidades que más reciben, las tiendas vendieron menos que hace un año.",
+    "published_iso": "2026-10-26T08:30:00+01:00",
+    "url": "https://pulso.j3b3.com/pulso/num-25.html"
   }
 ]

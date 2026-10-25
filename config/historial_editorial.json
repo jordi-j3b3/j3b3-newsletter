@@ -675,5 +675,37 @@
     "asunto": "La tarjeta ya sale a diario",
     "titular": "La tarjeta se ha hecho un hueco en la compra de cada día.",
     "nota_envio": "Programada per error per al 26/10; enviada amb sendNow el 19/10 a les 08:39. La capçalera del correu va sortir amb '26 octubre - 1 noviembre 2026' (ja no es pot corregir); web i mirall amb les dates bones."
+  },
+  {
+    "numero": 25,
+    "semana": "2026-10-26",
+    "cifra": "-6,3% (Cataluña)",
+    "dataset_bloc1": "ICM real por CCAA - Cataluña",
+    "periodo_bloc1": "2026-08",
+    "angulo_bloc1": "El turismo récord no se tradujo en ventas: las tres comunidades más visitadas lideran las caídas del comercio.",
+    "tema_prediccion": "Las tres comunidades turísticas seguirán por debajo de la media nacional en octubre-noviembre 2026.",
+    "angle_backlog": "",
+    "metrica_prediccion": "Media simple ICM real interanual Cataluña + Illes Balears + Comunitat Valenciana vs España · octubre-noviembre 2026",
+    "umbral_prediccion": "≥1 punto por debajo de la media española",
+    "dataset_prediccion": "ICM real por CCAA - Cataluña, Illes Balears, Comunitat Valenciana",
+    "noticias": [
+      "El comercio balear reclama ayudas para compensar el sobrecoste de los envíos y competir con Amazon",
+      "Las ventas de Carmila crecieron un 6,1% en España hasta septiembre",
+      "AECOC reclama recuperar el IVA cero para proteger el consumo"
+    ],
+    "periodo_eurostat": "2026-09",
+    "periodo_icm": "2026-08",
+    "periodo_icm_distribucio": "2026-08",
+    "indicador_bloc3": "icm_ccaa",
+    "mode_editorial": "P2",
+    "titular_fixat": "La temporada no llegó a las tiendas.",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "45",
+    "scheduled_at": "2026-10-26T08:30:00+01:00",
+    "asunto": "El turista llegó. A las tiendas, no.",
+    "titular": "La temporada no llegó a las tiendas.",
+    "created_at_utc": "2026-10-25T09:53:12.161257+00:00",
+    "signo": "negativo"
   }
 ]
