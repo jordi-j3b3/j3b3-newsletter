@@ -707,5 +707,37 @@
     "titular": "La temporada no llegó a las tiendas.",
     "created_at_utc": "2026-10-25T09:53:12.161257+00:00",
     "signo": "negativo"
+  },
+  {
+    "numero": 26,
+    "semana": "2026-11-02",
+    "cifra": "-8,4%",
+    "dataset_bloc1": "ICM real nacional - Equipo personal (ropa y calzado)",
+    "periodo_bloc1": "2026-09",
+    "angulo_bloc1": "La caída de ropa y calzado en septiembre se explica por el calor récord, no por debilidad general del consumo.",
+    "tema_prediccion": "Las ventas reales de ropa y calzado en octubre de 2026 serán negativas respecto al año anterior.",
+    "angle_backlog": "",
+    "metrica_prediccion": "ICM real interanual equipo personal (ropa y calzado) España · 2026-10",
+    "umbral_prediccion": "negativo (< 0%)",
+    "dataset_prediccion": "ICM real nacional - Equipo personal (ropa y calzado)",
+    "noticias": [
+      "El cliente que se va sin comprar también nos está diciendo algo (Diffusion Sport, 30/10)",
+      "Pulso en la gran distribución: Fetico exige a Anged una subida salarial del 16% en tres años",
+      "Los grandes proyectos comerciales ganan peso en España"
+    ],
+    "periodo_eurostat": "2026-09",
+    "periodo_icm": "2026-09",
+    "periodo_icm_distribucio": "2026-09",
+    "indicador_bloc3": "icm_ramas",
+    "mode_editorial": "P2",
+    "titular_fixat": "El otoño no llegó a los escaparates.",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "46",
+    "scheduled_at": "2026-11-02T08:30:00+01:00",
+    "asunto": "El septiembre más caluroso dejó la ropa en la percha.",
+    "titular": "El otoño no llegó a los escaparates.",
+    "created_at_utc": "2026-10-31T18:57:00.723234+00:00",
+    "signo": "negativo"
   }
 ]
