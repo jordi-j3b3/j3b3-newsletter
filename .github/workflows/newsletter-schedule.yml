@@ -27,7 +27,7 @@ jobs:
 
       - name: Clone observatori-comerc (lectura de dades + escriptura del mirall)
         run: |
-          git clone "https://x-access-token:${{ secrets.OBSERVATORI_PUSH_TOKEN }}@github.com/jordi-j3b3/observatori-comerc.git" /tmp/observatori-comerc
+          git clone "https://x-access-token:${{ secrets.OBSERVATORI_PUSH_TOKEN }}@github.com/J3B3-CONSULTING/observatori-comerc.git" /tmp/observatori-comerc
           git -C /tmp/observatori-comerc config user.name 'github-actions[bot]'
           git -C /tmp/observatori-comerc config user.email 'github-actions[bot]@users.noreply.github.com'
 
