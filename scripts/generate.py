@@ -461,7 +461,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--bloc3", default="",
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
                             "icm_ramas", "marges_branca", "icm_distribucio", "icm_ccaa",
-                            "ipc_coicop", "digitalitzacio", "cens_ccaa"],
+                            "ipc_coicop", "digitalitzacio", "cens_ccaa",
+                            "densitat_ccaa"],
                    help="Sobreescriu la selecció automàtica del bloc 3. "
                         "'marges_branca' només és vàlid si el dataset de marges "
                         "està verificat (verificat=True al snapshot). 'icm_ccaa' "
@@ -1353,6 +1354,24 @@ def construir_prompts(
             "concreta no es la que más pierde, las comunidades que sí encabezan la "
             "pérdida tienen que aparecer en la lista, no solo mencionarse."
         )
+    elif bloc3_mode == "densitat_ccaa":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (COMERCIOS POR HABITANTE, POR CCAA):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** <subtítulo con unidad y año, p.ej. Empresas de comercio "
+            "minorista por cada 1.000 habitantes · 2025>\n\n"
+            "   - Comunidad 1: <valor con un decimal, sin %>\n"
+            "   - Comunidad 2: <valor>\n"
+            "   - ...\n\n"
+            "   <2-3 párrafos de interpretación>\n\n"
+            "   Usa EXCLUSIVAMENTE la columna per_1000_hab de <CENS_CCAA> para el "
+            "último año. Las 17 comunidades más España como referencia, ordenadas "
+            "de MÁS comercios por habitante a MENOS. Sin Ceuta ni Melilla.\n"
+            "   COBERTURA (obligatorio): el DIRCE cuenta EMPRESAS, no locales ni "
+            "establecimientos. Escribe 'empresas de comercio' o 'comercios' en el "
+            "sentido de empresas; nunca 'locales' ni 'persianas' sobre esta serie.\n"
+            "   No uses la columna de variación acumulada en este bloque."
+        )
     else:  # "europeu"
         bloque3_instr = (
             "D. Bloque 3, estructura literal:\n\n"
@@ -1894,8 +1913,8 @@ def main() -> int:
             print("  Bloc 3: 'digitalitzacio' sol·licitat però digitalitzacio_comerc.csv "
                   "no és al snapshot; recau a context editorial", file=sys.stderr)
             bloc3_mode = "editorial_contexto"
-        elif bloc3_mode == "cens_ccaa" and not (semana_dir / "cens_ccaa.csv").exists():
-            print("  Bloc 3: 'cens_ccaa' sol·licitat però cens_ccaa.csv no és al "
+        elif bloc3_mode in ("cens_ccaa", "densitat_ccaa") and not (semana_dir / "cens_ccaa.csv").exists():
+            print(f"  Bloc 3: '{bloc3_mode}' sol·licitat però cens_ccaa.csv no és al "
                   "snapshot; recau a context editorial", file=sys.stderr)
             bloc3_mode = "editorial_contexto"
         else:

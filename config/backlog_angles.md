@@ -32,7 +32,7 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Mecanisme**: el diferencial s'obre al segon any, quan s'acaba el coixí inicial i toca renovar lloguer i finançament. És un argument sobre estructura de costos fixos i accés al crèdit, no sobre esperit emprenedor. Connecta directe amb les polítiques municipals de suport al comerç, que gairebé sempre financen l'obertura i no la supervivència.
 - **Bloc 3**: barres ES vs UE-27 a Y1 i Y2, o comparativa de països si s'amplia el fetcher.
 - **Per què no està cremat**: cap edició ha tractat demografia empresarial. Les 16 han anat de vendes, ocupació, marges, preus o territori.
-- **Estat**: LLIURE
+- **Estat**: SEMI-GASTAT. El Núm. 17 (2026-08-31) va fer demografia empresarial amb la mateixa font (natalitat i defunció). La supervivència al segon any és un angle diferent, però caldria separar-la unes quantes edicions i dir-ho al text.
 
 ## A2 · Espanya té el comerç més atomitzat de la UE en ocupació, no en nombre d'empreses
 
@@ -68,7 +68,7 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Mecanisme**: la comunitat amb menys renda té més comerços per habitant, i la més rica menys. No és una paradoxa: és mida mitjana d'establiment. On hi ha renda, el mateix consum es concentra en menys locals i més grans. Serveix per desmuntar l'indicador de "densitat comercial" com a mesura de salut del sector, que és com se fa servir habitualment als plans locals.
 - **Bloc 3**: barres de comerços per 1.000 habitants per CCAA.
 - **Per què no està cremat**: cap edició ha usat densitat per habitant. Serie llarga disponible (2008-2025), o sigui que permet mirar si la bretxa s'obre o es tanca.
-- **Estat**: LLIURE
+- **Estat**: **USAT (Núm. 27, 2026-11-09)**. Reverificat el 2026-11-08: 9,36 i 6,22 (2025); els dos extrems es repeteixen cada any del 2008 al 2025. Mecanisme ancorat amb la mida del local (EEE 2024: 2,5 i 4,2 persones per local; 442.000 i 855.000 € per local) i el PIB per càpita 2025 de la CRE (nota INE del 30/09/2026). Bloc 3 nou `densitat_ccaa`.
 
 ## A6 · El comerç espanyol ven més en línia que la mitjana europea i està menys digitalitzat per dins
 
@@ -77,7 +77,7 @@ de manera que el prompt de les setmanes següents ja sap quins estan gastats.
 - **Mecanisme**: la contradicció aparent és l'angle. Espanya va per davant en el canal que el client veu i per darrere en la infraestructura que no es veu. Vendre en línia sense núvol vol dir fer-ho sobre sistemes que no escalen: el sostre no és comercial, és tècnic. Predicció natural: la bretxa de núvol es tradueix en bretxa de marge quan el volum en línia creixi.
 - **Bloc 3**: barres de la bretxa ES−UE per tecnologia.
 - **Per què no està cremat**: cap edició ha tractat digitalització. Compte: només hi ha tres tecnologies al dataset, o sigui que no es pot generalitzar a "digitalització" en abstracte — s'ha de parlar de les tres.
-- **Estat**: LLIURE
+- **Estat**: **USAT (Núm. 18, 2026-09-07)**: el núvol contra la venda en línia ja va ser la tesi d'aquella edició. La fitxa no s'havia marcat.
 
 ## A7 · Mercadona ven una tercera part de tot el que venen els 63 líders
 

@@ -214,5 +214,14 @@
     "description": "Las tiendas de ropa y calzado vendieron menos que hace dos años. El resto del comercio aguantó.",
     "published_iso": "2026-11-02T08:30:00+01:00",
     "url": "https://pulso.j3b3.com/pulso/num-26.html"
+  },
+  {
+    "numero": 27,
+    "semana": "2026-11-09",
+    "titular": "Más renta, menos comercios por habitante.",
+    "subject": "Extremadura tiene más comercios por habitante que Madrid, y así cada año desde 2008.",
+    "description": "Donde hay más renta, el comercio se concentra en menos tiendas y más grandes.",
+    "published_iso": "2026-11-09T08:30:00+01:00",
+    "url": "https://pulso.j3b3.com/pulso/num-27.html"
   }
 ]

@@ -342,4 +342,18 @@
     <changefreq>never</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://pulso.j3b3.com/pulso/num-27.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Observatorio del Comercio</news:name>
+        <news:language>es</news:language>
+      </news:publication>
+      <news:publication_date>2026-11-09T08:30:00+01:00</news:publication_date>
+      <news:title>Más renta, menos comercios por habitante.</news:title>
+    </news:news>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>

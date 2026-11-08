@@ -739,5 +739,36 @@
     "titular": "El otoño no llegó a los escaparates.",
     "created_at_utc": "2026-10-31T18:57:00.723234+00:00",
     "signo": "negativo"
+  },
+  {
+    "numero": 27,
+    "semana": "2026-11-09",
+    "cifra": "9,4 frente a 6,2",
+    "dataset_bloc1": "Densidad comercial por CCAA - empresas CNAE 47 por 1.000 habitantes (DIRCE 2025)",
+    "periodo_bloc1": "2025-01-01",
+    "angulo_bloc1": "La densidad comercial sigue la renta al revés: Extremadura arriba y Madrid abajo desde 2008; el tamaño del local explica la diferencia.",
+    "tema_prediccion": "Extremadura seguirá liderando y Madrid cerrará la tabla en el DIRCE a enero de 2026",
+    "angle_backlog": "A5",
+    "metrica_prediccion": "Densidad comercial por CCAA - empresas CNAE 47 por 1.000 habitantes · DIRCE 2026-01-01",
+    "umbral_prediccion": "Extremadura en el máximo y Madrid en el mínimo del ranking autonómico",
+    "dataset_prediccion": "DIRCE - Directorio Central de Empresas (INE), CNAE 47, a 1 de enero de 2026",
+    "noticias": [
+      "Mercadona cierra un supermercado en Bilbao por no adaptarse a T9",
+      "Lidl abre en Valdebebas (Madrid) tras invertir 4,2 millones de euros"
+    ],
+    "periodo_eurostat": "2026-09",
+    "periodo_icm": "2026-09",
+    "periodo_icm_distribucio": "2026-09",
+    "indicador_bloc3": "densitat_ccaa",
+    "mode_editorial": "P2",
+    "titular_fixat": "Más renta, menos comercios por habitante.",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "47",
+    "scheduled_at": "2026-11-09T08:30:00+01:00",
+    "asunto": "Extremadura tiene más comercios por habitante que Madrid, y así cada año desde 2008.",
+    "titular": "Más renta, menos comercios por habitante.",
+    "created_at_utc": "2026-11-08T16:48:59.713541+00:00",
+    "signo": "mixto"
   }
 ]
