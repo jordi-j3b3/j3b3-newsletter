@@ -598,6 +598,11 @@ no → ritmo CDMGE de la segunda quincena (días 14, 18, 22, 26, 30 de la
 17. ¿Cada comparación entre comunidades está comprobada con la cifra de cada
     una, y lo que vale solo para una o para la media se dice así
     (`estil_editorial.md`, regla 27)?
+18. Si la edición usa el censo de empresas, ¿algún bloque hace decir al
+    censo algo sobre aperturas o cierres de tiendas (`estil_editorial.md`,
+    regla 28)?
+19. ¿La lista del Bloque 3 está en el orden que pide su instrucción, fila
+    por fila (`estil_editorial.md`, regla 29)?
 
 ---
 

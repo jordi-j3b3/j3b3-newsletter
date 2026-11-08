@@ -296,6 +296,24 @@ contra quina sèrie s'ha comprovat si no es llegeix. Mateixa família que la
 troballa anterior: la mètrica "ventas" no discrimina prou entre marges i ICM
 quan la branca coincideix.
 
+## Núm. 27 (2026-11-08): tres coses que el gate i el flux no cobreixen · Prioritat: mitjana
+
+1. **Fals positiu de superlatiu en rànquings entre comunitats.** `verify.py`
+   llegeix "son los dos extremos" o "de los más grandes de España" com un
+   superlatiu temporal i el contrasta amb la sèrie de la mateixa comunitat. Com
+   que Extremadura tenia més densitat el 2008, ho marca com a ERROR. Hi ha
+   hagut de reformular tres frases correctes. Fix: distingir el superlatiu
+   transversal (entre territoris, un mateix període) i comprovar-lo contra
+   el rànquing de l'any, no contra la sèrie.
+2. **L'ordre de la llista del Bloc 3 no es comprova.** El borrador va sortir
+   desordenat i el gate el va donar per bo (cada xifra era correcta). Es pot
+   comprovar a `verify.py` o a `compose.py` quan el mode de Bloc 3 fixa un
+   ordre (de més a menys, o de més pèrdua a menys).
+3. **El workflow `newsletter-schedule.yml` no s'executa des de l'11/10.** No
+   surt a `gh workflow list` des del trasllat a J3B3-CONSULTING (commit
+   86d49d1). Les edicions 23 a 27 s'han tancat a mà. Decidir si es reactiva o
+   si el tancament manual passa a ser el flux oficial.
+
 ## Detector de negació binària al borrador del butlletí · Prioritat: mitjana (2026-09-25)
 
 La guia (`estil_editorial.md` §4, patró "No A. Sí B.") no n'hi ha prou: al Núm. 21 el primer

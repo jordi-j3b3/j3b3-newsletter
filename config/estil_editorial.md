@@ -261,7 +261,11 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
     titular. Puedes situarla con nuestros datos y decir qué habría que saber
     para valorarla, pero sin inventar su contenido. (Núm. 21: al plan de
     Bilbao se le atribuyó un mecanismo de precio de traspaso, y a JYSK un
-    patrón "Lidl y Primark", que no estaban en ninguna de las dos piezas.)
+    patrón "Lidl y Primark", que no estaban en ninguna de las dos piezas.
+    Núm. 27: a ALDI en el centro de Zaragoza, sin resumen, se le atribuyó
+    un "formato que concentra demanda de un radio amplio", y a Mercadona que
+    "crece en personas empleadas". Ninguna de las dos cosas estaba en la
+    pieza.)
 21. **Dos fuentes con ajuste distinto se dicen distintas.** El volumen de ventas
     de Eurostat es una serie desestacionalizada y corregida de calendario; el
     ICM del INE que usa el Observatorio es la serie original, sin ajustar. Si
@@ -337,7 +341,22 @@ recomendación condicionada a norma o dato ("sempre i quan...", "atès que...").
     (Núm. 25: el borrador decía "más inflación en las comunidades turísticas",
     y era al revés: Castilla-La Mancha y Galicia estaban por encima de
     Cataluña. También decía que restauración y alojamiento subían "al doble
-    de la inflación", y eso solo era cierto en Illes Balears.)
+    de la inflación", y eso solo era cierto en Illes Balears. Núm. 27: el
+    Bloque 2 decía que Madrid era la comunidad que menos empresas había
+    perdido desde 2023, y era la segunda, detrás de Illes Balears.)
+28. **El censo cuenta empresas, en todo el boletín.** El DIRCE no cambia
+    porque una cadena abra o cierre una tienda: la empresa sigue siendo una.
+    Ningún bloque puede decir que una apertura "añade un comercio al censo" ni
+    que un cierre "quita una empresa del censo" si la empresa sigue activa.
+    Cuando la tesis usa el censo, las noticias se comentan como locales o
+    tiendas, y se dice que son otra cosa. (Núm. 27: el borrador decía que el
+    cierre de un supermercado de Mercadona hacía perder "una empresa del
+    censo".)
+29. **La lista del Bloque 3 va ordenada como dice su instrucción.** Antes de
+    entregar, recorre los valores de arriba abajo y comprueba que ninguno
+    rompe el orden, incluida la fila de España. (Núm. 27: la Comunitat
+    Valenciana, con 7,9, salía detrás de tres comunidades con 7,8, y
+    Cantabria delante de Navarra.)
 
 ---
 
