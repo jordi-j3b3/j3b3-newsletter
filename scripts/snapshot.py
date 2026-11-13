@@ -395,6 +395,11 @@ ICM_BRANCA_CULTURA = ("Comercio al por menor de artículos culturales y recreati
 # Estacions de servei amb històric (canvi 2026-09-25, Núm. 21): quan el total i
 # el 47-sin-473 divergeixen, el combustible és l'explicació, i sense la sèrie
 # sencera verify.py no podia comptar-ne cap ratxa (només hi havia l'últim mes).
+# Salut i alimentació, sèrie sencera en nominal i real (canvi 2026-10-13, Núm.
+# 24): l'edició compara les dues branques i afirma ratxes i mínims que
+# necessiten tot l'històric (el tall de 24 mesos no arriba al 2023).
+ICM_BRANQUES_SALUT_ALIMENTACIO = ("Salud (4773+4774+4775)",
+                                  "Alimentación (4711+472)")
 ICM_BRANCA_COMBUSTIBLE = ("Comercio al por menor de combustible para la "
                           "automoción en establecimientos especializados")
 
@@ -445,6 +450,12 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
         & (df["data"] >= cutoff)
     ]
 
+    salut_alimentacio = df[
+        df["branca"].isin(ICM_BRANQUES_SALUT_ALIMENTACIO)
+        & df["tipus"].isin(["nominal", "real"])
+        & df["indicador"].isin(["index", "var_anual", "var_mitjana_acum"])
+    ]
+
     # Desglossament per branca del mes més recent (real, var_anual)
     ult_data = df["data"].max()
     branques = df[
@@ -478,7 +489,7 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
     else:
         ccaa = ccaa_full
 
-    out = pd.concat([general, cultura, branques, ccaa]).drop_duplicates()
+    out = pd.concat([general, cultura, salut_alimentacio, branques, ccaa]).drop_duplicates()
     cols = ["ambit", "tipus", "branca", "indicador", "any", "mes", "data", "valor"]
     out = out[cols].sort_values(["tipus", "branca", "indicador", "ambit", "data"])
     out.to_csv(dst, index=False)
@@ -502,6 +513,49 @@ def capture_icm(src: Path, dst: Path, meses: int = 24) -> dict | None:
         "ccaa_disponible": bool(not ccaa_full.empty),
         "ccaa_ultimo_periodo": ccaa_ultimo_periodo,
     }
+
+
+def capture_estacionalitat_nadal(src: Path, dst: Path) -> dict | None:
+    """Estacionalitat de novembre i desembre per branca (canvi 2026-11-13, Núm. 28).
+
+    A partir de l'ICM nacional complet (índex nominal, sèrie original sense
+    desestacionalitzar) calcula, per cada any complet i cada branca, quant se
+    separen novembre i desembre de la mitjana dels dotze mesos del mateix any.
+    Afegeix la mitjana dels quatre darrers anys complets. El snapshot normal
+    només porta 24 mesos d'ICM i no n'hi ha prou per veure l'estacionalitat.
+    """
+    if not src.exists():
+        print(f"  Estacionalitat Nadal: no trobat a {src}, s'omet", file=sys.stderr)
+        return None
+    df = pd.read_csv(src)
+    df = df[(df["ambit"] == "nacional") & (df["tipus"] == "nominal")
+            & (df["indicador"] == "index")]
+    files = []
+    for branca, g in df.groupby("branca"):
+        taula = g.pivot_table(index="any", columns="mes", values="valor")
+        complets = [a for a in taula.index if taula.loc[a].notna().sum() == 12 and a >= 2019]
+        if not complets:
+            continue
+        registres = []
+        for a in complets:
+            mitjana = float(taula.loc[a].mean())
+            nov = (float(taula.loc[a, 11]) / mitjana - 1) * 100
+            dic = (float(taula.loc[a, 12]) / mitjana - 1) * 100
+            registres.append((str(int(a)), nov, dic))
+        recents = registres[-4:]
+        registres.append((f"mitjana {recents[0][0]}-{recents[-1][0]}",
+                          sum(r[1] for r in recents) / len(recents),
+                          sum(r[2] for r in recents) / len(recents)))
+        for periode, nov, dic in registres:
+            files.append({"branca": branca, "periode": periode,
+                          "nov_vs_mitjana_pct": round(nov, 2),
+                          "dic_vs_mitjana_pct": round(dic, 2)})
+    if not files:
+        return None
+    out = pd.DataFrame(files)
+    out.to_csv(dst, index=False)
+    return {"origen": str(src), "filas": len(out),
+            "branques": int(out["branca"].nunique())}
 
 
 def capture_icm_distribucio(src: Path, dst: Path, meses: int = 24) -> dict | None:
@@ -806,6 +860,7 @@ def main() -> int:
     digitalitzacio_dst = semana_dir / "digitalitzacio_comerc.csv"
     mida_empresa_dst = semana_dir / "mida_empresa.csv"
     cens_ccaa_dst = semana_dir / "cens_ccaa.csv"
+    estacionalitat_dst = semana_dir / "estacionalitat_nadal.csv"
     locals_provincia_dst = semana_dir / "locals_provincia.csv"
     locals_ccaa_grups_dst = semana_dir / "locals_ccaa_grups.csv"
     fets_src = obs_path / SETTINGS["snapshot"]["fets_origen"]
@@ -929,6 +984,11 @@ def main() -> int:
               f"ocupació 10+ ES {mida_empresa_info['pct_ocupacio_ge10']['ES']}% "
               f"(UE-27 {mida_empresa_info['pct_ocupacio_ge10']['UE-27']}%)")
 
+    estacionalitat_info = capture_estacionalitat_nadal(icm_src, estacionalitat_dst)
+    if estacionalitat_info:
+        print(f"  estacionalitat_nadal.csv · {estacionalitat_info['filas']:>6} filas · "
+              f"{estacionalitat_info['branques']} branques")
+
     cens_ccaa_info = copy_csv_optional(cens_ccaa_src, cens_ccaa_dst,
                                        "Cens DIRCE per CCAA")
     if cens_ccaa_info:
@@ -1004,6 +1064,7 @@ def main() -> int:
         "digitalitzacio": digitalitzacio_info,
         "mida_empresa": mida_empresa_info,
         "cens_ccaa": cens_ccaa_info,
+        "estacionalitat_nadal": estacionalitat_info,
         "locals_provincia": locals_provincia_info,
         "locals_ccaa_grups": locals_ccaa_grups_info,
         "fets": fets_info,

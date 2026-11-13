@@ -770,5 +770,37 @@
     "titular": "Más renta, menos comercios por habitante.",
     "created_at_utc": "2026-11-08T16:48:59.713541+00:00",
     "signo": "mixto"
+  },
+  {
+    "numero": 28,
+    "semana": "2026-11-16",
+    "cifra": "+21,6%",
+    "dataset_bloc1": "Índice de Comercio al por Menor · estacionalidad diciembre · comercio sin gasolineras",
+    "periodo_bloc1": "2022-2025 (media)",
+    "angulo_bloc1": "Diciembre vende estructuralmente un quinto más, concentrado en moda y regalos, no en todo el comercio.",
+    "tema_prediccion": "Diciembre 2026 superará el 20% sobre el mes medio, salvo caída brusca del consumo.",
+    "angle_backlog": "",
+    "metrica_prediccion": "ICM nominal sin desestacionalizar · comercio sin gasolineras · diciembre 2026 sobre mes medio 2026",
+    "umbral_prediccion": "≥ +20,0%",
+    "dataset_prediccion": "Estacionalidad Navidad · serie histórica ICM nominal diciembre 2019-2025",
+    "noticias": [
+      "Las ventas del comercio catalán se recuperan un 4,9% en octubre",
+      "El pequeño comercio aragonés explora las posibilidades de la inteligencia artificial",
+      "Decathlon lanza su campaña de contratación de Navidad con 800 vacantes en España"
+    ],
+    "periodo_eurostat": "2026-09",
+    "periodo_icm": "2026-09",
+    "periodo_icm_distribucio": "2026-09",
+    "indicador_bloc3": "estacionalitat_nadal",
+    "mode_editorial": "P2",
+    "titular_fixat": "Diciembre vende un quinto más que un mes cualquiera.",
+    "productivitat_any": 2024,
+    "ocupacio_any": 2025,
+    "brevo_campaign_id": "48",
+    "scheduled_at": "2026-11-16T08:30:00+01:00",
+    "asunto": "Diciembre vende un quinto más que un mes cualquiera",
+    "titular": "Diciembre vende un quinto más que un mes cualquiera.",
+    "created_at_utc": "2026-11-13T16:03:12.098726+00:00",
+    "signo": "positivo"
   }
 ]

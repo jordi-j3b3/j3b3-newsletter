@@ -462,7 +462,7 @@ def parse_args() -> argparse.Namespace:
                    choices=["", "europeu", "cdmge_tasa_anual", "editorial_contexto",
                             "icm_ramas", "marges_branca", "icm_distribucio", "icm_ccaa",
                             "ipc_coicop", "digitalitzacio", "cens_ccaa",
-                            "densitat_ccaa"],
+                            "densitat_ccaa", "estacionalitat_nadal"],
                    help="Sobreescriu la selecció automàtica del bloc 3. "
                         "'marges_branca' només és vàlid si el dataset de marges "
                         "està verificat (verificat=True al snapshot). 'icm_ccaa' "
@@ -743,6 +743,21 @@ def slice_estructura_empreses(csv_path: Path) -> str:
         piv = g.pivot_table(index="pais", columns="any", values="valor", aggfunc="first")
         parts.append(f"\n{ind} — {nom}:\n" + piv.round(2).to_csv())
     return "".join(parts)
+
+
+def slice_estacionalitat_nadal(csv_path: Path) -> str:
+    """Novembre i desembre per branca respecte a la mitjana del mateix any.
+
+    Dades de l'ICM nacional, índex nominal, sèrie original sense
+    desestacionalitzar (Núm. 28). Cada fila és branca · període · novembre ·
+    desembre, en % sobre el mes mitjà de l'any.
+    """
+    df = pd.read_csv(csv_path)
+    files = ["branca | periode | novembre vs mes mitja (%) | desembre vs mes mitja (%)"]
+    for _, r in df.iterrows():
+        files.append(f"{r['branca']} | {r['periode']} | "
+                     f"{r['nov_vs_mitjana_pct']:+.1f} | {r['dic_vs_mitjana_pct']:+.1f}")
+    return "\n".join(files)
 
 
 def slice_cens_ccaa(csv_path: Path) -> str:
@@ -1354,6 +1369,29 @@ def construir_prompts(
             "concreta no es la que más pierde, las comunidades que sí encabezan la "
             "pérdida tienen que aparecer en la lista, no solo mencionarse."
         )
+    elif bloc3_mode == "estacionalitat_nadal":
+        bloque3_instr = (
+            "D. Bloque 3, estructura literal (ESTACIONALIDAD DE NAVIDAD POR RAMA):\n\n"
+            "   **◆ DATOS DE LA SEMANA**\n\n"
+            "   **Datos:** Ventas de diciembre sobre el mes medio del año · media "
+            "de los últimos cuatro años\n\n"
+            "   - Equipo personal: <valor con un decimal>%\n"
+            "   - Resto: <valor>%\n"
+            "   - ...\n\n"
+            "   <2-3 párrafos de interpretación>\n\n"
+            "   Usa EXCLUSIVAMENTE la columna desembre de <ESTACIONALITAT_NADAL>, "
+            "en la fila que empieza por 'mitjana'. Las siete ramas que haya, de "
+            "mayor a menor valor, con el nombre que usa el boletín (equipo "
+            "personal, alimentación, equipo del hogar, salud, resto, el comercio "
+            "sin gasolineras). No pongas el agregado con gasolineras. Todos los "
+            "valores son positivos.\n"
+            "   COBERTURA (obligatorio): es el índice del INE en euros corrientes y "
+            "sin desestacionalizar. Dilo en una frase: se compara cada mes con "
+            "el mes medio de su propio año, nunca un año con otro.\n"
+            "   La fila 'Resto' agrupa grandes almacenes, informática, libros, "
+            "deporte, juguetes, joyería y venta a distancia, entre otras; la fuente "
+            "no las separa."
+        )
     elif bloc3_mode == "densitat_ccaa":
         bloque3_instr = (
             "D. Bloque 3, estructura literal (COMERCIOS POR HABITANTE, POR CCAA):\n\n"
@@ -1733,6 +1771,15 @@ def construir_prompts(
             "",
         ])
 
+    estacionalitat_path = semana_dir / "estacionalitat_nadal.csv"
+    if estacionalitat_path.exists():
+        parts.extend([
+            f"<ESTACIONALITAT_NADAL font=INE_ICM tipus=nominal_sense_desestacionalitzar>\n"
+            f"{slice_estacionalitat_nadal(estacionalitat_path)}\n"
+            f"</ESTACIONALITAT_NADAL>",
+            "",
+        ])
+
     mida_empresa_path = semana_dir / "mida_empresa.csv"
     if mida_empresa_path.exists():
         mida_empresa_data = slice_mida_empresa(mida_empresa_path)
@@ -1911,6 +1958,10 @@ def main() -> int:
             bloc3_mode = "editorial_contexto"
         elif bloc3_mode == "digitalitzacio" and not (semana_dir / "digitalitzacio_comerc.csv").exists():
             print("  Bloc 3: 'digitalitzacio' sol·licitat però digitalitzacio_comerc.csv "
+                  "no és al snapshot; recau a context editorial", file=sys.stderr)
+            bloc3_mode = "editorial_contexto"
+        elif bloc3_mode == "estacionalitat_nadal" and not (semana_dir / "estacionalitat_nadal.csv").exists():
+            print("  Bloc 3: 'estacionalitat_nadal' sol·licitat però estacionalitat_nadal.csv "
                   "no és al snapshot; recau a context editorial", file=sys.stderr)
             bloc3_mode = "editorial_contexto"
         elif bloc3_mode in ("cens_ccaa", "densitat_ccaa") and not (semana_dir / "cens_ccaa.csv").exists():

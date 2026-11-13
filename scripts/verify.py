@@ -317,11 +317,52 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
             entitat_serie = str(ambit) if ambit != "nacional" else "España"
             if "culturales y recreativos" in str(branca):
                 entitat_serie += " · comercio de cultura y ocio"
+            # Salut i alimentació (Núm. 24): mateix problema que la 476, el
+            # butlletí en diu "comercio minorista de salud / de alimentación".
+            # Sense l'entitat, el gate resolia les xifres contra l'ocupació EPA
+            # i contra l'IPC (un "-2,3%" quedava VERIFICAT contra l'IPC).
+            if str(branca).startswith("Salud ("):
+                entitat_serie += " · comercio minorista de salud"
+            elif str(branca).startswith("Alimentación ("):
+                entitat_serie += " · comercio minorista de alimentación"
+            if str(tipus) == "nominal":
+                temes += " facturacion facturan factura precios corrientes"
+            elif str(tipus) == "real":
+                temes += " volumen vende ventas precios constantes"
             _afegeix(S, f"icm|{ambit}|{tipus}|{branca}|{ind}",
                      entitat=entitat_serie,
                      metrica=f"ICM {tipus} {ind} · {branca}",
                      unitat="%" if "var" in str(ind) else "index", punts=punts,
                      temes=temes)
+
+    # -- ICM salut / alimentació: preu implícit i poder de compra per euro ---
+    # Derivats dels índexs nominal i real (cociente), com es fa a la tesi del
+    # Núm. 24. El preu implícit NO és l'IPC: és facturació / volum de la branca.
+    if f.exists():
+        for etiq, prefix in [("comercio minorista de salud", "Salud ("),
+                             ("comercio minorista de alimentación", "Alimentación (")]:
+            sub = df[(df["ambit"] == "nacional") & (df["indicador"] == "index")
+                     & df["branca"].astype(str).str.startswith(prefix)]
+            if sub.empty:
+                continue
+            def _ix(tp):
+                g = sub[sub["tipus"] == tp]
+                return {f"{int(r.any_):04d}-{int(r.mes):02d}": float(r.valor)
+                        for r in g.rename(columns={"any": "any_"}).itertuples()}
+            nom, rea = _yoy(_ix("nominal")), _yoy(_ix("real"))
+            preu = {p: ((1 + nom[p] / 100) / (1 + rea[p] / 100) - 1) * 100
+                    for p in nom if p in rea}
+            poder = {p: (1 - 1 / (1 + v / 100)) * -100 for p, v in preu.items()}
+            _afegeix(S, f"icmpreu|{etiq}", f"España · {etiq}",
+                     "variación de precios interanual (implícita ICM)", "%", preu,
+                     temes=f"{_TEMES_PREUS} {_TEMES_VARIACIO} precio implicito")
+            nivell = {p: 100 + v for p, v in preu.items()}
+            _afegeix(S, f"icmcost|{etiq}", f"España · {etiq}",
+                     "índice de precio implícito (base 100 año anterior)", "index",
+                     nivell, temes=f"{_TEMES_PREUS} euros costaba cuesta precio implicito")
+            _afegeix(S, f"icmpoder|{etiq}", f"España · {etiq}",
+                     "poder de compra por euro gastado (variación interanual)", "%",
+                     poder, temes=f"{_TEMES_PREUS} {_TEMES_VARIACIO} euro compra poder")
 
     # -- ICM per modo de distribució ----------------------------------------
     f = semana_dir / "pulso_icm_distribucio.csv"
@@ -697,6 +738,33 @@ def carrega_series(semana_dir: Path) -> dict[str, Serie]:
             _afegeix(S, f"cens|{territori}|var_anual", etiqueta,
                      "variación anual del censo de comercios, %", "%", anual,
                      temes=f"{_TEMES_CENS} {_TEMES_VARIACIO} anual")
+
+    # -- Estacionalitat de Nadal per branca (ICM, Núm. 28) ----------------------
+    f = semana_dir / "estacionalitat_nadal.csv"
+    if f.exists():
+        df = pd.read_csv(f)
+        _TEMES_NADAL = ("navidad navideno diciembre noviembre black friday campana "
+                        "estacionalidad mes medio ventas facturacion rebajas")
+        for branca, g in df.groupby("branca"):
+            etiq = str(branca)
+            if etiq.startswith("Comercio al por menor sin Estaciones"):
+                etiq += " · comercio sin gasolineras el comercio"
+            elif etiq.startswith("Equipo personal"):
+                etiq += " · moda calzado equipo personal"
+            elif etiq.startswith("Equipo del hogar"):
+                etiq += " · hogar equipo del hogar"
+            elif etiq.startswith("Alimentación"):
+                etiq += " · alimentacion"
+            elif etiq.startswith("Salud"):
+                etiq += " · salud"
+            elif etiq.startswith("Resto"):
+                etiq += " · resto de ramas"
+            for col, nom in (("dic_vs_mitjana_pct", "diciembre"),
+                             ("nov_vs_mitjana_pct", "noviembre")):
+                _afegeix(S, f"nadal|{branca}|{nom}", etiq,
+                         f"ventas de {nom} sobre el mes medio del año", "%",
+                         {str(p_): float(v) for p_, v in zip(g["periode"], g[col])},
+                         temes=_TEMES_NADAL)
 
     _afegeix_ocupacio_edat(S, semana_dir)
     return S
